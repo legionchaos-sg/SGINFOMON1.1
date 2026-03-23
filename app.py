@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.0", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.1", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (Every 3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -45,7 +45,8 @@ def get_financial_data(tickers_dict):
             p = t.fast_info['last_price']
             prev = t.fast_info['regular_market_previous_close']
             results[label] = {"p": p, "change": p - prev, "pc": ((p - prev) / prev) * 100}
-        except: results[label] = {"p": 0.0, "change": 0.0, "pc": 0.0}
+        except: 
+            results[label] = {"p": 0.0, "change": 0.0, "pc": 0.0}
     return results
 
 def fetch_news(url):
@@ -53,12 +54,44 @@ def fetch_news(url):
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, timeout=5, headers=headers)
         return feedparser.parse(response.content)
-    except: return None
+    except: 
+        return None
 
 # 5. HEADER & CLOCKS
-st.title("Singapore Info Monitor 3.0")
+st.title("Singapore Info Monitor 3.1")
 t_cols = st.columns(6)
 zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
          ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
+
 for i, (city, tz) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz
+    current_time = get_tz_time(tz)
+    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{current_time}</div></div>', unsafe_allow_html=True)
+
+st.divider()
+
+# 6. TRAIN SERVICE STATUS
+st.subheader("🚇 MRT/LRT Service Status")
+train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
+s_cols = st.columns(6)
+for i, (line, status) in enumerate(train_lines.items()):
+    bg = "status-normal" if status == "Normal" else "status-advisory"
+    icon = "✅" if status == "Normal" else "⚠️"
+    s_cols[i].markdown(f'<div class="status-card {bg}">{line}<br>{icon} {status}</div>', unsafe_allow_html=True)
+
+st.write("")
+
+# 7. MARKETS (DROPDOWN WITH DEFAULTS)
+with st.expander("📊 Market Overview", expanded=True):
+    m_tickers = {"Gold": "GC=F", "Crude": "CL=F", "STI": "^STI", "S&P 500": "^GSPC"}
+    m_data = get_financial_data(m_tickers)
+    
+    c1, c2 = st.columns(2)
+    c1.metric("Gold Price (Default)", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
+    c2.metric("Crude Oil (Default)", f"${m_data['Crude']['p']:,.2f}", f"{m_data['Crude']['change']:+.2f}")
+    
+    st.write("---")
+    c3, c4 = st.columns(2)
+    c3.metric("STI INDEX", f"{m_data['STI']['p']:,.2f}", f"{m_data['STI']['change']:+.2f}")
+    c4.metric("S&P 500", f"{m_data['S&P 500']['p']:,.2f}", f"{m_data['S&P 500']['change']:+.2f}")
+
+# 8.
