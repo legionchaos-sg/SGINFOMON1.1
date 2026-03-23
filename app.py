@@ -4,8 +4,8 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# 1. Page Setup
-st.set_page_config(page_title="SG INFO MON 6.7", page_icon="🇸🇬", layout="wide")
+# 1. Page Config
+st.set_page_config(page_title="SG INFO MON 6.8", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="refresh")
 
 st.markdown("""
@@ -32,7 +32,7 @@ def fetch_top(url):
     except: return None
 
 # --- 1. REGIONAL TIME ---
-st.title("🇸🇬 Singapore Info Monitor 6.7")
+st.title("🇸🇬 Singapore Info Monitor 6.8")
 t_cols = st.columns(6)
 zones = [("Singapore","Asia/Singapore"), ("Bangkok","Asia/Bangkok"), ("Tokyo","Asia/Tokyo"), 
          ("Jakarta","Asia/Jakarta"), ("Manila","Asia/Manila"), ("Brisbane","Australia/Brisbane")]
@@ -57,19 +57,25 @@ with t_uni:
     
     do_tr = st.checkbox("Fast Translation (Simplified Chinese)")
     
-    # Batch Translation logic
-    trans_map = {}
+    # NEW: Robust Batch Translation using Newlines
+    translations = []
     if do_tr and unified:
         try:
-            mega = " ||| ".join([x['t'] for x in unified])
-            translated = GoogleTranslator(target='zh-CN').translate(mega).split(" ||| ")
-            trans_map = {unified[i]['t']: translated[i] for i in range(len(unified))}
-        except: st.error("Translation Error")
+            # Using newline instead of ||| is more reliable for Google
+            mega_text = "\n".join([x['t'] for x in unified])
+            translated_text = GoogleTranslator(source='auto', target='zh-CN').translate(mega_text)
+            translations = translated_text.split("\n")
+        except Exception as e:
+            st.error(f"Translation Service Error: {e}")
 
-    for item in unified:
+    # Display Loop
+    for i, item in enumerate(unified):
+        # 1. Headline
         st.write(f"<span class='news-tag'>{item['n']}</span> **[{item['t']}]({item['l']})**", unsafe_allow_html=True)
-        if do_tr and item['t'] in trans_map:
-            st.markdown(f"<div class='trans-box'>🇨🇳 {trans_map[item['t']]}</div>", unsafe_allow_html=True)
+        
+        # 2. Matching Translation (Strict Index Check)
+        if do_tr and i < len(translations):
+            st.markdown(f"<div class='trans-box'>🇨🇳 {translations[i].strip()}</div>", unsafe_allow_html=True)
 
 with t_src:
     s = st.selectbox("Outlet", list(srcs.keys()))
@@ -101,4 +107,4 @@ with st.expander("🚗 COE Bidding - Mar 2026", expanded=True):
         c[i].markdown(f'<div class="coe-card"><b>{cat}</b><br><span style="color:#d32f2f;font-weight:bold;">${p:,}</span><br><small>▲ ${d:,}</small></div>', unsafe_allow_html=True)
 
 st.divider()
-st.caption(f"Sync: {get_sg_now().strftime('%H:%M:%S')} SGT | v6.7 OK")
+st.caption(f"Sync: {get_sg_now().strftime('%H:%M:%S')} SGT | v6.8 Final Fix")
