@@ -1,7 +1,147 @@
 import streamlit as st
 import feedparser, requests, pytz
 from datetime import datetime
+from streamlit_autorefresh import st_autorefreshimport streamlit as st
+import feedparser, requests, pytz
+from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from deep_translator import GoogleTranslator
+
+# 1. Page Configuration
+st.set_page_config(page_title="SG INFO MON 8.0", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync")
+
+# 2. Advanced CSS
+st.markdown("""
+    <style>
+    .main .block-container { max-width: 95%; }
+    .t-card {background:#f8f9fa; border:1px solid #ddd; padding:8px; border-radius:8px; text-align:center; margin-bottom:5px;}
+    .c-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:12px; border-radius:6px; margin-bottom:10px; min-height:175px;}
+    .f-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
+    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
+    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
+    .up {color: #d32f2f !important; font-weight: bold;} 
+    .down {color: #28a745 !important; font-weight: bold;}
+    .stat-label {font-size: 0.75rem; color: #666; text-transform: uppercase;}
+    @media (prefers-color-scheme: dark) { 
+        .t-card, .c-card {background:#262730; border-color:#444;} 
+        .f-card {background:#1e2630;} 
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 3. Fuel Pricing Database (March 23, 2026)
+fuel_data = {
+    "92 Octane": {"Esso": (3.43, 0.04), "Caltex": (3.43, 0.04), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01), "SmartEnergy": (3.41, 0.01)},
+    "95 Octane": {"Esso": (3.47, 0.04), "Shell": (3.47, 0.04), "Caltex": (3.47, 0.04), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.04), "Cnergy": (3.44, -0.02), "SmartEnergy": (3.45, -0.01)},
+    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "Caltex": (4.16, 0.08), "SPC": (3.97, 0.05), "Sinopec": (3.97, 0.05), "Cnergy": (3.92, -0.03), "SmartEnergy": (3.94, -0.02)},
+    "Premium": {"Shell V-Power": (4.21, 0.05), "Caltex Platinum": (4.16, 0.08), "Sinopec X-Power": (4.10, 0.04), "Esso Supreme+": (3.97, 0.05)},
+    "Diesel": {"Esso": (3.73, -0.04), "Shell": (3.73, -0.04), "Caltex": (3.73, -0.04), "SPC": (3.56, -0.06), "Sinopec": (3.72, -0.05), "Cnergy": (3.45, -0.08), "SmartEnergy": (3.49, -0.07)}
+}
+
+@st.dialog("Fuel Brand Comparison")
+def show_fuel(ftype):
+    st.subheader(f"📍 {ftype} Brand Breakdown")
+    cols = st.columns(2)
+    for i, (brand, (p, c)) in enumerate(fuel_data[ftype].items()):
+        tr = f'<span class="{"up" if c>0 else "down"}">{"▲" if c>0 else "▼"} ${abs(c):.2f}</span>' if c!=0 else "Stable"
+        cols[i%2].markdown(f'<div style="padding:10px; border-bottom:1px solid #ddd;"><b>{brand}</b><br><span style="color:#007bff; font-size:1.1rem;">${p:.2f}</span><br>{tr}</div>', unsafe_allow_html=True)
+
+# --- UI START ---
+st.title("🇸🇬 Singapore Info Monitor 8.0")
+t_cols = st.columns(6)
+zones = [("SGT","Asia/Singapore"),("ICT","Asia/Bangkok"),("JST","Asia/Tokyo"),("WIB","Asia/Jakarta"),("PHT","Asia/Manila"),("AEST","Australia/Brisbane")]
+for i, (n, z) in enumerate(zones):
+    t_cols[i].markdown(f'<div class="t-card"><small>{n}</small><br><b>{datetime.now(pytz.timezone(z)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+
+st.divider()
+
+# 4. News Section (Top 3 Per Source)
+st.header("🗞️ Singapore Headlines")
+news_sources = {
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
+    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
+    "Mothership": "https://mothership.sg/feed/"
+}
+
+col_n1, col_n2 = st.columns([2, 1])
+with col_n1:
+    choice = st.radio("Select View:", ["All (Unified Top 3)", "CNA Only", "Straits Times Only", "Mothership Only"], horizontal=True)
+with col_n2:
+    do_tr = st.checkbox("Translate (Chinese)")
+
+# Fetch Logic
+unified = []
+if "All" in choice:
+    for src_name, url in news_sources.items():
+        try:
+            f = feedparser.parse(requests.get(url, timeout=5).content)
+            for entry in f.entries[:3]: # LIMIT TO TOP 3 HEADLINES PER SOURCE
+                unified.append({'n': src_name, 't': entry.title, 'l': entry.link})
+        except: pass
+else:
+    src_key = choice.replace(" Only", "")
+    try:
+        f = feedparser.parse(requests.get(news_sources[src_key], timeout=5).content)
+        for entry in f.entries[:10]: # Show more if single source selected
+            unified.append({'n': src_key, 't': entry.title, 'l': entry.link})
+    except: pass
+
+tr_list = []
+if do_tr and unified:
+    try: tr_list = GoogleTranslator(target='zh-CN').translate("\n".join([x['t'] for x in unified])).split("\n")
+    except: pass
+
+for i, item in enumerate(unified):
+    st.write(f"<span class='news-tag'>{item['n']}</span> **[{item['t']}]({item['l']})**", unsafe_allow_html=True)
+    if do_tr and i < len(tr_list):
+        st.markdown(f"<div class='trans-box'>🇨🇳 {tr_list[i].strip()}</div>", unsafe_allow_html=True)
+
+st.divider()
+
+# 5. Markets & Forex
+with st.expander("📈 Market Indices & Forex", expanded=True):
+    m_row1 = st.columns(4)
+    m_row1[0].metric("STI Index", "4,892.27", "-0.30%")
+    m_row1[1].metric("USD / SGD", "1.3369", "+0.22%")
+    m_row1[2].metric("CNY / SGD", "5.3975", "-0.07%")
+    m_row1[3].metric("Gold (Spot)", "$4,202.90", "-8.04%")
+
+# 6. COE Results
+with st.expander("🚗 COE Bidding (Mar 2026 2nd Round)", expanded=True):
+    coe_data = [
+        ("Cat A", 111890, 3670, 1264, 1895, 133),
+        ("Cat B", 115568, 1566, 812, 1185, -76),
+        ("Cat C", 78000, 2000, 290, 438, -50),
+        ("Cat D", 9589, 987, 546, 726, 83),
+        ("Cat E", 118119, 3229, 246, 422, -92)
+    ]
+    c_cols = st.columns(5)
+    for i, (cat, p, d, q, b, bd) in enumerate(coe_data):
+        b_cls = "up" if bd > 0 else "down"
+        b_sym = "▲" if bd > 0 else "▼"
+        c_cols[i].markdown(f"""
+            <div class="c-card">
+                <b>{cat}</b><br>
+                <span style="color:#d32f2f;font-size:1.1rem;font-weight:bold;">${p:,}</span><br>
+                <small class="up">▲ ${d:,}</small>
+                <hr style="margin:8px 0; opacity:0.1;">
+                <span class="stat-label">Quota:</span> <b>{q:,}</b><br>
+                <span class="stat-label">Bids:</span> <b>{b:,}</b><br>
+                <small class="{b_cls}">{b_sym} {abs(bd)}</small>
+            </div>
+            """, unsafe_allow_html=True)
+
+# 7. Fuel Prices
+with st.expander("⛽ Fuel Prices (Click for Brand Details)", expanded=True):
+    f_cols = st.columns(5)
+    for i, ftype in enumerate(list(fuel_data.keys())):
+        avg = sum([v[0] for v in fuel_data[ftype].values()]) / len(fuel_data[ftype])
+        f_cols[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
+        if f_cols[i].button(f"Details: {ftype}", key=f"f_{i}"): 
+            show_fuel(ftype)
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
 from deep_translator import GoogleTranslator
 
 # 1. Setup
