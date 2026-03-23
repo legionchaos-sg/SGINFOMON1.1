@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 2.4", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 2.5", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -16,17 +16,28 @@ st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; max-width: 1200px; }
+    
+    /* Time Panel Styling */
     .time-card {
         background-color: #f8f9fa; border: 1px solid #e9ecef;
         padding: 10px; border-radius: 8px; text-align: center;
     }
-    .time-city { font-size: 0.7rem; color: #6c757d; font-weight: bold; text-transform: uppercase; }
+    .time-city { 
+        font-size: 0.75rem; 
+        color: #ff4b4b; /* CHANGED TO RED */
+        font-weight: bold; 
+        text-transform: uppercase; 
+        margin-bottom: 2px;
+    }
     .time-value { font-size: 1.1rem; font-weight: bold; color: #212529; }
+    
+    /* COE Card Styling */
     .coe-card {
         background-color: #f8f9fa; border-top: 4px solid #ff4b4b;
         padding: 12px; border-radius: 8px; margin-bottom: 10px;
     }
     .coe-value { font-size: 1.3rem; font-weight: bold; color: #d32f2f; }
+
     @media (prefers-color-scheme: dark) {
         .time-card, .coe-card { background-color: #262730; border-color: #333; }
         .time-value { color: #ffffff; }
@@ -37,7 +48,11 @@ st.markdown("""
 
 # 4. Data Functions
 def get_tz_time(zone_name):
-    return datetime.now(pytz.timezone(zone_name)).strftime("%H:%M")
+    try:
+        tz = pytz.timezone(zone_name)
+        return datetime.now(tz).strftime("%H:%M")
+    except:
+        return "00:00"
 
 @st.cache_data(ttl=180)
 def get_market_data():
@@ -56,8 +71,14 @@ st.title("Singapore Info Monitor 1.1")
 st.subheader("🌐 REGIONAL Current Time")
 
 t_cols = st.columns(6)
-zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
-         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
+zones = [
+    ("Singapore", "Asia/Singapore"), 
+    ("Bangkok", "Asia/Bangkok"), 
+    ("Tokyo", "Asia/Tokyo"), 
+    ("Jakarta", "Asia/Jakarta"), 
+    ("Manila", "Asia/Manila"), 
+    ("Brisbane", "Australia/Brisbane")
+]
 
 for i, (city, tz) in enumerate(zones):
     with t_cols[i]:
@@ -83,8 +104,10 @@ st.divider()
 
 # 7. Singapore Headline News
 st.header("🇸🇬 Singapore Headline News")
-sources = {"The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
-           "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416"}
+sources = {
+    "The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416"
+}
 
 for name, url in sources.items():
     try:
@@ -120,4 +143,4 @@ for i, res in enumerate(coe_results):
 
 # 9. Footer
 st.divider()
-st.caption(f"Last Sync: {datetime.now().strftime('%H:%M:%S')} SGT | 2026 Stable Build")
+st.caption(f"Sync Active | Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
