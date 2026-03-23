@@ -5,12 +5,12 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Setup
-st.set_page_config(page_title="SG INFO MON 7.6", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 7.7", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="sync")
 
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; height: auto !important; }
+    .main .block-container { max-width: 95%; }
     .t-card {background:#f8f9fa; border:1px solid #ddd; padding:8px; border-radius:8px; text-align:center; margin-bottom:5px;}
     .c-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:12px; border-radius:6px; margin-bottom:10px;}
     .f-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
@@ -21,7 +21,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Data
+# 2. Fuel Data
 fuel_trends = {
     "92 Octane": {"Esso": (3.43, 0.04), "Caltex": (3.43, 0.04), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01)},
     "95 Octane": {"Esso": (3.47, 0.04), "Shell": (3.47, 0.04), "Caltex": (3.47, 0.04), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.04)},
@@ -40,13 +40,15 @@ def show_fuel(ftype):
         cols[i%2].markdown(f'<div style="padding:10px; border-bottom:1px solid #ddd;"><b>{brand}</b><br><span style="font-size:1.2rem; color:#007bff;">${p:.2f}</span><br>{tr}</div>', unsafe_allow_html=True)
 
 # --- UI ---
-st.title("🇸🇬 Singapore Info Monitor 7.6")
+st.title("🇸🇬 Singapore Info Monitor 7.7")
 zones = [("SGT","Asia/Singapore"),("ICT","Asia/Bangkok"),("JST","Asia/Tokyo"),("WIB","Asia/Jakarta"),("PHT","Asia/Manila"),("AEST","Australia/Brisbane")]
 t_cols = st.columns(6)
 for i, (n, z) in enumerate(zones):
     t_cols[i].markdown(f'<div class="t-card"><small>{n}</small><br><b>{datetime.now(pytz.timezone(z)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
 st.divider()
+
+# News Section
 st.header("🗞️ Singapore Headlines")
 srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "ST": "https://www.straitstimes.com/news/singapore/rss.xml", "MS": "https://mothership.sg/feed/"}
 unified = []
@@ -67,18 +69,32 @@ for i, item in enumerate(unified):
     if do_tr and i < len(tr_list): st.markdown(f"<div class='trans-box'>🇨🇳 {tr_list[i].strip()}</div>", unsafe_allow_html=True)
 
 st.divider()
-with st.expander("📊 Markets & COE", expanded=True):
+
+# Expander 1: Markets
+with st.expander("📈 Market Indices & Commodities", expanded=True):
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("STI", "4,841.30", "-2.2%")
-    m2.metric("Gold", "$4,400.00", "-8.8%")
-    m3.metric("USD/SGD", "1.2770", "-0.4%")
-    m4.metric("CNY/SGD", "5.3842", "+0.2%")
-    st.write("---")
-    coe = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
+    m1.metric("STI Index", "4,892.27", "-0.30%")
+    m2.metric("Gold (Spot)", "$4,202.90", "-8.04%")
+    m3.metric("Silver (Spot)", "$64.12", "-7.56%")
+    m4.metric("Brent Crude", "$113.13", "+0.84%")
+
+# Expander 2: Forex
+with st.expander("💱 Foreign Exchange (SGD Base)", expanded=True):
+    f1, f2, f3, f4, f5 = st.columns(5)
+    f1.metric("USD / SGD", "1.3369", "+0.22%")
+    f2.metric("CNY / SGD", "5.3975", "-0.07%")
+    f3.metric("MYR / SGD", "3.4412", "+0.12%")
+    f4.metric("JPY / SGD", "118.55", "-0.43%")
+    f5.metric("THB / SGD", "26.85", "+0.15%")
+
+# Expander 3: COE Results (Latest Mar 2026 2nd Bid)
+with st.expander("🚗 COE Bidding Results", expanded=True):
+    coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
     c_cols = st.columns(5)
-    for i, (cat, p, d) in enumerate(coe):
+    for i, (cat, p, d) in enumerate(coe_data):
         c_cols[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#d32f2f;font-size:1.1rem;font-weight:bold;">${p:,}</span><br><small>▲ ${d:,}</small></div>', unsafe_allow_html=True)
 
+# Expander 4: Fuel Prices
 with st.expander("⛽ Fuel Prices", expanded=True):
     f_types = list(fuel_trends.keys())
     f_cols = st.columns(5)
@@ -86,6 +102,6 @@ with st.expander("⛽ Fuel Prices", expanded=True):
         with f_cols[i]:
             avg = sum([v[0] for v in fuel_trends[ftype].values()]) / len(fuel_trends[ftype])
             st.markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if st.button(f"View {ftype}", key=f"b_{i}"): show_fuel(ftype)
+            if st.button(f"Details", key=f"fuel_{i}"): show_fuel(ftype)
 
-st.caption(f"Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
