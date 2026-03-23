@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.5", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.6", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -54,7 +54,7 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 3.5")
+st.title("Singapore Info Monitor 3.6")
 
 # 5. REGIONAL CLOCKS
 t_cols = st.columns(6)
@@ -65,49 +65,7 @@ for i, (city, tz) in enumerate(zones):
 
 st.divider()
 
-# 6. TRAIN STATUS
-st.subheader("🚇 MRT/LRT Service Status")
-train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
-s_cols = st.columns(6)
-for i, (line, status) in enumerate(train_lines.items()):
-    bg = "status-normal" if status == "Normal" else "status-advisory"
-    s_cols[i].markdown(f'<div class="status-card {bg}">{line}<br>{status}</div>', unsafe_allow_html=True)
-
-st.write("")
-
-# 7. COMBINED: MARKETS (STI, Gold, Silver, Crude), COE & FOREX
-with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
-    # A. Market Data Ordered: STI, Gold, Silver, Crude
-    m_tickers = {"STI Index": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude Oil": "CL=F"}
-    m_data = get_financial_data(m_tickers)
-    
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("STI Index", f"{m_data['STI Index']['p']:,.2f}", f"{m_data['STI Index']['change']:+.2f}")
-    m2.metric("Gold", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
-    m3.metric("Silver", f"${m_data['Silver']['p']:,.2f}", f"{m_data['Silver']['change']:+.2f}")
-    m4.metric("Crude Oil", f"${m_data['Crude Oil']['p']:,.2f}", f"{m_data['Crude Oil']['change']:+.2f}")
-    
-    st.markdown("---")
-    
-    # B. COE Premiums
-    st.write("**Latest COE Results (Mar 2026)**")
-    coe_cols = st.columns(5)
-    coe_list = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
-    for i, (cat, price) in enumerate(coe_list):
-        coe_cols[i].markdown(f'<div class="coe-card"><div style="font-size:0.7rem;">{cat}</div><div style="font-size:1.1rem; font-weight:bold; color:#d32f2f;">${price:,}</div></div>', unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # C. Forex (1 SGD to X)
-    st.write("**Forex Rates**")
-    fx_data = get_financial_data({"MYR": "SGDMYR=X", "CNY": "SGDCNY=X", "THB": "SGDTHB=X", "JPY": "SGDJPY=X", "AUD": "SGDAUD=X"})
-    f_cols = st.columns(5)
-    for i, (label, val) in enumerate(fx_data.items()):
-        f_cols[i].metric(label, f"{val['p']:.4f}", f"{val['pc']:+.2f}%")
-
-st.divider()
-
-# 8. NEWS SECTION (RESTORED SOURCES)
+# 6. NEWS SECTION (MOVED UP)
 st.header("🇸🇬 Singapore Headline News")
 sources = {
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
@@ -131,6 +89,48 @@ with t_news2:
     if feed and feed.entries:
         for e in feed.entries[:6]: 
             st.write(f"• [{e.title}]({e.link})")
+
+st.divider()
+
+# 7. TRAIN SERVICE STATUS
+st.subheader("🚇 MRT/LRT Service Status")
+train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
+s_cols = st.columns(6)
+for i, (line, status) in enumerate(train_lines.items()):
+    bg = "status-normal" if status == "Normal" else "status-advisory"
+    s_cols[i].markdown(f'<div class="status-card {bg}">{line}<br>{status}</div>', unsafe_allow_html=True)
+
+st.write("")
+
+# 8. COMBINED: MARKETS (STI, GOLD, SILVER, CRUDE), COE & FOREX
+with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
+    # A. Markets ordered by STI Index, Gold, Silver, Crude
+    m_tickers = {"STI Index": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude Oil": "CL=F"}
+    m_data = get_financial_data(m_tickers)
+    
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("STI Index", f"{m_data['STI Index']['p']:,.2f}", f"{m_data['STI Index']['change']:+.2f}")
+    m2.metric("Gold", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
+    m3.metric("Silver", f"${m_data['Silver']['p']:,.2f}", f"{m_data['Silver']['change']:+.2f}")
+    m4.metric("Crude Oil", f"${m_data['Crude Oil']['p']:,.2f}", f"{m_data['Crude Oil']['change']:+.2f}")
+    
+    st.markdown("---")
+    
+    # B. COE Premiums (Latest)
+    st.write("**Latest COE Results**")
+    coe_cols = st.columns(5)
+    coe_list = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
+    for i, (cat, price) in enumerate(coe_list):
+        coe_cols[i].markdown(f'<div class="coe-card"><div style="font-size:0.7rem;">{cat}</div><div style="font-size:1.1rem; font-weight:bold; color:#d32f2f;">${price:,}</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # C. Forex (1 SGD to X)
+    st.write("**Forex Rates**")
+    fx_data = get_financial_data({"MYR": "SGDMYR=X", "CNY": "SGDCNY=X", "THB": "SGDTHB=X", "JPY": "SGDJPY=X", "AUD": "SGDAUD=X"})
+    f_cols = st.columns(5)
+    for i, (label, val) in enumerate(fx_data.items()):
+        f_cols[i].metric(label, f"{val['p']:.4f}", f"{val['pc']:+.2f}%")
 
 st.divider()
 st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
