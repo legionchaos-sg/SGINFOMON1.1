@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 2.6", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 2.7", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -46,6 +46,7 @@ def get_tz_time(zone_name):
 
 @st.cache_data(ttl=180)
 def get_market_data():
+    # Adding 'SG_INFLATION' as a static/manual entry since it's monthly data
     tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude": "CL=F"}
     results = {}
     for label, sym in tickers.items():
@@ -72,46 +73,43 @@ for i, (city, tz) in enumerate(zones):
     with t_cols[i]:
         st.markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
 
-# 6. Market Overview
+# 6. Market Overview (UPDATED WITH INFLATION)
 st.write("")
-st.subheader("📊 Market Overview")
+st.subheader("📊 Market Overview & Economic Indicators")
 m_data = get_market_data()
-m_cols = st.columns(4)
-for i, (l, k) in enumerate([("STI INDEX", "STI"), ("Gold Price", "Gold"), ("Silver Price", "Silver"), ("Crude Price", "Crude")]):
+m_cols = st.columns(5) # Changed to 5 columns
+
+# Standard Market Tickers
+market_items = [("STI INDEX", "STI"), ("Gold Price", "Gold"), ("Silver Price", "Silver"), ("Crude Price", "Crude")]
+for i, (l, k) in enumerate(market_items):
     m_cols[i].metric(l, f"{m_data[k]['p']:,.2f}", f"{m_data[k]['d']:+.2f}")
+
+# Dedicated Inflation Metric (Feb 2026 Data released Mar 23)
+# MAS Core excludes accommodation and private transport
+m_cols[4].metric("SG Core Inflation", "1.40%", "+0.40%", help="MAS Core Inflation (Feb 2026 YoY). Up from 1.0% in Jan.")
 
 st.divider()
 
-# 7. Singapore Headline News (FIXED INDIVIDUAL SOURCE LOGIC)
+# 7. News Section (Recovered Source Logic)
 st.header("🇸🇬 Singapore Headline News")
 sources = {
     "The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
-    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
-    "Lianhe Zaobao": "https://www.zaobao.com.sg/rss/realtime/singapore",
-    "The Business Times": "https://www.businesstimes.com.sg/rss/singapore"
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416"
 }
-
 tab1, tab2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
 
 with tab1:
     all_news = []
     for name, url in sources.items():
-        feed_items = fetch_feed(url)
-        for item in feed_items[:3]:
+        for item in fetch_feed(url)[:3]:
             all_news.append(f"**{name}**: [{item['t']}]({item['l']})")
-    for news in all_news[:12]:
-        st.markdown(news)
+    for news in all_news[:6]: st.markdown(news)
 
 with tab2:
-    selected_name = st.selectbox("Select News Outlet", list(sources.keys()))
-    source_news = fetch_feed(sources[selected_name])
-    if source_news:
-        for item in source_news[:5]:
-            st.markdown(f"#### [{item['t']}]({item['l']})")
-            st.caption(f"Published: {item['d']}")
-            st.write("---")
-    else:
-        st.warning("Could not fetch news from this source. Please try again later.")
+    sel = st.selectbox("Select News Outlet", list(sources.keys()))
+    for item in fetch_feed(sources[sel])[:5]:
+        st.markdown(f"#### [{item['t']}]({item['l']})")
+        st.write("---")
 
 st.divider()
 
@@ -131,4 +129,4 @@ for i, res in enumerate(coe_results):
 
 # 9. Footer
 st.divider()
-st.caption(f"Sync Active | Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
+st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT | Data: Yahoo Finance & MTI/MAS")
