@@ -7,115 +7,118 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG DASHBOARD 3.5", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 2.8", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
 
-# 3. Custom CSS for Sidebar Weather Cards
+# 3. Custom Styling
 st.markdown("""
     <style>
-    [data-testid="stSidebar"] { background-color: #f8f9fa; border-right: 1px solid #e9ecef; }
-    .side-weather-card {
-        background-color: #ffffff; border-radius: 12px; padding: 15px; 
-        border: 1px solid #d1e3ff; margin-bottom: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-    .estate-name { color: #ff4b4b; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
-    .temp-val { font-size: 1.8rem; font-weight: bold; color: #1a202c; }
-    .psi-badge { 
-        display: inline-block; background-color: #e2fce6; color: #2d6a4f; 
-        padding: 2px 8px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;
-    }
+    .block-container { padding-top: 1rem; max-width: 1200px; }
+    .time-card { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
+    .time-city { font-size: 0.75rem; color: #ff4b4b; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+    .time-value { font-size: 1.1rem; font-weight: bold; color: #212529; }
+    .forex-card { background-color: #ffffff; border: 1px solid #eee; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .forex-label { font-size: 0.7rem; color: #666; font-weight: bold; }
+    .forex-price { font-size: 1.1rem; font-weight: bold; margin: 4px 0; }
+    .coe-card { background-color: #f8f9fa; border-top: 4px solid #ff4b4b; padding: 12px; border-radius: 8px; }
     @media (prefers-color-scheme: dark) {
-        .side-weather-card { background-color: #1a202c; border-color: #2d3748; }
-        .temp-val { color: #ffffff; }
-        .psi-badge { background-color: #1b4332; color: #95d5b2; }
+        .time-card, .forex-card, .coe-card { background-color: #262730; border-color: #333; }
+        .time-value, .forex-price { color: #ffffff; }
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 4. Estate Logic
-ESTATES = {
-    "Ang Mo Kio": "North", "Bedok": "East", "Bishan": "Central", "Clementi": "West",
-    "Jurong": "West", "Orchard": "Central", "Punggol": "North", "Tampines": "East",
-    "Woodlands": "North", "Yishun": "North", "Bukit Merah": "South", "Newton": "Central"
-}
+# 4. Data Functions
+def get_tz_time(zone_name):
+    return datetime.now(pytz.timezone(zone_name)).strftime("%H:%M")
 
-def get_live_env(estate):
-    region = ESTATES.get(estate, "Central")
-    # NEA Forecast Mar 23: Fair and Warm. PSI range 45-66.
-    readings = {
-        "North": {"t": "34°C", "psi": 52, "cond": "Fair"},
-        "South": {"t": "33°C", "psi": 47, "cond": "Warm"},
-        "East": {"t": "34°C", "psi": 59, "cond": "Slightly Hazy"},
-        "West": {"t": "35°C", "psi": 55, "cond": "Very Warm"},
-        "Central": {"t": "35°C", "psi": 66, "cond": "Dry/Warm"}
-    }
-    return readings[region]
+@st.cache_data(ttl=180)
+def get_financial_data(tickers_dict):
+    results = {}
+    for label, sym in tickers_dict.items():
+        try:
+            t = yf.Ticker(sym)
+            p = t.fast_info['last_price']
+            prev = t.fast_info['regular_market_previous_close']
+            results[label] = {"p": p, "change": p - prev, "pc": ((p - prev) / prev) * 100}
+        except: results[label] = {"p": 0.0, "change": 0.0, "pc": 0.0}
+    return results
 
-# --- SIDEBAR: WEATHER & PSI ---
-with st.sidebar:
-    st.header("🌦️ Estate Monitor")
-    st.write("Live weather for selected areas:")
-    
-    e1 = st.selectbox("Watchlist 1", sorted(ESTATES.keys()), index=0)
-    d1 = get_live_env(e1)
-    st.markdown(f"""
-        <div class="side-weather-card">
-            <div class="estate-name">{e1.upper()}</div>
-            <div class="temp-val">{d1['t']}</div>
-            <div style="font-size:0.8rem; margin-bottom:8px;">{d1['cond']}</div>
-            <div class="psi-badge">PSI {d1['psi']} ({ESTATES[e1]})</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    e2 = st.selectbox("Watchlist 2", sorted(ESTATES.keys()), index=7)
-    d2 = get_live_env(e2)
-    st.markdown(f"""
-        <div class="side-weather-card">
-            <div class="estate-name">{e2.upper()}</div>
-            <div class="temp-val">{d2['t']}</div>
-            <div style="font-size:0.8rem; margin-bottom:8px;">{d2['cond']}</div>
-            <div class="psi-badge">PSI {d2['psi']} ({ESTATES[e2]})</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.divider()
-    st.caption(f"Last Updated: {datetime.now().strftime('%H:%M:%S')}")
-
-# --- MAIN DASHBOARD ---
-st.title("Singapore Command Center")
-
-# Row 1: Clocks
+# 5. Header & Clocks
+st.title("Singapore Info Monitor 1.1")
+st.subheader("🌐 REGIONAL Current Time")
 t_cols = st.columns(6)
-zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
-         ("London", "Europe/London"), ("Manila", "Asia/Manila"), ("New York", "America/New_York")]
+zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
 for i, (city, tz) in enumerate(zones):
-    t_cols[i].metric(city, datetime.now(pytz.timezone(tz)).strftime("%H:%M"))
+    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
+
+# 6. Market Overview
+st.write("")
+st.subheader("📊 Market Overview")
+m_tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude": "CL=F"}
+m_data = get_financial_data(m_tickers)
+m_cols = st.columns(5)
+market_items = [("STI INDEX", "STI"), ("Gold Price", "Gold"), ("Silver Price", "Silver"), ("Crude Price", "Crude")]
+for i, (l, k) in enumerate(market_items):
+    m_cols[i].metric(l, f"{m_data[k]['p']:,.2f}", f"{m_data[k]['change']:+.2f}")
+m_cols[4].metric("SG Core Inflation", "1.40%", "+0.40%")
+
+# 7. Forex Exchange Panel (NEW)
+st.write("")
+st.subheader("💱 Forex Exchange (Base: 1 SGD)")
+fx_tickers = {
+    "CNY (China)": "SGDCNY=X",
+    "MYR (Malaysia)": "SGDMYR=X",
+    "THB (Thailand)": "SGDTHB=X",
+    "JPY (Japan)": "SGDJPY=X",
+    "AUD (Australia)": "SGDAUD=X"
+}
+fx_data = get_financial_data(fx_tickers)
+fx_cols = st.columns(5)
+
+for i, label in enumerate(fx_tickers.keys()):
+    val = fx_data[label]
+    color = "#28a745" if val['change'] >= 0 else "#dc3545"
+    arrow = "▲" if val['change'] >= 0 else "▼"
+    with fx_cols[i]:
+        st.markdown(f"""
+            <div class="forex-card">
+                <div class="forex-label">{label}</div>
+                <div class="forex-price">{val['p']:.4f}</div>
+                <div style="color:{color}; font-size:0.8rem; font-weight:bold;">
+                    {arrow} {abs(val['pc']):.2f}%
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
 st.divider()
 
-# Row 2: Economy & Finance
-st.subheader("📊 Economy & Finance")
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("STI INDEX", "3,254.10", "+12.45")
-# Core Inflation rose to 1.4% in Feb (reported today Mar 23)
-m2.metric("Core Inflation", "1.40%", "+0.40%") 
-m3.metric("SGD/MYR", "3.072", "+0.02%")
-m4.metric("SGD/CNY", "5.366", "-0.01%")
+# 8. News Section
+st.header("🇸🇬 Singapore Headline News")
+# ... (Keep existing News Tab Logic from V2.7) ...
+st.info("News feeds are active in the tabs below.")
+sources = {"The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416"}
+t1, t2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
+with t1:
+    for name, url in sources.items():
+        feed = feedparser.parse(requests.get(url, timeout=5).content)
+        for e in feed.entries[:2]: st.markdown(f"**{name}**: [{e.title}]({e.link})")
+with t2:
+    sel = st.selectbox("Select News Outlet", list(sources.keys()))
+    feed = feedparser.parse(requests.get(sources[sel], timeout=5).content)
+    for e in feed.entries[:5]: st.write(f"• [{e.title}]({e.link})")
 
 st.divider()
 
-# Row 3: COE & News
-n_col1, n_col2 = st.columns([2, 1])
-with n_col1:
-    st.subheader("📰 Headlines")
-    st.markdown("• **MAS**: Core inflation hits 1.4% in February amid energy surge.")
-    st.markdown("• **NEA**: Haze risk remains as hot spots emerge in Johor.")
-    st.markdown("• **CNA**: Singapore prepares for record 36°C heat later this week.")
+# 9. CURRENT COE STATS
+st.header("🚗 CURRENT COE STATS")
+coe_results = [{"cat": "CAT A", "price": 111890, "q": 1264, "b": 1895}, {"cat": "CAT B", "price": 115568, "q": 812, "b": 1185}, {"cat": "CAT C", "price": 78000, "q": 290, "b": 438}, {"cat": "CAT D", "price": 9589, "q": 546, "b": 726}, {"cat": "CAT E", "price": 118119, "q": 246, "b": 422}]
+c_cols = st.columns(5)
+for i, res in enumerate(coe_results):
+    c_cols[i].markdown(f'<div class="coe-card"><div style="font-weight:bold; font-size:0.85rem;">{res["cat"]}</div><div style="font-size:1.3rem; font-weight:bold; color:#d32f2f;">${res["price"]:,}</div><div style="font-size:0.7rem; color:gray; margin-top:5px;">Quota: {res["q"]} | Bids: {res["b"]}</div></div>', unsafe_allow_html=True)
 
-with n_col2:
-    st.subheader("🚗 Latest COE (Mar 2nd)")
-    st.markdown(f"""
-        <div style="background-color:#fff3cd; padding:12px; border-radius:10px; border-left:5px solid #ff
+# 10. Footer
+st.divider()
+st.caption(f"Forex Data via Yahoo Finance | Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
