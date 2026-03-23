@@ -1,121 +1,81 @@
 import streamlit as st
-import feedparser
-import requests
-import pytz
+import feedparser, requests, pytz
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# 1. Page Config
-st.set_page_config(page_title="SG INFO MON 5.4", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
+# 1. Setup
+st.set_page_config(page_title="SG INFO MON 5.6", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=3 * 60 * 1000, key="refresh_sync")
 
-# 2. Main Title
-st.title("🇸🇬 Singapore Info Monitor 5.3")
+# 2. Appearance
+st.markdown("""<style>
+    .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;}
+    .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:10px; border-radius:6px;}
+    @media(prefers-color-scheme:dark){.time-card,.coe-card{background:#262730; border-color:#444;}}
+</style>""", unsafe_allow_html=True)
 
-# 3. Custom Styles
-st.markdown("""
-    <style>
-    .time-card { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
-    .coe-card { background-color: #f8f9fa; border-left: 4px solid #ff4b4b; padding: 10px; border-radius: 6px; min-height: 120px; }
-    .news-tag { font-size: 0.65rem; background: #eee; padding: 2px 4px; border-radius: 3px; color: #666; margin-right: 5px; }
-    @media (prefers-color-scheme: dark) { .time-card, .coe-card { background-color: #262730; border-color: #444; } }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 4. Helpers
-def get_tz_time(zone_name):
-    return datetime.now(pytz.timezone(zone_name)).strftime("%H:%M")
-
-def fetch_news(url):
+# 3. Functional Logic
+def get_tz(z): return datetime.now(pytz.timezone(z)).strftime("%H:%M")
+def fetch(u):
     try:
-        resp = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-        feed = feedparser.parse(resp.content)
-        return [{'title': e.title, 'link': e.link} for e in feed.entries[:8]]
+        r = requests.get(u, timeout=5)
+        return [{'t': e.title, 'l': e.link} for e in feedparser.parse(r.content).entries[:8]]
     except: return []
 
-# --- SECTION 1: REGIONAL TIME ---
-st.subheader("🌐 Regional Time")
+# --- 1. REGIONAL TIME ---
+st.title("🇸🇬 Singapore Info Monitor 5.6")
 t_cols = st.columns(6)
-zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
-         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
-for i, (city, tz) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div style="font-size:0.7rem;color:#ff4b4b;font-weight:bold;">{city}</div><div style="font-size:1.1rem;font-weight:bold;">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
+zones = [("Singapore","Asia/Singapore"),("Bangkok","Asia/Bangkok"),("Tokyo","Asia/Tokyo"),
+         ("Jakarta","Asia/Jakarta"),("Manila","Asia/Manila"),("Brisbane","Australia/Brisbane")]
+for i, (c, z) in enumerate(zones):
+    t_cols[i].markdown(f'<div class="time-card"><div style="font-size:0.7rem;color:#ff4b4b;font-weight:bold;">{c}</div><div style="font-size:1.1rem;font-weight:bold;">{get_tz(z)}</div></div>', unsafe_allow_html=True)
 
 st.divider()
 
-# --- SECTION 2: SINGAPORE HEADLINES ---
+# --- 2. SINGAPORE HEADLINES ---
 st.header("🗞️ Singapore Headlines")
-news_sources = {
-    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
-    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
-    "Mothership": "https://mothership.sg/feed/"
-}
+srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
+        "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
+        "Mothership": "https://mothership.sg/feed/"}
+t1, t2 = st.tabs(["📊 Unified Pool", "📰 Select Source"])
 
-tab_uni, tab_src = st.tabs(["📊 Unified Pool", "📰 Select Source"])
+with t1:
+    for n, u in srcs.items():
+        d = fetch(u)
+        if d: st.write(f"**{n}**: [{d[0]['t']}]({d[0]['l']})")
 
-# Step A: Load the headlines first
-with tab_uni:
-    for name, url in news_sources.items():
-        data = fetch_news(url)
-        if data:
-            item = data[0]
-            st.write(f"<span class='news-tag'>{name}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-
-with tab_src:
-    src_choice = st.selectbox("Choose News Outlet", list(news_sources.keys()))
-    selected_news = fetch_news(news_sources[src_choice])
-    for e in selected_news:
-        st.write(f"• [{e['title']}]({e['link']})")
-
-# Step B: Translation service only appears after loading data
-st.write("---")
-trans_on = st.checkbox("Enable Chinese Translation for News (启用中文翻译)", value=False)
-if trans_on and selected_news:
-    with st.status("Translating content...", expanded=False):
-        for e in selected_news:
-            translated = GoogleTranslator(source='auto', target='zh-CN').translate(e['title'])
-            st.caption(f"🇨🇳 {translated}")
+with t2:
+    s = st.selectbox("Choose Outlet", list(srcs.keys()))
+    news_items = fetch(srcs[s])
+    for e in news_items: st.write(f"• [{e['t']}]({e['l']})")
+    st.write("---")
+    if st.button("Translate Selected News to Chinese"):
+        with st.spinner("Translating..."):
+            for e in news_items:
+                st.caption(f"🇨🇳 {GoogleTranslator(target='zh-CN').translate(e['t'])}")
 
 st.divider()
 
-# --- SECTION 3: MARKET INFO ---
-with st.expander("📊 Market Info (STI; Gold; Silver; Brent Crude)", expanded=True):
+# --- 3. MARKET INFO (STI; Gold; Silver; Brent Crude) ---
+with st.expander("📊 Market Info", expanded=True):
     m1, m2, m3, m4 = st.columns(4)
-    # Mar 23, 2026 Closing Data
     m1.metric("STI Index", "4,841.30", "-107.57 (-2.2%)")
     m2.metric("Gold (Spot)", "$4,239.09", "-5.56%")
     m3.metric("Silver (Spot)", "$63.43", "-6.16%")
     m4.metric("Brent Crude", "$113.36", "+1.04%")
 
-# --- SECTION 4: FOREX RATES ---
-with st.expander("💱 Forex Rates (CNY; THB; JPY; MYR; AUD; USD)", expanded=True):
-    f1, f2, f3, f4, f5, f6 = st.columns(6)
-    f1.metric("CNY (Yuan)", "5.381", "+0.18%")
-    f2.metric("THB (Baht)", "25.435", "-0.26%")
-    f3.metric("JPY (Yen)", "124.22", "+0.01%")
-    f4.metric("MYR (Ringgit)", "3.071", "+0.17%")
-    f5.metric("AUD (Dollar)", "1.119", "+0.60%")
-    f6.metric("USD (Dollar)", "0.781", "+0.19%")
+# --- 4. FOREX RATES (CNY; THB; JPY; MYR; AUD; USD) ---
+with st.expander("💱 Forex Rates (1 SGD to X)", expanded=True):
+    f_cols = st.columns(6)
+    fx = [("CNY","5.381","+0.18%"),("THB","25.435","-0.26%"),("JPY","124.22","+0.01%"),
+          ("MYR","3.071","+0.17%"),("AUD","1.119","+0.60%"),("USD","0.781","+0.19%")]
+    for i, (n, v, c) in enumerate(fx): f_cols[i].metric(n, v, c)
 
-# --- SECTION 5: COE BIDDING ---
-with st.expander("🚗 COE Bidding (Full Data - Mar 2026 2nd Round)", expanded=True):
-    coe_data = [
-        ("Cat A", 111890, 3670, 1264, 1895),
-        ("Cat B", 115568, 1566, 812, 1185),
-        ("Cat C", 78000, 2000, 290, 438),
-        ("Cat D", 9589, 987, 546, 726),
-        ("Cat E", 118119, 3229, 246, 422)
-    ]
+# --- 5. COE BIDDING ---
+with st.expander("🚗 COE Bidding - Mar 2026", expanded=True):
+    coe = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), 
+           ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
     c_cols = st.columns(5)
-    for i, (cat, price, diff, q, b) in enumerate(coe_data):
-        c_cols[i].markdown(f"""
-            <div class="coe-card">
-                <div style="font-weight:bold;font-size:0.8rem;">{cat}</div>
-                <div style="color:#d32f2f;font-weight:bold;font-size:1.1rem;">${price:,}</div>
-                <div style="color:#d32f2f;font-size:0.8rem;font-weight:bold;">▲ ${diff:,}</div>
-                <div style="font-size:0.7rem;margin-top:5px;color:#666;">Quota: {q}<br>Bids: {b}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-st.caption(f"Last Refresh: {datetime.now().strftime('%
+    for i, (cat, p, d, q, b) in enumerate(coe):
+        c_cols[i].markdown(f'<div class="coe-card"><b>{cat}</b><br><span style="color:#d32f2f;font-size:1.1rem;font-weight:bold;">${p:,}</span><br><small>
