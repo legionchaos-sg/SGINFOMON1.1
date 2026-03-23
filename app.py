@@ -1,29 +1,29 @@
 import streamlit as st
 import feedparser, requests, pytz
+import pandas as pd
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-#gold5
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_109_stable")
+st.set_page_config(page_title="SG INFO MON 11.0", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_110_stable")
 
-# 2. Adaptive CSS (Updated for COE Height Reduction)
+# 2. Adaptive CSS
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
     .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    /* Reduced min-height by 5px (from 155px to 150px) */
     .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
-    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
     .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
     .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
     .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
     .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
     .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
+    .status-up { color: #28a745; font-weight: bold; }
+    .status-down { color: #ff4b4b; font-weight: bold; }
     
     div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
     .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
@@ -48,19 +48,8 @@ fuel_data = {
     "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
 }
 
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
-
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.9")
+st.title("🇸🇬 SG Info Monitor 11.0")
 
 tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
 
@@ -98,23 +87,12 @@ with tab1:
                             news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
             except: pass
 
-    tr_dict = {}
-    if do_tr and news_list:
-        en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
-        if en_titles:
-            try:
-                translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
-                tr_dict = dict(zip(en_titles, translated))
-            except: pass
-
     for item in news_list:
         st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-        if do_tr and item['title'] in tr_dict:
-            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     st.divider()
 
-    # 3. Markets & Commodities (Sorted: STI, Gold, Silver, Brent, Gas)
+    # 3. Markets & Commodities
     with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("STI Index", "4,841.30", "-2.20%")
@@ -123,29 +101,12 @@ with tab1:
         m4.metric("Brent Crude", "$112.61", "+0.40%")
         m5.metric("Natural Gas", "$3.09", "-2.21%")
 
-    with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
-        f1, f2, f3, f4, f5 = st.columns(5)
-        f1.metric("SGD/MYR", "3.4412", "+0.12%")
-        f2.metric("SGD/JPY", "118.55", "-0.43%")
-        f3.metric("SGD/THB", "26.85", "+0.15%")
-        f4.metric("SGD/CNY", "5.3975", "-0.07%")
-        f5.metric("SGD/USD", "0.7480", "-0.22%")
-
-    # 4. COE Bidding (Height Reduced)
+    # 4. COE Bidding
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
         coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
         cc = st.columns(5)
         for i, (cat, p, d, q, b) in enumerate(coe_data):
-            cc[i].markdown(f"""
-                <div class="c-card">
-                    <b>{cat}</b><br>
-                    <span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br>
-                    <small class="up">▲ ${d:,}</small>
-                    <hr style="margin:5px 0; opacity:0.1;">
-                    <span class="stat-label">Quota:</span> <b>{q:,}</b><br>
-                    <span class="stat-label">Bids:</span> <b>{b:,}</b>
-                </div>
-            """, unsafe_allow_html=True)
+            cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
     # 5. Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
@@ -155,20 +116,56 @@ with tab1:
             prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
             avg = sum(prices) / len(prices) if prices else 0
             fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if fc[i].button("Details", key=f"fbtn_109_{ftype}"):
-                show_fuel_details(ftype)
 
 with tab2:
     # --- SG Public Services Workspace ---
-    st.header("🏢 Government & Public Services")
-    ps_c1, ps_c2, ps_c3 = st.columns(3)
+    st.header("🏢 SG PUBLIC SERVICES")
     
+    # INTERNET SERVICE STATUS SECTION
+    st.subheader("🌐 Internet Service Status (Real-time)")
+    
+    # Mock data for status graph
+    isp_data = {
+        "Provider": ["Singtel", "M1", "Simba", "SPTel"],
+        "Uptime %": [99.9, 99.8, 97.5, 100.0],
+        "Status": ["Stable", "Stable", "Minor Issues", "Stable"]
+    }
+    
+    ist1, ist2 = st.columns([1, 2])
+    
+    with ist1:
+        for i, isp in enumerate(isp_data["Provider"]):
+            uptime = isp_data["Uptime %"][i]
+            status = isp_data["Status"][i]
+            color = "green" if uptime > 99 else "orange" if uptime > 95 else "red"
+            
+            st.markdown(f"**{isp}** | <span class='{'status-up' if color=='green' else 'status-down'}'>{status}</span>", unsafe_allow_html=True)
+            st.progress(uptime/100)
+            
+    with ist2:
+        # Mini Disruptions Log
+        st.markdown("""
+        <div class="svc-card">
+        <b>⚠️ Recent Disruptions Log</b><br>
+        <small><i>Last updated: March 23, 22:25 SGT</i></small><br>
+        <ul style="font-size: 0.85rem; margin-top:10px;">
+            <li><b>Simba:</b> Reports of intermittent 5G latency in Jurong West (Resolving).</li>
+            <li><b>M1:</b> Scheduled maintenance tonight 01:00 - 04:00 (Fibre).</li>
+            <li><b>Singtel/SPTel:</b> No active disruptions detected.</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+    
+    # Existing Government Links
+    ps_c1, ps_c2, ps_c3 = st.columns(3)
     with ps_c1:
-        st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
+        st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a></ul></div>', unsafe_allow_html=True)
     with ps_c2:
-        st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
+        st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a></ul></div>', unsafe_allow_html=True)
     with ps_c3:
-        st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
+        st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a></ul></div>', unsafe_allow_html=True)
     
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
