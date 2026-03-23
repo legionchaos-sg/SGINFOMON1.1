@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.9", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 4.0", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -22,7 +22,7 @@ st.markdown("""
     .status-card { padding: 12px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; }
     .status-normal { background-color: #28a745; }
     .status-advisory { background-color: #ffc107; color: #212529; }
-    .coe-card { background-color: #f8f9fa; border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; min-height: 160px; }
+    .coe-card { background-color: #f8f9fa; border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; min-height: 150px; }
     .coe-price { font-size: 1.3rem; font-weight: bold; color: #d32f2f; }
     @media (prefers-color-scheme: dark) {
         .time-card, .coe-card { background-color: #262730; border-color: #444; }
@@ -55,40 +55,9 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 3.9")
+st.title("Singapore Info Monitor 4.0")
 
 # Clocks
 t_cols = st.columns(6)
 zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
-         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
-for i, (city, tz) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
-
-st.divider()
-
-# News (Top)
-st.header("🇸🇬 Singapore Headline News")
-sources = {"Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Business Times": "https://www.businesstimes.com.sg/rss-feeds/singapore", "Mothership": "https://mothership.sg/feed/", "Shin Min": "https://www.zaobao.com.sg/rss/realtime/singapore"}
-t_news1, t_news2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
-with t_news1:
-    for name, url in sources.items():
-        feed = fetch_news(url)
-        if feed and feed.entries: st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
-with t_news2:
-    sel = st.selectbox("Select News Outlet", list(sources.keys()))
-    feed = fetch_news(sources[sel])
-    if feed and feed.entries:
-        for e in feed.entries[:6]: st.write(f"• [{e.title}]({e.link})")
-
-st.divider()
-
-# 1. DROPDOWN: TRAIN STATUS (MODIFIED)
-with st.expander("🚇 MRT/LRT Service Status", expanded=True):
-    train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
-    s_cols = st.columns(6)
-    for i, (line, status) in enumerate(train_lines.items()):
-        bg = "status-normal" if status == "Normal" else "status-advisory"
-        icon = "✅" if status == "Normal" else "⚠️"
-        s_cols[i].markdown(f'<div class="status-card {bg}">{line}<br>{icon} {status}</div>', unsafe_allow_html=True)
-    
-    if "Ad
+         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Bris
