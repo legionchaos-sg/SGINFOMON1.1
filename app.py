@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.3", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.4", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -23,7 +23,6 @@ st.markdown("""
     .status-normal { background-color: #28a745; }
     .status-advisory { background-color: #ffc107; color: #212529; }
     .coe-card { background-color: #f8f9fa; border-top: 4px solid #ff4b4b; padding: 8px; border-radius: 8px; text-align: center; }
-    .fx-text { font-size: 0.9rem; font-weight: bold; }
     @media (prefers-color-scheme: dark) {
         .time-card, .coe-card { background-color: #262730; border-color: #333; }
         .time-value { color: #ffffff; }
@@ -54,12 +53,13 @@ def fetch_news(url):
         return feedparser.parse(response.content)
     except: return None
 
-# --- APP START ---
-st.title("Singapore Info Monitor 3.3")
+# --- UI START ---
+st.title("Singapore Info Monitor 3.4")
 
 # 5. REGIONAL CLOCKS
 t_cols = st.columns(6)
-zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
+zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
+         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
 for i, (city, tz) in enumerate(zones):
     t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
 
@@ -77,7 +77,7 @@ st.write("")
 
 # 7. COMBINED: MARKETS, COE & FOREX
 with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
-    # A. Markets (Gold & Crude Defaults)
+    # A. Markets
     m_data = get_financial_data({"Gold": "GC=F", "Crude": "CL=F", "STI": "^STI"})
     m1, m2, m3 = st.columns(3)
     m1.metric("Gold Price", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
@@ -86,11 +86,11 @@ with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
     
     st.markdown("---")
     
-    # B. COE Premiums (Latest)
+    # B. COE Premiums
     st.write("**Latest COE Results**")
     coe_cols = st.columns(5)
-    coe = {"Cat A": 111890, "Cat B": 115568, "Cat C": 78000, "Cat D": 9589, "Cat E": 118119}
-    for i, (cat, price) in enumerate(coe.items()):
+    coe_list = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
+    for i, (cat, price) in enumerate(coe_list):
         coe_cols[i].markdown(f'<div class="coe-card"><div style="font-size:0.7rem;">{cat}</div><div style="font-size:1.1rem; font-weight:bold; color:#d32f2f;">${price:,}</div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
@@ -104,10 +104,30 @@ with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
 
 st.divider()
 
-# 8. NEWS SECTION (RESTORED)
+# 8. NEWS SECTION (RE-STRUCTURED)
 st.header("🇸🇬 Singapore Headline News")
 sources = {
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
     "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
     "Business Times": "https://www.businesstimes.com.sg/rss-feeds/singapore",
-    "
+    "Mothership": "https://mothership.sg/feed/",
+    "Shin Min (新明)": "https://www.zaobao.com.sg/rss/realtime/singapore"
+}
+
+t_news1, t_news2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
+
+with t_news1:
+    for name, url in sources.items():
+        feed = fetch_news(url)
+        if feed and feed.entries:
+            st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
+
+with t_news2:
+    sel = st.selectbox("Select News Outlet", list(sources.keys()))
+    feed = fetch_news(sources[sel])
+    if feed and feed.entries:
+        for e in feed.entries[:6]: 
+            st.write(f"• [{e.title}]({e.link})")
+
+st.divider()
+st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
