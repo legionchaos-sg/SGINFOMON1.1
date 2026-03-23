@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 4.1", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 4.2", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -43,40 +43,52 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 4.1")
+st.title("Singapore Info Monitor 4.2")
 
-# Clocks - FIXED Syntax at line 63
+# Clocks
 t_cols = st.columns(6)
 zones = [
-    ("Singapore", "Asia/Singapore"), 
-    ("Bangkok", "Asia/Bangkok"), 
-    ("Tokyo", "Asia/Tokyo"), 
-    ("Jakarta", "Asia/Jakarta"), 
-    ("Manila", "Asia/Manila"), 
-    ("Brisbane", "Australia/Brisbane")
+    ("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), 
+    ("Tokyo", "Asia/Tokyo"), ("Jakarta", "Asia/Jakarta"), 
+    ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")
 ]
 for i, (city, tz) in enumerate(zones):
     t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz_time(tz)}</div></div>', unsafe_allow_html=True)
 
 st.divider()
 
-# News Section
+# News Section - Top 5 Unified Headlines
 st.header("🇸🇬 Singapore Headline News")
-sources = {"Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416"}
-t_news1, t_news2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
+sources = {
+    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
+    "Business Times": "https://www.businesstimes.com.sg/rss-feeds/singapore",
+    "Mothership": "https://mothership.sg/feed/",
+    "Shin Min": "https://www.shinmin.sg/rss/realtime/singapore"
+}
+
+t_news1, t_news2 = st.tabs(["📊 Unified Feed (Top 5)", "📰 Individual Sources"])
+
 with t_news1:
     for name, url in sources.items():
         feed = fetch_news(url)
-        if feed and feed.entries: st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
+        if feed and feed.entries:
+            st.subheader(f"🗞️ {name}")
+            # Loop through first 5 entries
+            for entry in feed.entries[:5]:
+                st.markdown(f"• [{entry.title}]({entry.link})")
+            st.write("") # Spacer
+
 with t_news2:
     sel = st.selectbox("Select News Outlet", list(sources.keys()))
     feed = fetch_news(sources[sel])
     if feed and feed.entries:
-        for e in feed.entries[:6]: st.write(f"• [{e.title}]({e.link})")
+        for e in feed.entries[:10]: 
+            st.write(f"• [{e.title}]({e.link})")
 
 st.divider()
 
-# 1. DROPDOWN: TRAIN STATUS (March 23 Status)
+# 1. DROPDOWN: TRAIN STATUS
 with st.expander("🚇 MRT/LRT Service Status", expanded=True):
     train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
     s_cols = st.columns(6)
@@ -85,17 +97,17 @@ with st.expander("🚇 MRT/LRT Service Status", expanded=True):
         icon = "✅" if status == "Normal" else "⚠️"
         s_cols[i].markdown(f'<div class="status-card {bg}">{line}<br>{icon} {status}</div>', unsafe_allow_html=True)
     if "Advisory" in train_lines.values():
-        st.warning("⚠️ **Circle Line (CCL):** Expect 5-10 min additional travel time due to track maintenance near Paya Lebar.")
+        st.warning("⚠️ **Circle Line:** Maintenance near Paya Lebar; minor off-peak delays expected.")
 
-# 2. DROPDOWN: MARKET INFO (Mar 23 Closing Data)
-with st.expander("📊 Market Info - Mar 23 Close", expanded=False):
+# 2. DROPDOWN: MARKET INFO (March 23 Context)
+with st.expander("📊 Market Info", expanded=False):
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("STI Index", "4,841.30", "-107.57 (-2.2%)")
     m2.metric("Gold (Spot)", "$4,400.12", "-114.20")
     m3.metric("Silver", "$67.42", "-2.24")
     m4.metric("Brent Crude", "$113.15", "+0.86")
 
-# 3. DROPDOWN: FOREX (Mar 23 Rates)
+# 3. DROPDOWN: FOREX
 with st.expander("💱 Forex Rates (Base: 1 SGD)", expanded=False):
     f_cols = st.columns(5)
     f_cols[0].metric("MYR", "3.0717", "+0.17%")
@@ -104,33 +116,16 @@ with st.expander("💱 Forex Rates (Base: 1 SGD)", expanded=False):
     f_cols[3].metric("JPY", "112.45", "-0.22%")
     f_cols[4].metric("AUD", "1.1241", "+0.08%")
 
-# 4. DROPDOWN: COE COMPARISON (Latest Results)
-with st.expander("🚗 COE Bidding - Mar 2026 (2nd Ex)", expanded=False):
-    # Data: (Cat, Price, Diff vs Last, Quota, Bids)
+# 4. DROPDOWN: COE COMPARISON
+with st.expander("🚗 COE Bidding - Mar 2026", expanded=False):
     coe_data = [
-        ("Cat A", 111890, 3670, 1264, 1895),
-        ("Cat B", 115568, 1566, 812, 1185),
-        ("Cat C", 78000, 2000, 290, 438),
-        ("Cat D", 9589, 987, 546, 726),
-        ("Cat E", 118119, 3229, 246, 422)
+        ("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185),
+        ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)
     ]
     c_cols = st.columns(5)
     for i, (cat, price, diff, q, b) in enumerate(coe_data):
         with c_cols[i]:
-            ratio = b / q if q > 0 else 0
-            st.markdown(f"""
-                <div class="coe-card">
-                    <div style="font-weight:bold; font-size:0.8rem;">{cat}</div>
-                    <div class="coe-price">${price:,}</div>
-                    <div style="color:#d32f2f; font-weight:bold; font-size:0.85rem;">▲ ${diff:,}</div>
-                    <hr style="margin:8px 0;">
-                    <div style="font-size:0.7rem; color:#666;">
-                        Quota: <b>{q}</b><br>
-                        Bids: <b>{b}</b><br>
-                        Ratio: <b>{ratio:.2f}x</b>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="coe-card"><div style="font-weight:bold; font-size:0.8rem;">{cat}</div><div class="coe-price">${price:,}</div><div style="color:#d32f2f; font-weight:bold; font-size:0.85rem;">▲ ${diff:,}</div><hr style="margin:8px 0;"><div style="font-size:0.7rem; color:#666;">Alloc: <b>{q}</b><br>Bids: <b>{b}</b></div></div>', unsafe_allow_html=True)
 
 st.divider()
-st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT | v4.1 Stable")
+st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT | v4.2 Unified News")
