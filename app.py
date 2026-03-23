@@ -48,15 +48,19 @@ with tab1:
         st.error("Unable to load CNA feed.")
 
 with tab2:
-    # Zaobao uses a standard RSS feed URL
+    # Updated 2026 Zaobao Realtime Feed
     zb_news = get_news("https://www.zaobao.com.sg/rss/realtime/singapore")
+    
     if zb_news:
         for entry in zb_news:
             st.markdown(f"**[{entry.title}]({entry.link})**")
-            st.caption(f"发布时间: {entry.published if 'published' in entry else '刚刚'}")
+            st.caption(f"🕒 {entry.published if 'published' in entry else 'Just updated'}")
             st.write("---")
     else:
-        st.info("Lianhe Zaobao feed is temporarily offline or restricted.")
+        # Improved error message for troubleshooting
+        st.warning("⚠️ Zaobao feed is currently restricted or refreshing. Please check back in 5 minutes.")
+        if st.button("Manual Refresh"):
+            st.rerun()
 
 # 6. Footer
 st.caption("Version 1.2 | Data: RSS Feeds from Mediacorp & SPH Media")
