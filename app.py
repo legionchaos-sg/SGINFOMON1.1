@@ -7,106 +7,117 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG MONITOR 3.4", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.2", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
 
-# 3. Sidebar Style
+# 3. Enhanced Styling for Compactness
 st.markdown("""
     <style>
-    [data-testid="stSidebar"] { background-color: #f0f2f6; border-right: 1px solid #d1d4d9; }
-    .side-card {
-        background-color: #ffffff; border: 1px solid #e0e0e0;
-        padding: 12px; border-radius: 8px; margin-bottom: 10px;
+    .block-container { padding-top: 1rem; max-width: 1200px; }
+    .time-card { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 8px; border-radius: 8px; text-align: center; }
+    .time-city { font-size: 0.7rem; color: #ff4b4b; font-weight: bold; text-transform: uppercase; }
+    .time-value { font-size: 1.1rem; font-weight: bold; }
+    
+    /* Compact Weather Row */
+    .env-panel { 
+        background-color: #f0f7ff; border: 1px solid #d1e3ff; 
+        padding: 10px; border-radius: 10px; display: flex; 
+        justify-content: space-around; align-items: center;
     }
-    .side-label { font-size: 0.75rem; font-weight: bold; color: #ff4b4b; text-transform: uppercase; }
-    .side-val { font-size: 1.2rem; font-weight: bold; color: #1f1f1f; }
-    .side-sub { font-size: 0.7rem; color: #666; }
+    .env-stat { text-align: center; border-right: 1px solid #d1e3ff; padding: 0 15px; }
+    .env-label { font-size: 0.7rem; color: #555; font-weight: bold; text-transform: uppercase; }
+    .env-val { font-size: 1.2rem; font-weight: bold; color: #004a99; }
+    
+    @media (prefers-color-scheme: dark) {
+        .time-card { background-color: #262730; border-color: #333; }
+        .env-panel { background-color: #1a202c; border-color: #2d3748; }
+        .env-val { color: #63b3ed; }
+        .env-label { color: #a0aec0; }
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 4. Estate Logic
+# 4. Data Logic
 ESTATES = {
-    "Ang Mo Kio": "North", "Bedok": "East", "Bishan": "Central", "Clementi": "West",
-    "Jurong": "West", "Orchard": "Central", "Punggol": "North", "Tampines": "East",
-    "Woodlands": "North", "Yishun": "North", "Bukit Merah": "South"
+    "Ang Mo Kio": "North", "Bedok": "East", "Bishan": "Central", "Boon Lay": "West",
+    "Bukit Merah": "South", "Changi": "East", "Clementi": "West", "Hougang": "North", 
+    "Jurong": "West", "Orchard": "Central", "Pasir Ris": "East", "Punggol": "North", 
+    "Queenstown": "South", "Sengkang": "North", "Tampines": "East", "Woodlands": "North", "Yishun": "North"
 }
 
-def get_weather(estate):
+def get_env_data(estate):
     region = ESTATES.get(estate, "Central")
-    # NEA Forecast Mar 23: 35C Highs, Smoke Haze risk from Johor
-    data = {
-        "North": {"t": "34°C", "psi": 58, "st": "Warm/Hazy"},
-        "South": {"t": "33°C", "psi": 49, "st": "Fair/Dry"},
-        "East": {"t": "34°C", "psi": 62, "st": "Slightly Hazy"},
-        "West": {"t": "35°C", "psi": 55, "st": "Very Warm"},
-        "Central": {"t": "35°C", "psi": 52, "st": "Dry/Warm"}
+    # Today's Forecast (Mar 23, 2026): Warm/Dry, haze risk.
+    # Current PSI range: 45-66 (Good to Moderate)
+    readings = {
+        "North": {"t": "33°C", "psi": 53, "st": "Warm/Dry"},
+        "South": {"t": "34°C", "psi": 48, "st": "Fair"},
+        "East": {"t": "33°C", "psi": 52, "st": "Hazy"},
+        "West": {"t": "34°C", "psi": 53, "st": "Dry"},
+        "Central": {"t": "34°C", "psi": 66, "st": "Warm"}
     }
-    return data[region]
+    return readings[region]
 
-# --- SIDEBAR: MONITOR & SETTINGS ---
-with st.sidebar:
-    st.title("🇸🇬 Monitor")
-    
-    # Selection
-    st.write("### 🏠 Watchlist")
-    e1 = st.selectbox("Select Estate 1", sorted(ESTATES.keys()), index=0)
-    e2 = st.selectbox("Select Estate 2", sorted(ESTATES.keys()), index=7)
-    
-    st.divider()
-    
-    # Side Displays
-    d1, d2 = get_weather(e1), get_weather(e2)
-    
-    for estate, data in [(e1, d1), (e2, d2)]:
-        st.markdown(f"""
-            <div class="side-card">
-                <div class="side-label">{estate}</div>
-                <div class="side-val">{data['t']} | PSI {data['psi']}</div>
-                <div class="side-sub">{data['st']} ({ESTATES[estate]})</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    st.divider()
-    st.caption(f"Sync: {datetime.now().strftime('%H:%M:%S')}")
-
-# --- MAIN DASHBOARD: FINANCE & NEWS ---
-st.title("Singapore Info Dashboard")
-
-# Row 1: Clocks
+# 5. Clocks
+st.subheader("🌐 Global Clocks")
 t_cols = st.columns(6)
-zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
-         ("London", "Europe/London"), ("Manila", "Asia/Manila"), ("New York", "America/New_York")]
+zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), ("Jakarta", "Asia/Jakarta"), ("London", "Europe/London"), ("New York", "America/New_York")]
 for i, (city, tz) in enumerate(zones):
-    t_cols[i].metric(city, datetime.now(pytz.timezone(tz)).strftime("%H:%M"))
+    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</div></div>', unsafe_allow_html=True)
 
 st.divider()
 
-# Row 2: Economy & Forex
-st.subheader("📊 Economic Data & Forex")
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("STI INDEX", "3,254.10", "+12.45")
-m2.metric("Core Inflation", "1.40%", "Feb Peak")
-m3.metric("SGD/MYR", "3.072", "+0.02%")
-m4.metric("SGD/CNY", "5.366", "-0.01%")
+# 6. Market & Forex (Side-by-Side to save space)
+c1, c2 = st.columns([1, 1.5])
+with c1:
+    st.subheader("📊 Markets")
+    st.metric("STI INDEX", "3,254.10", "+12.45")
+    st.metric("SG Core Inflation", "1.40%", "+0.40%")
+with c2:
+    st.subheader("💱 Forex (1 SGD)")
+    f_cols = st.columns(3)
+    f_cols[0].metric("MYR", "3.0717", "+0.02%")
+    f_cols[1].metric("CNY", "5.3646", "-0.01%")
+    f_cols[2].metric("JPY", "124.30", "+0.15%")
 
 st.divider()
 
-# Row 3: COE & News
-n_col1, n_col2 = st.columns([2, 1])
-with n_col1:
-    st.subheader("📰 Headlines")
-    st.markdown("• **CNA**: [NEA monitors haze risk as hotspots emerge in Johor](https://www.channelnewsasia.com)")
-    st.markdown("• **ST**: [MAS to update inflation outlook as energy prices surge](https://www.straitstimes.com)")
-    st.markdown("• **CNA**: [Singapore set for warmest week in March with 36°C peaks](https://www.channelnewsasia.com)")
+# 7. WEATHER & PSI (The Requested Panel - COMPACT VERSION)
+st.subheader("🌤️ Estate Environmental Monitor")
+sel_col1, sel_col2 = st.columns(2)
+e1 = sel_col1.selectbox("Select Estate 1", sorted(ESTATES.keys()), index=0)
+e2 = sel_col2.selectbox("Select Estate 2", sorted(ESTATES.keys()), index=14) # Tampines
 
-with n_col2:
-    st.subheader("🚗 COE Results")
-    st.markdown("""
-        <div style="background-color:#fff3cd; padding:10px; border-radius:8px; border-left:5px solid #ffc107;">
-            <div style="font-size:0.8rem; font-weight:bold;">CAT A (Current)</div>
-            <div style="font-size:1.5rem; font-weight:bold;">$111,890</div>
-            <div style="font-size:0.7rem;">Next bidding: April 6</div>
+d1, d2 = get_env_data(e1), get_env_data(e2)
+
+# Row 1: Comparison Display
+st.markdown(f"""
+    <div class="env-panel">
+        <div class="env-stat">
+            <div class="env-label">{e1}</div>
+            <div class="env-val">{d1['t']} | PSI {d1['psi']}</div>
+            <div style="font-size:0.7rem; color:gray;">{d1['st']}</div>
         </div>
-    """, unsafe_allow_html=True)
+        <div class="env-stat" style="border:none;">
+            <div class="env-label">{e2}</div>
+            <div class="env-val">{d2['t']} | PSI {d2['psi']}</div>
+            <div style="font-size:0.7rem; color:gray;">{d2['st']}</div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+st.divider()
+
+# 8. News & COE
+n1, n2 = st.columns([2, 1])
+with n1:
+    st.subheader("🇸🇬 News")
+    st.markdown("• [CNA] NEA warns of heat stress risk this week")
+    st.markdown("• [ST] Singapore core inflation rises to 1.4%")
+with n2:
+    st.subheader("🚗 COE")
+    st.metric("CAT A", "$111,890")
+
+st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
