@@ -5,25 +5,33 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.3", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_103_stable")
+st.set_page_config(page_title="SG INFO MON 10.4", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_104_compact")
 
-# 2. Adaptive CSS
+# 2. Adaptive CSS (Updated for Shorter Fuel/COE Boxes)
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
     .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 10px; min-height: 190px; color: var(--text-color); }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 15px; border-radius: 10px; text-align: center; color: var(--text-color); }
+    
+    /* Reduced Height COE Cards */
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 10px; border-radius: 6px; margin-bottom: 10px; min-height: 170px; color: var(--text-color); }
+    
+    /* Reduced Height Fuel Cards (-5pts adjustment) */
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
+    
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
     .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
     .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.85rem; } 
     .down { color: #28a745 !important; font-weight: bold; font-size: 0.85rem; }
     .stat-label { font-size: 0.75rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
-    .holiday-text { font-size: 1rem; color: #28a745; font-weight: bold; margin-left: 10px; }
+    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
     
     div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.05rem !important; }
     div[data-testid="stExpander"] [data-testid="stMetricLabel"] { font-size: 0.75rem !important; }
+    
+    /* Tighten button spacing in fuel cards */
+    .stButton>button { height: 28px; padding-top: 0; padding-bottom: 0; font-size: 0.8rem; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -31,7 +39,6 @@ st.markdown("""
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
-    # 2026 Singapore Holidays
     holidays_2026 = [
         ("New Year's Day", datetime(2026, 1, 1).date()),
         ("Chinese New Year", datetime(2026, 2, 17).date()),
@@ -72,7 +79,7 @@ def show_fuel_details(ftype):
         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{c_class}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.3")
+st.title("🇸🇬 SG Info Monitor 10.4")
 
 # 5. Clocks
 t_cols = st.columns(6)
@@ -139,14 +146,14 @@ with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
     f4.metric("SGD/CNY", "5.3975", "-0.07%")
     f5.metric("SGD/USD", "0.7480", "-0.22%")
 
-# 8. COE Bidding
+# 8. COE Bidding (Restored & Shorter)
 with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
     coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
     coe_cols = st.columns(5)
     for i, (cat, p, d, q, b) in enumerate(coe_data):
-        coe_cols[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:8px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids Rec'd:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
+        coe_cols[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:8px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
-# 9. Fuel Prices
+# 9. Fuel Prices (Reduced Padding & Height)
 with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
     f_cols = st.columns(5)
     ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
@@ -154,7 +161,7 @@ with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
         prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
         avg = sum(prices) / len(prices) if prices else 0
         f_cols[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-        if f_cols[i].button("Details", key=f"fuel_btn_{ftype}"):
+        if f_cols[i].button("Details", key=f"fbtn_104_{ftype}"):
             show_fuel_details(ftype)
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
