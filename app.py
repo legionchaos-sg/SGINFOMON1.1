@@ -1,12 +1,11 @@
 import streamlit as st
 import feedparser, requests, pytz
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Page Config & Padding Fix
-st.set_page_config(page_title="SG INFO MON 6.1", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 6.2", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180 * 1000, key="global_refresh")
 
 st.markdown("""
@@ -19,26 +18,29 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Optimized Helpers
+# 2. Helpers
 def get_sg_time(): return datetime.now(pytz.timezone('Asia/Singapore'))
 
 def fetch_news(url):
     try:
         resp = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-        return [{'title': e.title, 'link': e.link} for e in feedparser.parse(resp.content).entries[:8]]
+        return [{'title': e.title, 'link': e.link} for e in feedparser.parse(resp.content).entries[:5]]
     except: return []
 
-# FAST TRANSLATION SERVICE (Parallel Threading)
-def translate_batch(text_list):
-    def trans_single(text):
-        try: return GoogleTranslator(source='auto', target='zh-CN').translate(text)
-        except: return "翻译失败"
-    
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        return list(executor.map(trans_single, text_list))
+# ULTRA-FAST BATCH TRANSLATION
+def translate_unified_fast(unified_list):
+    if not unified_list: return []
+    # Combine all titles into one big string separated by a unique delimiter
+    combined_text = " ||| ".join([f"{e['name']}: {e['title']}" for e in unified_list])
+    try:
+        # One single API call for everything
+        translated_big_string = GoogleTranslator(source='auto', target='zh-CN').translate(combined_text)
+        return translated_big_string.split(" ||| ")
+    except:
+        return [f"翻译失败: {e['title']}" for e in unified_list]
 
 # --- SECTION 1: REGIONAL TIME ---
-st.title("🇸🇬 Singapore Info Monitor 6.1")
+st.title("🇸🇬 Singapore Info Monitor 6.2")
 t_cols = st.columns(6)
 zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
          ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
@@ -59,29 +61,26 @@ tab_uni, tab_src = st.tabs(["📊 Unified Pool", "📰 Select Source"])
 unified_list = []
 
 with tab_uni:
+    # 1. Show English first (Instant)
     for name, url in sources.items():
         data = fetch_news(url)
         if data:
             item = data[0]
-            unified_list.append({'name': name, 'title': item['title'], 'link': item['link']})
+            unified_list.append({'name': name, 'title': item['title']})
             st.write(f"<span class='news-tag'>{name}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
     
     st.write("---")
-    if st.checkbox("Fast Translate Unified Pool (Simplified Chinese)"):
-        with st.status("High-speed translation in progress...", expanded=False):
-            titles = [e['title'] for e in unified_list]
-            translated_titles = translate_batch(titles)
-            for i, entry in enumerate(unified_list):
-                st.caption(f"🇨🇳 **{entry['name']}**: {translated_titles[i]}")
+    # 2. Batch Translation (Fastest Method)
+    if st.checkbox("Fast Batch Translate Unified Pool (简体中文)"):
+        with st.spinner("Batch translating..."):
+            translations = translate_unified_fast(unified_list)
+            for text in translations:
+                st.caption(f"🇨🇳 {text}")
 
 with tab_src:
     src_choice = st.selectbox("Choose News Outlet", list(sources.keys()))
-    news_items = fetch_news(sources[src_choice])
-    for e in news_items: st.write(f"• [{e['title']}]({e['link']})")
-    if st.button("Turbo Translate Source News"):
-        titles = [e['title'] for e in news_items]
-        translated = translate_batch(titles)
-        for i, text in enumerate(translated): st.caption(f"🇨🇳 {text}")
+    for e in fetch_news(sources[src_choice]):
+        st.write(f"• [{e['title']}]({e['link']})")
 
 st.divider()
 
@@ -110,4 +109,4 @@ with st.expander("🚗 COE Bidding - Mar 2026 2nd Round", expanded=True):
 
 # FINAL SYNC
 st.divider()
-st.caption(f"Sync Success: {get_sg_time().strftime('%H:%M:%S')} SGT | v6.1 Parallel Engine Active")
+st.caption(f"Sync Success: {get_sg_time().strftime('%H:%M:%S')} SGT | v6.2 Batch-Engine Active")
