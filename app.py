@@ -31,13 +31,40 @@ def get_weather():
     except:
         return None
 
+def get_psi(): # --- Data Fetching Functions ---
+    try:
+        url = "https://api.data.gov.sg/v1/environment/psi"
+        response = requests.get(url)
+        # Pull the national PSI value
+        val = response.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
+        return int(val) # Convert to number here
+    except Exception:
+        return None # Return None if something goes wrong
+
+# ... (down in the layout section) ...
+
+# --- Data Fetching Functions ---
 def get_psi():
     try:
         url = "https://api.data.gov.sg/v1/environment/psi"
         response = requests.get(url)
-        return response.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
-    except:
-        return "N/A"
+        # Pull the national PSI value
+        val = response.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
+        return int(val) # Convert to number here
+    except Exception:
+        return None # Return None if something goes wrong
+
+# ... (down in the layout section) ...
+
+with col_a:
+    st.subheader("📡 Environment Status")
+    psi_val = get_psi()
+    
+    if psi_val is not None:
+        status = "Healthy" if psi_val < 50 else "Moderate"
+        st.metric(label="24h PSI (National)", value=psi_val, delta=status)
+    else:
+        st.metric(label="24h PSI (National)", value="Offline", delta="Sensor Issue")
 
 # --- Layout ---
 col_a, col_b = st.columns([1, 2])
