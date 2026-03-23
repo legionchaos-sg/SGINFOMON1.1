@@ -19,7 +19,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 3. Header
-st.title("🇸🇬 Singapore Info Monitor 1.1")
+st.title("Singapore Info Monitor 1.1")
 st.caption(f"Real-time Data | Last System Check: {datetime.now().strftime('%d %b %Y, %H:%M:%S')}")
 
 # 4. Data Functions
