@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.6", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.7", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -22,7 +22,9 @@ st.markdown("""
     .status-card { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 0.85rem; }
     .status-normal { background-color: #28a745; }
     .status-advisory { background-color: #ffc107; color: #212529; }
-    .coe-card { background-color: #f8f9fa; border-top: 4px solid #ff4b4b; padding: 8px; border-radius: 8px; text-align: center; }
+    .coe-card { background-color: #f8f9fa; border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+    .coe-price { font-size: 1.4rem; font-weight: bold; color: #d32f2f; }
+    .coe-meta { font-size: 0.75rem; color: #666; }
     @media (prefers-color-scheme: dark) {
         .time-card, .coe-card { background-color: #262730; border-color: #333; }
         .time-value { color: #ffffff; }
@@ -54,7 +56,7 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 3.6")
+st.title("Singapore Info Monitor 3.7")
 
 # 5. REGIONAL CLOCKS
 t_cols = st.columns(6)
@@ -65,7 +67,7 @@ for i, (city, tz) in enumerate(zones):
 
 st.divider()
 
-# 6. NEWS SECTION (MOVED UP)
+# 6. NEWS SECTION (TOP)
 st.header("🇸🇬 Singapore Headline News")
 sources = {
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
@@ -74,21 +76,17 @@ sources = {
     "Mothership": "https://mothership.sg/feed/",
     "Shin Min (新明)": "https://www.zaobao.com.sg/rss/realtime/singapore"
 }
-
 t_news1, t_news2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
-
 with t_news1:
     for name, url in sources.items():
         feed = fetch_news(url)
         if feed and feed.entries:
             st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
-
 with t_news2:
     sel = st.selectbox("Select News Outlet", list(sources.keys()))
     feed = fetch_news(sources[sel])
     if feed and feed.entries:
-        for e in feed.entries[:6]: 
-            st.write(f"• [{e.title}]({e.link})")
+        for e in feed.entries[:6]: st.write(f"• [{e.title}]({e.link})")
 
 st.divider()
 
@@ -102,35 +100,48 @@ for i, (line, status) in enumerate(train_lines.items()):
 
 st.write("")
 
-# 8. COMBINED: MARKETS (STI, GOLD, SILVER, CRUDE), COE & FOREX
-with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
-    # A. Markets ordered by STI Index, Gold, Silver, Crude
+# 8. DROPDOWN GROUPS: MARKET -> FOREX -> COE
+# GROUP 1: MARKET INFO
+with st.expander("📊 Market Info", expanded=True):
     m_tickers = {"STI Index": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude Oil": "CL=F"}
     m_data = get_financial_data(m_tickers)
-    
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("STI Index", f"{m_data['STI Index']['p']:,.2f}", f"{m_data['STI Index']['change']:+.2f}")
     m2.metric("Gold", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
     m3.metric("Silver", f"${m_data['Silver']['p']:,.2f}", f"{m_data['Silver']['change']:+.2f}")
     m4.metric("Crude Oil", f"${m_data['Crude Oil']['p']:,.2f}", f"{m_data['Crude Oil']['change']:+.2f}")
-    
-    st.markdown("---")
-    
-    # B. COE Premiums (Latest)
-    st.write("**Latest COE Results**")
-    coe_cols = st.columns(5)
-    coe_list = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
-    for i, (cat, price) in enumerate(coe_list):
-        coe_cols[i].markdown(f'<div class="coe-card"><div style="font-size:0.7rem;">{cat}</div><div style="font-size:1.1rem; font-weight:bold; color:#d32f2f;">${price:,}</div></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-
-    # C. Forex (1 SGD to X)
-    st.write("**Forex Rates**")
-    fx_data = get_financial_data({"MYR": "SGDMYR=X", "CNY": "SGDCNY=X", "THB": "SGDTHB=X", "JPY": "SGDJPY=X", "AUD": "SGDAUD=X"})
+# GROUP 2: FOREX
+with st.expander("💱 Forex Rates (Base: 1 SGD)", expanded=False):
+    fx_tickers = {"MYR": "SGDMYR=X", "CNY": "SGDCNY=X", "THB": "SGDTHB=X", "JPY": "SGDJPY=X", "AUD": "SGDAUD=X"}
+    fx_data = get_financial_data(fx_tickers)
     f_cols = st.columns(5)
     for i, (label, val) in enumerate(fx_data.items()):
         f_cols[i].metric(label, f"{val['p']:.4f}", f"{val['pc']:+.2f}%")
+
+# GROUP 3: COE (WITH BIDS DATA)
+with st.expander("🚗 COE Premium & Bidding Status", expanded=False):
+    st.write("**Latest Bidding Results (March 2026)**")
+    # Data structure: (Category, Price, Quota, Bids)
+    coe_data = [
+        ("Cat A (<1600cc)", 111890, 1264, 1895),
+        ("Cat B (>1600cc)", 115568, 812, 1185),
+        ("Cat C (Goods/Bus)", 78000, 290, 438),
+        ("Cat D (Motorcycle)", 9589, 546, 726),
+        ("Cat E (Open)", 118119, 246, 422)
+    ]
+    
+    c_cols = st.columns(5)
+    for i, (cat, price, q, b) in enumerate(coe_data):
+        with c_cols[i]:
+            st.markdown(f"""
+                <div class="coe-card">
+                    <div style="font-weight:bold; font-size:0.8rem;">{cat}</div>
+                    <div class="coe-price">${price:,}</div>
+                    <div class="coe-meta">Quota: <b>{q}</b></div>
+                    <div class="coe-meta">Bids: <b>{b}</b></div>
+                </div>
+            """, unsafe_allow_html=True)
 
 st.divider()
 st.caption(f"Last Refresh: {datetime.now().strftime('%H:%M:%S')} SGT")
