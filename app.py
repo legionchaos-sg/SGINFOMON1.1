@@ -60,14 +60,20 @@ with col_right:
     weather_data = get_weather()
     if weather_data:
         df = pd.DataFrame(weather_data)
-        # Show key areas in a grid
-        key_areas = ["Orchard", "Changi", "Tuas", "Woodlands"]
-        display_df = df[df['area'].isin(key_areas)]
         
+        # We define the areas we WANT to see
+        key_areas = ["Orchard", "Changi", "Tuas", "Woodlands"]
         m_cols = st.columns(len(key_areas))
+        
         for i, area in enumerate(key_areas):
-            forecast = display_df[display_df['area'] == area]['forecast'].values[0]
-            m_cols[i].metric(area, forecast)
+            # Safer way to grab data: check if area exists in the dataframe first
+            area_row = df[df['area'] == area]
+            
+            if not area_row.empty:
+                forecast = area_row['forecast'].values[0]
+                m_cols[i].metric(area, forecast)
+            else:
+                m_cols[i].metric(area, "No Data")
             
         with st.expander("View All Singapore Areas"):
             st.dataframe(df, use_container_width=True)
