@@ -1,53 +1,62 @@
 import streamlit as st
+import feedparser
 from datetime import datetime
 
 # 1. Page Config
-st.set_page_config(
-    page_title="SG INFO MON 1.1",
-    page_icon="🇸🇬",
-    layout="wide"
-)
+st.set_page_config(page_title="SG INFO MON 1.1", page_icon="🇸🇬", layout="wide")
 
-# 2. Adaptive CSS 
+# 2. Adaptive CSS
 st.markdown("""
     <style>
-    /* Remove extra space at top */
-    .block-container { padding-top: 1rem; max-width: 1200px; }
-    
-    /* Small styling for the toggle area */
-    div[data-testid="stColumn"] {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-    }
+    .block-container { padding-top: 1rem; max-width: 1100px; }
+    .news-card { padding: 10px; border-bottom: 1px solid #eeeeee22; margin-bottom: 10px; }
+    .source-tag { font-size: 0.8rem; color: #ff4b4b; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Header & Top Right Toggle
-# We create two columns: one for the Title, one for the Mode
-col_title, col_mode = st.columns([3, 1])
-
+# 3. Header & Top-Right Toggle
+col_title, col_mode = st.columns([4, 1])
 with col_title:
     st.title("Singapore Info Monitor 1.1")
-
 with col_mode:
-    # This creates a small dropdown in the top right
-    theme = st.selectbox(
-        "Display Mode",
-        ["Default", "Light", "Dark"],
-        label_visibility="collapsed" # Hides the label for a cleaner look
-    )
+    theme = st.selectbox("Mode", ["Default", "Light", "Dark"], label_visibility="collapsed")
 
 st.write(f"**System Status:** Online | {datetime.now().strftime('%H:%M:%S')} SGT")
 st.divider()
 
-# 4. Logic for the Toggle (Informational)
-if theme == "Dark":
-    st.warning("🌙 **Dark Mode Tip:** Streamlit's engine follows your Browser/System. To force Dark Mode, go to Settings > Theme > Dark.")
-elif theme == "Light":
-    st.info("☀️ **Light Mode Tip:** Go to Settings > Theme > Light to keep this look permanently.")
-else:
-    st.success("🏗️ **Adaptive Mode:** Your app is currently following your system's look.")
+# 4. News Function
+def get_news(url):
+    try:
+        feed = feedparser.parse(url)
+        return feed.entries[:5] # Get top 5 news items
+    except:
+        return []
 
-# 5. Footer
-st.caption("Version 1.1 | Top-Right UI Layout")
+# 5. Panel 1: Singapore Headline News
+st.header("Singapore Headline News")
+
+tab1, tab2 = st.tabs(["CNA (English)", "Lianhe Zaobao (Chinese)"])
+
+with tab1:
+    cna_news = get_news("https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416")
+    if cna_news:
+        for entry in cna_news:
+            st.markdown(f"**[{entry.title}]({entry.link})**")
+            st.caption(f"Published: {entry.published if 'published' in entry else 'Just now'}")
+            st.write("---")
+    else:
+        st.error("Unable to load CNA feed.")
+
+with tab2:
+    # Zaobao uses a standard RSS feed URL
+    zb_news = get_news("https://www.zaobao.com.sg/rss/realtime/singapore")
+    if zb_news:
+        for entry in zb_news:
+            st.markdown(f"**[{entry.title}]({entry.link})**")
+            st.caption(f"发布时间: {entry.published if 'published' in entry else '刚刚'}")
+            st.write("---")
+    else:
+        st.info("Lianhe Zaobao feed is temporarily offline or restricted.")
+
+# 6. Footer
+st.caption("Version 1.2 | Data: RSS Feeds from Mediacorp & SPH Media")
