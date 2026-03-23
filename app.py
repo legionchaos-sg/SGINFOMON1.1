@@ -66,7 +66,7 @@ news_sources = {
     "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
     "Mothership": "https://mothership.sg/feed/",
-    "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
+    "8 world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
 }
 
 # Browser Headers to bypass bot protection
