@@ -1,58 +1,64 @@
-# 6. Market Overview (Grouped in Dropdown)
-st.write("")
-with st.expander("📊 Market Overview & Commodities", expanded=True):
-    # Defining tickers
-    m_tickers = {
-        "STI INDEX": "^STI", 
-        "Gold Price": "GC=F", 
-        "Crude Price": "CL=F",
-        "Silver Price": "SI=F",
-        "S&P 500": "^GSPC"
-    }
-    
-    m_data = get_financial_data(m_tickers)
-    
-    # Row 1: Your Defaults (Gold and Crude)
-    col_def1, col_def2 = st.columns(2)
-    with col_def1:
-        st.metric("Gold (Default)", f"${m_data['Gold Price']['p']:,.2f}", f"{m_data['Gold Price']['change']:+.2f}")
-    with col_def2:
-        st.metric("Crude Oil (Default)", f"${m_data['Crude Price']['p']:,.2f}", f"{m_data['Crude Price']['change']:+.2f}")
-    
-    st.divider()
-    
-    # Row 2: The rest of the list
-    col_rest1, col_rest2, col_rest3 = st.columns(3)
-    with col_rest1:
-        st.metric("STI INDEX", f"{m_data['STI INDEX']['p']:,.2f}", f"{m_data['STI INDEX']['change']:+.2f}")
-    with col_rest2:
-        st.metric("Silver Price", f"${m_data['Silver Price']['p']:,.2f}", f"{m_data['Silver Price']['change']:+.2f}")
-    with col_rest3:
-        st.metric("S&P 500", f"{m_data['S&P 500']['p']:,.2f}", f"{m_data['S&P 500']['change']:+.2f}")
+import streamlit as st
+import feedparser
+import requests
+import pytz
+import yfinance as yf
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
-# 7. Forex Exchange Panel (Grouped in Dropdown)
-with st.expander("💱 Forex Exchange (Base: 1 SGD)", expanded=False):
-    fx_tickers = {
-        "CNY (China)": "SGDCNY=X", 
-        "MYR (Malaysia)": "SGDMYR=X", 
-        "THB (Thailand)": "SGDTHB=X", 
-        "JPY (Japan)": "SGDJPY=X", 
-        "AUD (Australia)": "SGDAUD=X"
-    }
-    fx_data = get_financial_data(fx_tickers)
-    fx_cols = st.columns(5)
+# 1. Page Config
+st.set_page_config(page_title="SG INFO MON 3.0", page_icon="🇸🇬", layout="wide")
 
-    for i, label in enumerate(fx_tickers.keys()):
-        val = fx_data[label]
-        color = "#28a745" if val['change'] >= 0 else "#dc3545"
-        arrow = "▲" if val['change'] >= 0 else "▼"
-        with fx_cols[i]:
-            st.markdown(f"""
-                <div class="forex-card">
-                    <div class="forex-label">{label}</div>
-                    <div class="forex-price">{val['p']:.4f}</div>
-                    <div style="color:{color}; font-size:0.8rem; font-weight:bold;">
-                        {arrow} {abs(val['pc']):.2f}%
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+# 2. Auto-Refresh (Every 3 mins)
+st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
+
+# 3. Custom CSS Styling
+st.markdown("""
+    <style>
+    .block-container { padding-top: 1rem; max-width: 1200px; }
+    .time-card { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
+    .time-city { font-size: 0.75rem; color: #ff4b4b; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+    .time-value { font-size: 1.1rem; font-weight: bold; color: #212529; }
+    .status-card { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+    .status-normal { background-color: #28a745; }
+    .status-advisory { background-color: #ffc107; color: #212529; }
+    .forex-card { background-color: #ffffff; border: 1px solid #eee; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .forex-label { font-size: 0.7rem; color: #666; font-weight: bold; }
+    .forex-price { font-size: 1.1rem; font-weight: bold; margin: 4px 0; }
+    @media (prefers-color-scheme: dark) {
+        .time-card, .forex-card { background-color: #262730; border-color: #333; }
+        .time-value, .forex-price { color: #ffffff; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 4. Helper Functions
+def get_tz_time(zone_name):
+    return datetime.now(pytz.timezone(zone_name)).strftime("%H:%M")
+
+@st.cache_data(ttl=180)
+def get_financial_data(tickers_dict):
+    results = {}
+    for label, sym in tickers_dict.items():
+        try:
+            t = yf.Ticker(sym)
+            p = t.fast_info['last_price']
+            prev = t.fast_info['regular_market_previous_close']
+            results[label] = {"p": p, "change": p - prev, "pc": ((p - prev) / prev) * 100}
+        except: results[label] = {"p": 0.0, "change": 0.0, "pc": 0.0}
+    return results
+
+def fetch_news(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, timeout=5, headers=headers)
+        return feedparser.parse(response.content)
+    except: return None
+
+# 5. HEADER & CLOCKS
+st.title("Singapore Info Monitor 3.0")
+t_cols = st.columns(6)
+zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
+         ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
+for i, (city, tz) in enumerate(zones):
+    t_cols[i].markdown(f'<div class="time-card"><div class="time-city">{city}</div><div class="time-value">{get_tz
