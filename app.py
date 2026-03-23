@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.7", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.8", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -22,12 +22,16 @@ st.markdown("""
     .status-card { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 0.85rem; }
     .status-normal { background-color: #28a745; }
     .status-advisory { background-color: #ffc107; color: #212529; }
-    .coe-card { background-color: #f8f9fa; border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-    .coe-price { font-size: 1.4rem; font-weight: bold; color: #d32f2f; }
-    .coe-meta { font-size: 0.75rem; color: #666; }
+    .coe-card { background-color: #f8f9fa; border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; min-height: 160px; }
+    .coe-price { font-size: 1.3rem; font-weight: bold; color: #d32f2f; margin-bottom: 0px; }
+    .coe-diff { font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; }
+    .coe-meta { font-size: 0.75rem; color: #666; line-height: 1.2; }
+    .diff-up { color: #d32f2f; }
+    .diff-down { color: #28a745; }
     @media (prefers-color-scheme: dark) {
-        .time-card, .coe-card { background-color: #262730; border-color: #333; }
+        .time-card, .coe-card { background-color: #262730; border-color: #444; }
         .time-value { color: #ffffff; }
+        .coe-meta { color: #aaa; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -56,9 +60,9 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 3.7")
+st.title("Singapore Info Monitor 3.8")
 
-# 5. REGIONAL CLOCKS
+# Clocks
 t_cols = st.columns(6)
 zones = [("Singapore", "Asia/Singapore"), ("Bangkok", "Asia/Bangkok"), ("Tokyo", "Asia/Tokyo"), 
          ("Jakarta", "Asia/Jakarta"), ("Manila", "Asia/Manila"), ("Brisbane", "Australia/Brisbane")]
@@ -67,21 +71,14 @@ for i, (city, tz) in enumerate(zones):
 
 st.divider()
 
-# 6. NEWS SECTION (TOP)
+# News (Top)
 st.header("🇸🇬 Singapore Headline News")
-sources = {
-    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
-    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
-    "Business Times": "https://www.businesstimes.com.sg/rss-feeds/singapore",
-    "Mothership": "https://mothership.sg/feed/",
-    "Shin Min (新明)": "https://www.zaobao.com.sg/rss/realtime/singapore"
-}
+sources = {"Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Business Times": "https://www.businesstimes.com.sg/rss-feeds/singapore", "Mothership": "https://mothership.sg/feed/", "Shin Min": "https://www.zaobao.com.sg/rss/realtime/singapore"}
 t_news1, t_news2 = st.tabs(["📊 Unified Feed", "📰 Individual Sources"])
 with t_news1:
     for name, url in sources.items():
         feed = fetch_news(url)
-        if feed and feed.entries:
-            st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
+        if feed and feed.entries: st.markdown(f"**{name}**: [{feed.entries[0].title}]({feed.entries[0].link})")
 with t_news2:
     sel = st.selectbox("Select News Outlet", list(sources.keys()))
     feed = fetch_news(sources[sel])
@@ -90,7 +87,7 @@ with t_news2:
 
 st.divider()
 
-# 7. TRAIN SERVICE STATUS
+# Train Status
 st.subheader("🚇 MRT/LRT Service Status")
 train_lines = {"NSL": "Normal", "EWL": "Normal", "NEL": "Normal", "CCL": "Advisory", "DTL": "Normal", "TEL": "Normal"}
 s_cols = st.columns(6)
@@ -100,8 +97,7 @@ for i, (line, status) in enumerate(train_lines.items()):
 
 st.write("")
 
-# 8. DROPDOWN GROUPS: MARKET -> FOREX -> COE
-# GROUP 1: MARKET INFO
+# Market Dropdown List
 with st.expander("📊 Market Info", expanded=True):
     m_tickers = {"STI Index": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude Oil": "CL=F"}
     m_data = get_financial_data(m_tickers)
@@ -111,7 +107,7 @@ with st.expander("📊 Market Info", expanded=True):
     m3.metric("Silver", f"${m_data['Silver']['p']:,.2f}", f"{m_data['Silver']['change']:+.2f}")
     m4.metric("Crude Oil", f"${m_data['Crude Oil']['p']:,.2f}", f"{m_data['Crude Oil']['change']:+.2f}")
 
-# GROUP 2: FOREX
+# Forex Dropdown List
 with st.expander("💱 Forex Rates (Base: 1 SGD)", expanded=False):
     fx_tickers = {"MYR": "SGDMYR=X", "CNY": "SGDCNY=X", "THB": "SGDTHB=X", "JPY": "SGDJPY=X", "AUD": "SGDAUD=X"}
     fx_data = get_financial_data(fx_tickers)
@@ -119,27 +115,33 @@ with st.expander("💱 Forex Rates (Base: 1 SGD)", expanded=False):
     for i, (label, val) in enumerate(fx_data.items()):
         f_cols[i].metric(label, f"{val['p']:.4f}", f"{val['pc']:+.2f}%")
 
-# GROUP 3: COE (WITH BIDS DATA)
-with st.expander("🚗 COE Premium & Bidding Status", expanded=False):
-    st.write("**Latest Bidding Results (March 2026)**")
-    # Data structure: (Category, Price, Quota, Bids)
-    coe_data = [
-        ("Cat A (<1600cc)", 111890, 1264, 1895),
-        ("Cat B (>1600cc)", 115568, 812, 1185),
-        ("Cat C (Goods/Bus)", 78000, 290, 438),
-        ("Cat D (Motorcycle)", 9589, 546, 726),
-        ("Cat E (Open)", 118119, 246, 422)
+# COE Dropdown List with Comparison
+with st.expander("🚗 COE Premium & Bidding Analysis", expanded=False):
+    st.write("**Latest Bidding Results: March 2026 (2nd Exercise)**")
+    # Data structure: (Category, Price, Change, Quota, Bids)
+    coe_results = [
+        ("Cat A", 111890, 3670, 1264, 1895),
+        ("Cat B", 115568, 1566, 812, 1185),
+        ("Cat C", 78000, 2000, 290, 438),
+        ("Cat D", 9589, 987, 546, 726),
+        ("Cat E", 118119, 3229, 246, 422)
     ]
     
     c_cols = st.columns(5)
-    for i, (cat, price, q, b) in enumerate(coe_data):
+    for i, (cat, price, diff, q, b) in enumerate(coe_results):
         with c_cols[i]:
+            diff_sign = "▲" if diff > 0 else "▼"
+            diff_class = "diff-up" if diff > 0 else "diff-down"
+            ratio = b / q if q > 0 else 0
+            
             st.markdown(f"""
                 <div class="coe-card">
-                    <div style="font-weight:bold; font-size:0.8rem;">{cat}</div>
+                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:4px;">{cat}</div>
                     <div class="coe-price">${price:,}</div>
+                    <div class="coe-diff {diff_class}">{diff_sign} ${abs(diff):,}</div>
                     <div class="coe-meta">Quota: <b>{q}</b></div>
                     <div class="coe-meta">Bids: <b>{b}</b></div>
+                    <div class="coe-meta" style="margin-top:5px; color:#ff4b4b;">Ratio: <b>{ratio:.2f}x</b></div>
                 </div>
             """, unsafe_allow_html=True)
 
