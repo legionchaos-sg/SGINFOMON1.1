@@ -2,10 +2,11 @@ import streamlit as st
 import feedparser, requests, pytz
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from deep_translator import GoogleTranslator # RESTORED
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 9.6", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_96_fuel")
+st.set_page_config(page_title="SG INFO MON 9.7", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_97_tr")
 
 # 2. Adaptive CSS
 st.markdown("""
@@ -15,26 +16,18 @@ st.markdown("""
     .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 10px; min-height: 190px; color: var(--text-color); }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 15px; border-radius: 10px; text-align: center; color: var(--text-color); }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
+    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
     .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.85rem; } 
     .down { color: #28a745 !important; font-weight: bold; font-size: 0.85rem; }
     .stat-label { font-size: 0.75rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
     
-    /* Compact Markets & Forex Content (-3 font size) */
-    div[data-testid="stExpander"]:nth-of-type(1) [data-testid="stMetricValue"],
-    div[data-testid="stExpander"]:nth-of-type(2) [data-testid="stMetricValue"] {
-        font-size: 1.05rem !important;
-    }
-    div[data-testid="stExpander"]:nth-of-type(1) [data-testid="stMetricLabel"],
-    div[data-testid="stExpander"]:nth-of-type(2) [data-testid="stMetricLabel"] {
-        font-size: 0.75rem !important;
-    }
+    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.05rem !important; }
+    div[data-testid="stExpander"] [data-testid="stMetricLabel"] { font-size: 0.75rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Fuel Data with (Last Change)
+# 3. Fuel Data
 brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-
-# Format: (Price, Last Change)
 fuel_data = {
     "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
     "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
@@ -50,23 +43,13 @@ def show_fuel_details(ftype):
         data = fuel_data[ftype].get(brand, ("N/A", 0))
         price, change = data
         if brand == "Shell" and ftype == "92 Octane": continue
-        
         display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
         change_class = "up" if change > 0 else "down"
         change_str = f"({'+' if change > 0 else ''}{change:.2f})" if change != 0 else ""
-        
-        st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;'>
-                <b>{brand}</b>
-                <span>
-                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
-                    <span class='{change_class}'>{change_str}</span>
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{change_class}'>{change_str}</span></span></div>", unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 9.6")
+st.title("🇸🇬 SG Info Monitor 9.7")
 
 # 4. Country Clocks
 countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
@@ -76,7 +59,7 @@ for i, (name, tz) in enumerate(countries):
 
 st.divider()
 
-# 5. News Section (With updated 8world Link)
+# 5. News Section
 st.header("🗞️ Singapore Headlines")
 news_sources = {
     "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
@@ -86,7 +69,9 @@ news_sources = {
 }
 c1, c2 = st.columns([2, 1])
 with c1: search_q = st.text_input("🔍 Search Keywords:", placeholder="Enter topic...")
-with c2: v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+with c2: 
+    v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+    do_tr = st.checkbox("Translate (EN → CN)") # RESTORED
 
 news_list = []
 for src, url in news_sources.items():
@@ -99,13 +84,26 @@ for src, url in news_sources.items():
                     news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
         except: pass
 
+# RESTORED Translation Logic
+tr_dict = {}
+if do_tr and news_list:
+    # Filter only English sources for translation
+    en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
+    if en_titles:
+        try:
+            translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
+            tr_dict = dict(zip(en_titles, translated))
+        except: pass
+
 for item in news_list:
     st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
+    if do_tr and item['title'] in tr_dict:
+        st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
 st.divider()
 
-# 6. Markets & Forex (Condensed Fonts)
-sent_title = "📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS] (Middle East Conflict Impact)"
+# 6. Markets & Forex
+sent_title = "📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]"
 with st.expander(sent_title, expanded=True):
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("STI Index", "4,841.30", "-2.20%")
@@ -121,14 +119,14 @@ with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
     f4.metric("SGD/CNY", "5.3975", "-0.07%")
     f5.metric("SGD/USD", "0.7480", "-0.22%")
 
-# 7. COE Bidding (Restored Full Info)
+# 7. COE Bidding
 with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
     coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
     coe_cols = st.columns(5)
     for i, (cat, p, d, q, b) in enumerate(coe_data):
         coe_cols[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:8px 0; opacity:0.1; border-color: var(--border-color);"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids Rec'd:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
-# 8. Fuel Prices (Avg + Details with Change Indicator)
+# 8. Fuel Prices
 with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
     f_cols = st.columns(5)
     ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
@@ -136,7 +134,7 @@ with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
         prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
         avg = sum(prices) / len(prices) if prices else 0
         f_cols[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-        if f_cols[i].button("Details", key=f"fbtn_v96_{i}"):
+        if f_cols[i].button("Details", key=f"fbtn_v97_{i}"):
             show_fuel_details(ftype)
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
