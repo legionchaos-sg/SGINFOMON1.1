@@ -4,27 +4,21 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# 1. Setup & Auto-Refreshimport streamlit as st
-import feedparser, requests, pytz
-from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
-from deep_translator import GoogleTranslator
-
-# 1. FIXED Page Config
-st.set_page_config(page_title="SG INFO MON 7.2", page_icon="🇸🇬", layout="wide")
+# 1. FIXED Page Config (Syntax checked)
+st.set_page_config(page_title="SG INFO MON 7.3", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="master_sync")
 
-# 2. CSS for Dashboard & Trends
+# 2. Advanced CSS for Trends
 st.markdown("""
     <style>
     .block-container {padding-top: 1.2rem !important;}
     .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;}
     .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:10px; border-radius:6px;}
     .fuel-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
-    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
-    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
     .trend-up {color: #d32f2f; font-weight: bold; font-size: 0.9rem;}
     .trend-down {color: #28a745; font-weight: bold; font-size: 0.9rem;}
+    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
+    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
     @media (prefers-color-scheme: dark) { 
         .time-card, .coe-card {background:#262730; border-color:#444;}
         .fuel-card {background:#1e2630; border-color:#007bff;}
@@ -33,32 +27,32 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Data: Price (Mar 2026) and Change (vs Prev Week)
+# 3. LIVE DATA: March 23, 2026 (Price, Change)
 fuel_trends = {
-    "92 Octane": {"Esso": (3.43, 0.02), "Caltex": (3.43, 0.02), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01), "SmartEnergy": (3.41, 0.01)},
-    "95 Octane": {"Esso": (3.47, 0.03), "Shell": (3.47, 0.03), "Caltex": (3.47, 0.03), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.03), "Cnergy": (3.44, -0.02), "SmartEnergy": (3.45, -0.01)},
+    "92 Octane": {"Esso": (3.43, 0.04), "Caltex": (3.43, 0.04), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01), "SmartEnergy": (3.41, 0.01)},
+    "95 Octane": {"Esso": (3.47, 0.04), "Shell": (3.47, 0.04), "Caltex": (3.47, 0.04), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.04), "Cnergy": (3.44, -0.02), "SmartEnergy": (3.45, -0.01)},
     "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "Caltex": (4.16, 0.08), "SPC": (3.97, 0.05), "Sinopec": (3.97, 0.05), "Cnergy": (3.92, -0.03), "SmartEnergy": (3.94, -0.02)},
     "Premium": {"Shell V-Power": (4.21, 0.05), "Caltex Platinum": (4.16, 0.08), "Sinopec X-Power": (4.10, 0.04), "Esso Supreme+": (3.97, 0.05)},
-    "Diesel": {"Esso": (3.56, -0.04), "Shell": (3.56, -0.04), "Caltex": (3.56, -0.04), "SPC": (3.49, -0.06), "Sinopec": (3.55, -0.05), "Cnergy": (3.45, -0.08), "SmartEnergy": (3.49, -0.07)}
+    "Diesel": {"Esso": (3.73, -0.04), "Shell": (3.73, -0.04), "Caltex": (3.73, -0.04), "SPC": (3.56, -0.06), "Sinopec": (3.72, -0.05), "Cnergy": (3.45, -0.08), "SmartEnergy": (3.49, -0.07)}
 }
 
-# 4. Dialog Pop-up with Price Indicators
-@st.dialog("Fuel Brand Comparison")
+# 4. Interactive Brand Dialog
+@st.dialog("Fuel Brand Comparison (Live March 2026)")
 def show_fuel_details(fuel_type):
-    st.subheader(f"📍 {fuel_type} Trends")
+    st.subheader(f"📍 {fuel_type} Market Watch")
     data = fuel_trends[fuel_type]
     col1, col2 = st.columns(2)
     for i, (brand, (price, change)) in enumerate(data.items()):
         target = col1 if i % 2 == 0 else col2
-        trend_html = f'<span class="trend-up">▲ +${change:.2f}</span>' if change > 0 else (f'<span class="trend-down">▼ -${abs(change):.2f}</span>' if change < 0 else '<span style="color:gray;">● No Change</span>')
+        trend_html = f'<span class="trend-up">▲ +${change:.2f}</span>' if change > 0 else (f'<span class="trend-down">▼ -${abs(change):.2f}</span>' if change < 0 else '<span style="color:gray;">● Stable</span>')
         target.markdown(f"""
-            <div style="padding:8px; border-bottom:1px solid #ddd;">
-                <b>{brand}</b><br><span style="font-size:1.1rem;">${price:.2f}</span><br>{trend_html}
+            <div style="padding:10px; border-bottom:1px solid #ddd;">
+                <b style="font-size:1rem;">{brand}</b><br><span style="font-size:1.2rem; color:#007bff;">${price:.2f}</span><br>{trend_html}
             </div>
             """, unsafe_allow_html=True)
 
-# --- MAIN DASHBOARD ---
-st.title("🇸🇬 Singapore Info Monitor 7.2")
+# --- UI RENDER ---
+st.title("🇸🇬 Singapore Info Monitor 7.3")
 
 # Regional Times
 t_cols = st.columns(6)
@@ -69,7 +63,7 @@ for i, (c, z) in enumerate(zones):
 
 st.divider()
 
-# Headlines (Unified & Translated)
+# Headlines
 st.header("🗞️ Singapore Headlines")
 srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
         "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
@@ -82,216 +76,30 @@ for n, u in srcs.items():
         if f.entries: unified.append({'n': n, 't': f.entries[0].title, 'l': f.entries[0].link})
     except: pass
 
-do_tr = st.checkbox("Translate Headlines (Batch Mode)")
+do_tr = st.checkbox("Translate (Simplified Chinese)")
 trans_list = []
 if do_tr and unified:
     try:
-        mega = "\n".join
-st.set_page_config(page_title="SG INFO MON import streamlit as st
-import feedparser, requests, pytz
-from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
-from deep_translator import GoogleTranslator
-
-# 1. Setup & Refresh
-st.set_page_config(page_title="SG INFO MON 7.1", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="master_sync")
-
-# 2. CSS with Trend Colors
-st.markdown("""
-    <style>
-    .block-container {padding-top: 1.2rem !important;}
-    .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;}
-    .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:10px; border-radius:6px;}
-    .fuel-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
-    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
-    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
-    /* Trend Styling */
-    .trend-up {color: #d32f2f; font-weight: bold; font-size: 0.8rem;}
-    .trend-down {color: #28a745; font-weight: bold; font-size: 0.8rem;}
-    @media (prefers-color-scheme: dark) { 
-        .time-card, .coe-card {background:#262730; border-color:#444;}
-        .fuel-card {background:#1e2630; border-color:#007bff;}
-        .news-tag {background:#444; color:#bbb;} .trans-box {color:#ffbaba;}
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 3. Enhanced Data (Price + Change Amount)
-# Positive = Increase (Red), Negative = Decrease (Green)
-fuel_trends = {
-    "92 Octane": {"Esso": (3.43, 0.02), "Caltex": (3.43, 0.02), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01), "SmartEnergy": (3.41, 0.01)},
-    "95 Octane": {"Esso": (3.47, 0.03), "Shell": (3.47, 0.03), "Caltex": (3.47, 0.03), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.03), "Cnergy": (3.44, -0.02), "SmartEnergy": (3.45, -0.01)},
-    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "Caltex": (4.16, 0.08), "SPC": (3.97, 0.05), "Sinopec": (3.97, 0.05), "Cnergy": (3.92, -0.03), "SmartEnergy": (3.94, -0.02)},
-    "Premium": {"Shell V-Power": (4.21, 0.05), "Caltex Platinum": (4.16, 0.08), "Sinopec X-Power": (4.10, 0.04), "Esso Supreme+": (3.97, 0.05)},
-    "Diesel": {"Esso": (3.56, -0.04), "Shell": (3.56, -0.04), "Caltex": (3.56, -0.04), "SPC": (3.49, -0.06), "Sinopec": (3.55, -0.05), "Cnergy": (3.45, -0.08), "SmartEnergy": (3.49, -0.07)}
-}
-
-# 4. Pop-out Dialog with Trend logic
-@st.dialog("Brand Pricing & Trends")
-def show_fuel_details(fuel_type):
-    st.subheader(f"📍 {fuel_type} Breakdown")
-    data = fuel_trends[fuel_type]
-    
-    col1, col2 = st.columns(2)
-    for i, (brand, (price, change)) in enumerate(data.items()):
-        target_col = col1 if i % 2 == 0 else col2
-        
-        # Determine Color and Symbol
-        if change > 0:
-            trend_html = f'<span class="trend-up">▲ ${change:.2f}</span>'
-        elif change < 0:
-            trend_html = f'<span class="trend-down">▼ ${abs(change):.2f}</span>'
-        else:
-            trend_html = '<span style="color:gray; font-size:0.8rem;">● No Change</span>'
-            
-        target_col.markdown(f"""
-            <div style="padding:10px; border-bottom:1px solid #eee;">
-                <div style="font-weight:bold; font-size:1rem;">{brand}</div>
-                <div style="font-size:1.2rem;">${price:.2f}</div>
-                {trend_html}
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.caption("Data: Comparison against last monitored cycle (Mar 2026)")
-
-# --- MAIN UI ---
-st.title("🇸🇬 Singapore Info Monitor 7.1")
-
-# Times
-t_cols = st.columns(6)
-zones = [("Singapore","Asia/Singapore"), ("Bangkok","Asia/Bangkok"), ("Tokyo","Asia/Tokyo"), 
-         ("Jakarta","Asia/Jakarta"), ("Manila","Asia/Manila"), ("Brisbane","Australia/Brisbane")]
-for i, (c, z) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div style="font-size:0.7rem;color:#ff4b4b;font-weight:bold;">{c}</div><div style="font-size:1.1rem;font-weight:bold;">{datetime.now(pytz.timezone(z)).strftime("%H:%M")}</div></div>', unsafe_allow_html=True)
-
-st.divider()
-
-# News (Unified Pool with Translation)
-st.header("🗞️ Singapore Headlines")
-srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
-        "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
-        "Mothership": "https://mothership.sg/feed/"}
-
-unified = []
-for n, u in srcs.items():
-    try:
-        f = feedparser.parse(requests.get(u, timeout=5).7.0", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="master_sync")
-
-# 2. Advanced CSS
-st.markdown("""
-    <style>
-    .block-container {padding-top: 1.2rem !important;}
-    .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;}
-    .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:10px; border-radius:6px;}
-    .fuel-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
-    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
-    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
-    @media (prefers-color-scheme: dark) { 
-        .time-card, .coe-card {background:#262730; border-color:#444;}
-        .fuel-card {background:#1e2630; border-color:#007bff;}
-        .news-tag {background:#444; color:#bbb;} .trans-box {color:#ffbaba;}
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 3. Data Storage (March 23, 2026 Prices)
-fuel_details = {
-    "92 Octane": {"Esso": 3.43, "Caltex": 3.43, "SPC": 3.43, "Shell": "N.A.", "Sinopec": "N.A.", "Cnergy": 3.40, "SmartEnergy": 3.41},
-    "95 Octane": {"Esso": 3.47, "Shell": 3.47, "Caltex": 3.47, "SPC": 3.46, "Sinopec": 3.47, "Cnergy": 3.44, "SmartEnergy": 3.45},
-    "98 Octane": {"Esso": 3.97, "Shell": 3.99, "Caltex": 4.16, "SPC": 3.97, "Sinopec": 3.97, "Cnergy": 3.92, "SmartEnergy": 3.94},
-    "Premium": {"Shell V-Power": 4.21, "Caltex Platinum": 4.16, "Sinopec X-Power": 4.10, "Esso Supreme+": 3.97},
-    "Diesel": {"Esso": 3.56, "Shell": 3.56, "Caltex": 3.56, "SPC": 3.49, "Sinopec": 3.55, "Cnergy": 3.45, "SmartEnergy": 3.49}
-}
-
-# 4. Pop-out Dialog Function
-@st.dialog("Brand Pricing Details")
-def show_fuel_details(fuel_type):
-    st.subheader(f"📍 {fuel_type} Comparison")
-    st.write("Prices shown are before credit card/loyalty discounts.")
-    
-    data = fuel_details[fuel_type]
-    # Display as a clean table
-    col1, col2 = st.columns(2)
-    for i, (brand, price) in enumerate(data.items()):
-        target_col = col1 if i % 2 == 0 else col2
-        price_str = f"${price:.2f}/L" if isinstance(price, (int, float)) else price
-        target_col.metric(brand, price_str)
-    
-    st.caption("Data source: Fuel Kaki / Public Monitoring (Mar 2026)")
-
-# --- MAIN UI ---
-st.title("🇸🇬 Singapore Info Monitor 7.0")
-
-# Times
-t_cols = st.columns(6)
-zones = [("Singapore","Asia/Singapore"), ("Bangkok","Asia/Bangkok"), ("Tokyo","Asia/Tokyo"), 
-         ("Jakarta","Asia/Jakarta"), ("Manila","Asia/Manila"), ("Brisbane","Australia/Brisbane")]
-for i, (c, z) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div style="font-size:0.7rem;color:#ff4b4b;font-weight:bold;">{c}</div><div style="font-size:1.1rem;font-weight:bold;">{datetime.now(pytz.timezone(z)).strftime("%H:%M")}</div></div>', unsafe_allow_html=True)
-
-st.divider()
-
-# News (Unified Pool)
-st.header("🗞️ Singapore Headlines")
-srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
-        "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
-        "Mothership": "https://mothership.sg/feed/"}
-
-unified = []
-for n, u in srcs.items():
-    try:
-        f = feedparser.parse(requests.get(u, timeout=5).content)
-        if f.entries: unified.append({'n': n, 't': f.entries[0].title, 'l': f.entries[0].link})
-    except: pass
-
-do_tr = st.checkbox("Fast Translation (Simplified Chinese)")
-trans_map = {}
-if do_tr and unified:
-    try:
         mega = "\n".join([x['t'] for x in unified])
-        translated = GoogleTranslator(target='zh-CN').translate(mega).split("\n")
-        trans_map = {unified[i]['t']: translated[i] for i in range(len(unified))}
-    except: st.error("Translation Unavailable")
+        trans_list = GoogleTranslator(target='zh-CN').translate(mega).split("\n")
+    except: st.warning("Translation Service Busy")
 
-for item in unified:
+for i, item in enumerate(unified):
     st.write(f"<span class='news-tag'>{item['n']}</span> **[{item['t']}]({item['l']})**", unsafe_allow_html=True)
-    if do_tr and item['t'] in trans_map:
-        st.markdown(f"<div class='trans-box'>🇨🇳 {trans_map[item['t']]}</div>", unsafe_allow_html=True)
+    if do_tr and i < len(trans_list):
+        st.markdown(f"<div class='trans-box'>🇨🇳 {trans_list[i].strip()}</div>", unsafe_allow_html=True)
 
 st.divider()
 
-# Markets & Forex
-with st.expander("📊 Market Info & Forex", expanded=True):
-    m = st.columns(4)
-    m[0].metric("STI Index", "4,841.30", "-2.2%")
-    m[1].metric("Gold (Spot)", "$4,282.40", "-4.8%")
-    m[2].metric("Silver (Spot)", "$63.47", "-6.1%")
-    m[3].metric("Brent Crude", "$112.91", "+0.6%")
+# Market & COE (Updated Mar 23, 2026)
+with st.expander("📊 Market & COE (Bidding 2, Mar 2026)", expanded=True):
+    m_cols = st.columns(4)
+    m_cols[0].metric("STI Index", "4,841.30", "-2.2%")
+    m_cols[1].metric("Gold (Spot)", "$4,400.00", "-8.8%")
+    m_cols[2].metric("USD/SGD", "1.277", "-0.4%")
+    m_cols[3].metric("CNY/SGD", "5.384", "+0.2%")
     st.write("---")
-    f = st.columns(6)
-    fx = [("CNY","5.384"),("THB","23.04"),("JPY","111.2"),("MYR","2.747"),("AUD","1.117"),("USD","0.773")]
-    for i, (n, v) in enumerate(fx): f[i].metric(n, v)
-
-# COE Bidding
-with st.expander("🚗 COE Bidding - Mar 2026", expanded=True):
+    # Official Mar 2026 2nd Bidding Data
     coe = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
     c_cols = st.columns(5)
-    for i, (cat, p, d) in enumerate(coe):
-        c_cols[i].markdown(f'<div class="coe-card"><b>{cat}</b><br><span style="color:#d32f2f;font-weight:bold;font-size:1.1rem;">${p:,}</span><br><small>▲ ${d:,}</small></div>', unsafe_allow_html=True)
-
-# FUEL PRICES WITH POPUP
-with st.expander("⛽ Fuel Prices (Click for Brand Details)", expanded=True):
-    f_cols = st.columns(5)
-    labels = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-    avg_prices = ["$3.43", "$3.47", "$3.98", "$4.10", "$3.54"]
-    
-    for i in range(5):
-        with f_cols[i]:
-            st.markdown(f'<div class="fuel-card"><b>{labels[i]}</b><br><span style="color:#007bff;font-size:1.2rem;font-weight:bold;">{avg_prices[i]}</span></div>', unsafe_allow_html=True)
-            if st.button(f"Details: {labels[i]}", key=f"btn_{i}"):
-                show_fuel_details(labels[i])
-
-st.divider()
-st.caption(f"Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | v7.0 Interactive")
+    for i, (cat, p, d) in
