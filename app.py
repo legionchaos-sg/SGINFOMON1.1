@@ -5,15 +5,16 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.8", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_108_stable")
+st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_109_stable")
 
-# 2. Adaptive CSS
+# 2. Adaptive CSS (Updated for COE Height Reduction)
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
     .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 155px; color: var(--text-color); line-height: 1.1; }
+    /* Reduced min-height by 5px (from 155px to 150px) */
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
     .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
@@ -58,7 +59,7 @@ def show_fuel_details(ftype):
         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.8")
+st.title("🇸🇬 SG Info Monitor 10.9")
 
 tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
 
@@ -71,7 +72,7 @@ with tab1:
 
     st.divider()
     
-    # 2. News & Holidays (With Restoration of Translation)
+    # 2. News & Holidays
     holiday_info = get_upcoming_holiday()
     st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
 
@@ -112,13 +113,14 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets & Forex
-    with st.expander("📈 Market Indices", expanded=True):
-        m1, m2, m3, m4 = st.columns(4)
+    # 3. Markets & Commodities (Sorted: STI, Gold, Silver, Brent, Gas)
+    with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
+        m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("STI Index", "4,841.30", "-2.20%")
-        m2.metric("Gold", "$4,202.90", "-8.04%")
-        m3.metric("Brent Crude", "$113.34", "+1.02%")
-        m4.metric("Silver", "$64.12", "-7.56%")
+        m2.metric("Gold (Spot)", "$4,391.00", "+1.66%")
+        m3.metric("Silver (Spot)", "$64.63", "-6.11%")
+        m4.metric("Brent Crude", "$112.61", "+0.40%")
+        m5.metric("Natural Gas", "$3.09", "-2.21%")
 
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
@@ -128,7 +130,7 @@ with tab1:
         f4.metric("SGD/CNY", "5.3975", "-0.07%")
         f5.metric("SGD/USD", "0.7480", "-0.22%")
 
-    # 4. COE Bidding (Restoration of Quota and Bids Details)
+    # 4. COE Bidding (Height Reduced)
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
         coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
         cc = st.columns(5)
@@ -152,7 +154,7 @@ with tab1:
             prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
             avg = sum(prices) / len(prices) if prices else 0
             fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if fc[i].button("Details", key=f"fbtn_108_{ftype}"):
+            if fc[i].button("Details", key=f"fbtn_109_{ftype}"):
                 show_fuel_details(ftype)
 
 with tab2:
