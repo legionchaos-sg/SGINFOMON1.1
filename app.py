@@ -5,8 +5,8 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 9.3", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_93_sent")
+st.set_page_config(page_title="SG INFO MON 9.4", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_94_final")
 
 # 2. Adaptive CSS
 st.markdown("""
@@ -19,31 +19,39 @@ st.markdown("""
     .up { color: #ff4b4b !important; font-weight: bold; } 
     .down { color: #28a745 !important; font-weight: bold; }
     .stat-label { font-size: 0.75rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
-    
-    /* Make the sentiment in the title bar pop */
-    .sentiment-tag { color: #f39c12; font-weight: bold; padding: 0 10px; border-left: 2px solid var(--border-color); }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Data Definitions
+# 3. FIXED: Fuel Database with 7 Brands in Strict Order
+# Order: Esso; Caltex; Shell; SPC; Cnergy; Sinopec; SmartEnergy
+brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
+
 fuel_data = {
-    "92 Octane": {"Esso": (3.43, 0.04), "Caltex": (3.43, 0.04), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01)},
-    "95 Octane": {"Esso": (3.47, 0.04), "Shell": (3.47, 0.04), "Caltex": (3.47, 0.04), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.04), "Cnergy": (3.44, 0.00)},
-    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "Caltex": (4.16, 0.08), "SPC": (3.97, 0.05), "Sinopec": (3.98, 0.05)},
-    "Premium": {"Shell V-Power": (4.21, 0.05), "Caltex Platinum": (4.16, 0.08), "Sinopec X-Power": (4.10, 0.04)},
-    "Diesel": {"Esso": (3.73, -0.04), "Shell": (3.73, -0.04), "SPC": (3.56, -0.06), "Cnergy": (3.45, -0.08), "Sinopec": (3.70, -0.04)}
+    "92 Octane": {"Esso": 3.43, "Caltex": 3.43, "SPC": 3.43, "Cnergy": "N/A", "Sinopec": "N/A", "Smart Energy": "N/A"},
+    "95 Octane": {"Esso": 3.47, "Caltex": 3.47, "Shell": 3.47, "SPC": 3.46, "Cnergy": 2.46, "Sinopec": 3.47, "Smart Energy": 2.61},
+    "98 Octane": {"Esso": 3.97, "Shell": 3.99, "SPC": 3.97, "Cnergy": 2.80, "Sinopec": 3.97, "Smart Energy": 2.99},
+    "Premium": {"Caltex": 4.16, "Shell": 4.21, "Sinopec": 4.10, "Cnergy": "N/A", "Smart Energy": "N/A"},
+    "Diesel": {"Esso": 3.73, "Caltex": 3.73, "Shell": 3.73, "SPC": 3.56, "Cnergy": 2.80, "Sinopec": 3.72, "Smart Energy": 2.83}
 }
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Full Price List")
-    cols = st.columns(2)
-    for i, (brand, (price, change)) in enumerate(fuel_data[ftype].items()):
-        c_style, c_sym = ("up", "▲") if change > 0 else ("down", "▼")
-        cols[i % 2].markdown(f"**{brand}**: ${price:.2f} <span class='{c_style}'>{c_sym}${abs(change):.2f}</span>", unsafe_allow_html=True)
+    st.write(f"### 📍 {ftype} Price List (Mar 2026)")
+    # Check each brand in the requested order
+    for brand in brand_order:
+        price = fuel_data[ftype].get(brand, "N/A")
+        if brand == "Shell" and ftype == "92 Octane": continue # Shell doesn't have 92
+        
+        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        st.markdown(f"""
+            <div style="padding:10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                <b>{brand}</b>
+                <span style="color:#007bff; font-weight:bold;">{display_price}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 9.3")
+st.title("🇸🇬 SG Info Monitor 9.4")
 
 # 4. Country Clocks
 countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
@@ -55,11 +63,10 @@ st.divider()
 
 # 5. News Section
 st.header("🗞️ Singapore Headlines")
-news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world News": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176", "Shin Min Daily": "https://www.shinmin.sg/rss"}
-c1, c2, c3 = st.columns([1.5, 1, 1])
+news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world News": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
+c1, c2 = st.columns([2, 1])
 with c1: search_q = st.text_input("🔍 Search Keywords:", placeholder="Enter topic...")
-with c2: v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only", "Shin Min Only"])
-with c3: do_tr = st.checkbox("Translate (EN → CN)")
+with c2: v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
 
 news_list = []
 for src, url in news_sources.items():
@@ -77,18 +84,16 @@ for item in news_list:
 
 st.divider()
 
-# 6. MARKET INDICES WITH SENTIMENT IN TITLE
-# Creating the dynamic title bar
-sent_title = "📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS] (Drivers: Oil Volatility & STI Consolidation)"
-
+# 6. Markets with Sentiment in Title
+sent_title = "📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS] (Drivers: Middle East Tensions & Oil Price Surge)"
 with st.expander(sent_title, expanded=True):
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("STI Index", "4,841.30", "-2.20%")
     m2.metric("Gold (Spot)", "$4,202.90", "-8.04%")
-    m3.metric("Silver (Spot)", "$64.12", "-7.56%")
-    m4.metric("Brent Crude", "$113.13", "+0.84%")
+    m3.metric("Brent Crude", "$113.34", "+1.02%")
+    m4.metric("Silver (Spot)", "$64.12", "-7.56%")
 
-# 7. Forex (SGD AGAINST OTHERS)
+# 7. Forex (1 SGD Base)
 with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
     f1, f2, f3, f4, f5 = st.columns(5)
     f1.metric("SGD/MYR", "3.4412", "+0.12%")
@@ -97,21 +102,22 @@ with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
     f4.metric("SGD/CNY", "5.3975", "-0.07%")
     f5.metric("SGD/USD", "0.7480", "-0.22%")
 
-# 8. COE Bidding Results
+# 8. COE Bidding
 with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
-    coe_data = [("Cat A", 111890, 3670, 1264, 1895, 133), ("Cat B", 115568, 1566, 812, 1185, -76), ("Cat C", 78000, 2000, 290, 438, -50), ("Cat D", 9589, 987, 546, 726, 83), ("Cat E", 118119, 3229, 246, 422, -92)]
+    coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
     coe_cols = st.columns(5)
-    for i, (cat, p, d, q, b, bd) in enumerate(coe_data):
-        b_cls, b_sym = ("up", "▲") if bd > 0 else ("down", "▼")
-        coe_cols[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:8px 0; opacity:0.1; border-color: var(--border-color);"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b><br><small class="{b_cls}">{b_sym} {abs(bd)}</small></div>""", unsafe_allow_html=True)
+    for i, (cat, p, d) in enumerate(coe_data):
+        coe_cols[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>""", unsafe_allow_html=True)
 
-# 9. Fuel Prices (Full Brand Integration)
-with st.expander("⛽ Fuel Prices (All Brands)", expanded=True):
+# 9. Fuel Prices (ORDERED DETAILS)
+with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
     f_cols = st.columns(5)
-    for i, ftype in enumerate(list(fuel_data.keys())):
-        avg = sum([v[0] for v in fuel_data[ftype].values()]) / len(fuel_data[ftype])
+    ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
+    for i, ftype in enumerate(ftypes):
+        prices = [v for v in fuel_data[ftype].values() if isinstance(v, (int, float))]
+        avg = sum(prices) / len(prices) if prices else 0
         f_cols[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-        if f_cols[i].button("Details", key=f"fbtn_full_{i}"):
+        if f_cols[i].button("Details", key=f"fbtn_v94_{i}"):
             show_fuel_details(ftype)
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
