@@ -4,6 +4,8 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator # RESTORED
 
+#Gold ver3
+
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 9.7", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="sync_97_tr")
