@@ -4,30 +4,37 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# 1. Page Config MUST be the first Streamlit command
-st.set_page_config(page_title="SG INFO MON 7.4", page_icon="🇸🇬", layout="wide")
+# 1. Page Config & Unlimited Vertical Space
+st.set_page_config(page_title="SG INFO MON 7.5", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="master_sync")
 
-# 2. CSS with High-Contrast Trend Colors
+# 2. CSS for Responsive Grids & Unlimited Height
 st.markdown("""
     <style>
-    .block-container {padding-top: 1.2rem !important;}
-    .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;}
-    .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:10px; border-radius:6px;}
+    /* Prevent vertical clipping */
+    .main .block-container { max-width: 95%; padding-top: 1rem; height: auto !important; }
+    
+    /* Time & Card Styling */
+    .time-card {background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center; margin-bottom:5px;}
+    .coe-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:12px; border-radius:6px; margin-bottom:10px; min-height:100px;}
     .fuel-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
-    .trend-up {color: #d32f2f; font-weight: bold; font-size: 0.9rem;} /* RED for increase */
-    .trend-down {color: #28a745; font-weight: bold; font-size: 0.9rem;} /* GREEN for decrease */
+    
+    /* Trend Indicators */
+    .trend-up {color: #d32f2f; font-weight: bold; font-size: 0.9rem;}
+    .trend-down {color: #28a745; font-weight: bold; font-size: 0.9rem;}
+    
+    /* News Styling */
     .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
     .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
+    
     @media (prefers-color-scheme: dark) { 
         .time-card, .coe-card {background:#262730; border-color:#444;}
         .fuel-card {background:#1e2630; border-color:#007bff;}
-        .news-tag {background:#444; color:#bbb;} .trans-box {color:#ffbaba;}
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LIVE DATA: March 23, 2026
+# 3. DATA: March 23, 2026
 fuel_trends = {
     "92 Octane": {"Esso": (3.43, 0.04), "Caltex": (3.43, 0.04), "SPC": (3.43, 0.00), "Cnergy": (3.40, -0.01), "SmartEnergy": (3.41, 0.01)},
     "95 Octane": {"Esso": (3.47, 0.04), "Shell": (3.47, 0.04), "Caltex": (3.47, 0.04), "SPC": (3.46, 0.02), "Sinopec": (3.47, 0.04), "Cnergy": (3.44, -0.02), "SmartEnergy": (3.45, -0.01)},
@@ -36,43 +43,34 @@ fuel_trends = {
     "Diesel": {"Esso": (3.73, -0.04), "Shell": (3.73, -0.04), "Caltex": (3.73, -0.04), "SPC": (3.56, -0.06), "Sinopec": (3.72, -0.05), "Cnergy": (3.45, -0.08), "SmartEnergy": (3.49, -0.07)}
 }
 
-# 4. Interactive Dialog with Color-Coded Trends
-@st.dialog("Fuel Brand Comparison (Live March 2026)")
+# 4. Brand Dialog Pop-up
+@st.dialog("Fuel Brand Comparison (Mar 2026)")
 def show_fuel_details(fuel_type):
-    st.subheader(f"📍 {fuel_type} Market Watch")
+    st.subheader(f"📍 {fuel_type} Breakdown")
     data = fuel_trends[fuel_type]
     col1, col2 = st.columns(2)
     for i, (brand, (price, change)) in enumerate(data.items()):
         target = col1 if i % 2 == 0 else col2
-        # Trend logic: Increase = Red (▲), Decrease = Green (▼)
-        if change > 0:
-            trend_html = f'<span class="trend-up">▲ +${change:.2f}</span>'
-        elif change < 0:
-            trend_html = f'<span class="trend-down">▼ -${abs(change):.2f}</span>'
-        else:
-            trend_html = '<span style="color:gray;">● Stable</span>'
-            
-        target.markdown(f"""
-            <div style="padding:10px; border-bottom:1px solid #ddd;">
-                <b style="font-size:1rem;">{brand}</b><br>
-                <span style="font-size:1.2rem; color:#007bff;">${price:.2f}</span><br>
-                {trend_html}
-            </div>
-            """, unsafe_allow_html=True)
+        trend = f'<span class="trend-up">▲ +${change:.2f}</span>' if change > 0 else (f'<span class="trend-down">▼ -${abs(change):.2f}</span>' if change < 0 else '<span style="color:gray;">● Stable</span>')
+        target.markdown(f'<div style="padding:10px; border-bottom:1px solid #ddd;"><b>{brand}</b><br><span style="font-size:1.2rem; color:#007bff;">${price:.2f}</span><br>{trend}</div>', unsafe_allow_html=True)
 
-# --- UI MAIN ---
-st.title("🇸🇬 Singapore Info Monitor 7.4")
+# --- UI START ---
+st.title("🇸🇬 Singapore Info Monitor 7.5")
 
-# World Times
-t_cols = st.columns(6)
-zones = [("Singapore","Asia/Singapore"), ("Bangkok","Asia/Bangkok"), ("Tokyo","Asia/Tokyo"), 
-         ("Jakarta","Asia/Jakarta"), ("Manila","Asia/Manila"), ("Brisbane","Australia/Brisbane")]
-for i, (c, z) in enumerate(zones):
-    t_cols[i].markdown(f'<div class="time-card"><div style="font-size:0.7rem;color:#ff4b4b;font-weight:bold;">{c}</div><div style="font-size:1.1rem;font-weight:bold;">{datetime.now(pytz.timezone(z)).strftime("%H:%M")}</div></div>', unsafe_allow_html=True)
+# Times (Grid: 3 cols x 2 rows for stability)
+st.write("### 🌍 Global Exchange Times")
+t_row1 = st.columns(3)
+t_row2 = st.columns(3)
+zones = [("Singapore SGT","Asia/Singapore"), ("Bangkok ICT","Asia/Bangkok"), ("Tokyo JST","Asia/Tokyo"), 
+         ("Jakarta WIB","Asia/Jakarta"), ("Manila PHT","Asia/Manila"), ("Brisbane AEST","Australia/Brisbane")]
+
+for i, (name, tz) in enumerate(zones):
+    target_col = t_row1[i] if i < 3 else t_row2[i-3]
+    target_col.markdown(f'<div class="time-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
 st.divider()
 
-# News Feed
+# News Section
 st.header("🗞️ Singapore Headlines")
 srcs = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
         "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
@@ -85,13 +83,13 @@ for n, u in srcs.items():
         if f.entries: unified.append({'n': n, 't': f.entries[0].title, 'l': f.entries[0].link})
     except: pass
 
-do_tr = st.checkbox("Translate (Simplified Chinese)")
+do_tr = st.checkbox("Enable Chinese Translation")
 trans_list = []
 if do_tr and unified:
     try:
         mega = "\n".join([x['t'] for x in unified])
         trans_list = GoogleTranslator(target='zh-CN').translate(mega).split("\n")
-    except: st.warning("Translation Service Busy")
+    except: st.warning("Translator limited.")
 
 for i, item in enumerate(unified):
     st.write(f"<span class='news-tag'>{item['n']}</span> **[{item['t']}]({item['l']})**", unsafe_allow_html=True)
@@ -100,31 +98,29 @@ for i, item in enumerate(unified):
 
 st.divider()
 
-# Market & COE (Fixed For-Loop Syntax)
-with st.expander("📊 Market & COE (Mar 2026)", expanded=True):
-    m_cols = st.columns(4)
-    m_cols[0].metric("STI Index", "4,841.30", "-2.2%")
-    m_cols[1].metric("Gold", "$4,400.00", "-8.8%")
-    m_cols[2].metric("USD/SGD", "1.277", "-0.4%")
-    m_cols[3].metric("CNY/SGD", "5.384", "+0.2%")
-    st.write("---")
-    
-    # Corrected Loop Syntax: Single line declaration
-    coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
-    c_cols = st.columns(len(coe_data))
-    for i, (cat, price, delta) in enumerate(coe_data):
-        c_cols[i].markdown(f'<div class="coe-card"><b>{cat}</b><br><span style="color:#d32f2f;font-weight:bold;">${price:,}</span><br><small>▲ ${delta:,}</small></div>', unsafe_allow_html=True)
+# MARKET & FOREX (Fixed Messy Layout)
+with st.expander("📊 Market & Forex Watch", expanded=True):
+    # Using 2 rows of 2 for better spacing
+    f1, f2 = st.columns(2)
+    f3, f4 = st.columns(2)
+    f1.metric("STI Index", "4,841.30", "-2.2%", delta_color="inverse")
+    f2.metric("Gold (Spot)", "$4,400.00", "-8.8%")
+    f3.metric("USD / SGD", "1.2770", "-0.4%")
+    f4.metric("CNY / SGD", "5.3842", "+0.2%")
 
-# Fuel Pop-up Launchers
-with st.expander("⛽ Fuel Prices (Brand Comparison Trends)", expanded=True):
+# COE RESULTS (Fixed Grid)
+with st.expander("🚘 COE Results (Mar 2026 2nd Bidding)", expanded=True):
+    # Use 3 columns for better fit
+    c1, c2, c3 = st.columns(3)
+    c4, c5, _ = st.columns(3)
+    coe_list = [
+        (c1, "Cat A", 111890, 3670), (c2, "Cat B", 115568, 1566), (c3, "Cat C", 78000, 2000),
+        (c4, "Cat D", 9589, 987), (c5, "Cat E", 118119, 3229)
+    ]
+    for col, cat, price, delta in coe_list:
+        col.markdown(f'<div class="coe-card"><b>{cat}</b><br><span style="color:#d32f2f;font-size:1.3rem;font-weight:bold;">${price:,}</span><br><small>▲ ${delta:,}</small></div>', unsafe_allow_html=True)
+
+# FUEL SECTION
+with st.expander("⛽ Fuel Prices (Interactive Trends)", expanded=True):
     f_cols = st.columns(5)
-    f_types = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-    for i, ftype in enumerate(f_types):
-        with f_cols[i]:
-            avg_p = sum([v[0] for v in fuel_trends[ftype].values()]) / len(fuel_trends[ftype])
-            st.markdown(f'<div class="fuel-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg_p:.2f}</span></div>', unsafe_allow_html=True)
-            if st.button(f"Analyze {ftype}", key=f"fbtn_{i}"):
-                show_fuel_details(ftype)
-
-st.divider()
-st.caption(f"Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | v7.4 Stable")
+    f_types = ["92 Octane", "9
