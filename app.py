@@ -1,28 +1,84 @@
 import streamlit as st
-import feedparser
-import requests
-import pytz
+import feedparser, requests, pytz
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 8.3", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_83")
+st.set_page_config(page_title="SG INFO MON 8.4", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_84")
 
-# 2. CSS Styling
+# 2. Adaptive CSS (Using var(--text-color) for automatic contrast)
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; }
-    .t-card {background:#f8f9fa; border:1px solid #ddd; padding:8px; border-radius:8px; text-align:center; margin-bottom:5px;}
-    .c-card {background:#f8f9fa; border-left:4px solid #ff4b4b; padding:12px; border-radius:6px; margin-bottom:10px; min-height:175px;}
-    .f-card {background:#f1f7ff; border:1px solid #007bff; padding:15px; border-radius:10px; text-align:center;}
-    .news-tag {font-size:0.65rem; background:#eee; padding:2px 4px; border-radius:3px; color:#666; margin-right:5px; font-weight:bold;}
-    .trans-box {font-size:0.85rem; color:#d32f2f; margin-left:55px; margin-top:-10px; margin-bottom:12px; font-style:italic;}
-    .up {color: #d32f2f !important; font-weight: bold;} 
-    .down {color: #28a745 !important; font-weight: bold;}
-    .stat-label {font-size: 0.75rem; color: #666; text-transform: uppercase;}
-    @media (prefers-color-scheme: dark) { .t-card, .c-card {background:#262730; border-color:#444;} .f-card {background:#1e2630;} }
+    /* Global Text Color Adaptation */
+    .main .block-container { 
+        max-width: 95%; 
+        color: var(--text-color); 
+    }
+    
+    /* Time Cards */
+    .t-card {
+        background: var(--secondary-background-color); 
+        border: 1px solid var(--border-color); 
+        padding: 8px; 
+        border-radius: 8px; 
+        text-align: center; 
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+
+    /* News Tags & Boxes */
+    .news-tag {
+        font-size: 0.65rem; 
+        background: var(--secondary-background-color); 
+        padding: 2px 4px; 
+        border-radius: 3px; 
+        color: var(--text-color); 
+        opacity: 0.8;
+        margin-right: 5px; 
+        font-weight: bold;
+        border: 1px solid var(--border-color);
+    }
+    .trans-box {
+        font-size: 0.85rem; 
+        color: #ff4b4b; /* Keeping red for visibility, but could use var(--primary-color) */
+        margin-left: 55px; 
+        margin-top: -10px; 
+        margin-bottom: 12px; 
+        font-style: italic;
+    }
+
+    /* COE Cards */
+    .c-card {
+        background: var(--secondary-background-color); 
+        border-left: 5px solid #ff4b4b; 
+        padding: 12px; 
+        border-radius: 6px; 
+        margin-bottom: 10px; 
+        min-height: 175px;
+        color: var(--text-color);
+    }
+    .stat-label {
+        font-size: 0.75rem; 
+        color: var(--text-color); 
+        opacity: 0.6;
+        text-transform: uppercase;
+    }
+
+    /* Trend Colors (Logic-based) */
+    .up { color: #ff4b4b !important; font-weight: bold; } 
+    .down { color: #28a745 !important; font-weight: bold; }
+
+    /* Fuel Cards */
+    .f-card {
+        background: var(--secondary-background-color); 
+        border: 1px solid #007bff; 
+        padding: 15px; 
+        border-radius: 10px; 
+        text-align: center;
+        color: var(--text-color);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -41,12 +97,12 @@ def show_fuel(ftype):
     cols = st.columns(2)
     for i, (brand, (p, c)) in enumerate(fuel_data[ftype].items()):
         tr = f'<span class="{"up" if c>0 else "down"}">{"▲" if c>0 else "▼"} ${abs(c):.2f}</span>' if c!=0 else "Stable"
-        cols[i%2].markdown(f'<div style="padding:10px; border-bottom:1px solid #ddd;"><b>{brand}</b><br><span style="color:#007bff; font-size:1.1rem;">${p:.2f}</span><br>{tr}</div>', unsafe_allow_html=True)
+        cols[i%2].markdown(f'<div style="padding:10px; border-bottom:1px solid var(--border-color); color: var(--text-color);"><b>{brand}</b><br><span style="color:#007bff; font-size:1.1rem;">${p:.2f}</span><br>{tr}</div>', unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 Singapore Info Monitor 8.3")
+st.title("🇸🇬 Singapore Info Monitor 8.4")
 
-# 4. Country Clocks (Verified Country Names)
+# 4. Country Clocks
 countries = [
     ("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), 
     ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), 
@@ -58,21 +114,21 @@ for i, (name, tz) in enumerate(countries):
 
 st.divider()
 
-# 5. News Section (1 Headline per Source for Unified)
+# 5. News Section (Balanced Unified: 1 Headline per Source)
 st.header("🗞️ Singapore Headlines")
 news_sources = {
     "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
     "Mothership": "https://mothership.sg/feed/",
     "8world News": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176",
-    "Shin Min Daily": "https://www.shinmin.sg/rss" # Fallback to standard SPH Chinese if specific RSS is down
+    "Shin Min Daily": "https://www.shinmin.sg/rss"
 }
 
 col_n1, col_n2 = st.columns([2, 1])
 with col_n1:
     view_mode = st.radio("View Mode:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only", "Shin Min Only"], horizontal=True)
 with col_n2:
-    do_tr = st.checkbox("Translate English to Chinese")
+    do_tr = st.checkbox("Translate (English to Chinese)")
 
 news_list = []
 if "Unified" in view_mode:
@@ -80,18 +136,17 @@ if "Unified" in view_mode:
         try:
             feed = feedparser.parse(requests.get(url, timeout=5).content)
             if feed.entries:
-                entry = feed.entries[0] # STRICT: ONLY THE #1 TOP STORY
+                entry = feed.entries[0]
                 news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
         except: pass
 else:
     src_key = view_mode.replace(" Only", "")
     try:
         feed = feedparser.parse(requests.get(news_sources[src_key], timeout=5).content)
-        for entry in feed.entries[:10]: # Individual views still show more
+        for entry in feed.entries[:10]:
             news_list.append({'src': src_key, 'title': entry.title, 'link': entry.link})
     except: pass
 
-# Translation (Only applied to non-Chinese sources if needed, but simple logic for all here)
 tr_list = []
 if do_tr and news_list:
     try: tr_list = GoogleTranslator(target='zh-CN').translate("\n".join([x['title'] for x in news_list])).split("\n")
@@ -99,30 +154,12 @@ if do_tr and news_list:
 
 for i, item in enumerate(news_list):
     st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-    if do_tr and i < len(tr_list):
-        # Only show translation if the source is likely English (CNA, ST, MS)
-        if item['src'] in ["CNA", "Straits Times", "Mothership"]:
-            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_list[i].strip()}</div>", unsafe_allow_html=True)
+    if do_tr and i < len(tr_list) and item['src'] in ["CNA", "Straits Times", "Mothership"]:
+        st.markdown(f"<div class='trans-box'>🇨🇳 {tr_list[i].strip()}</div>", unsafe_allow_html=True)
 
 st.divider()
 
-# 6. Market & Forex (As per previous request)
-with st.expander("📈 Market Indices & Commodities", expanded=True):
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("STI Index", "4,892.27", "-0.30%")
-    m2.metric("Gold (Spot)", "$4,202.90", "-8.04%")
-    m3.metric("Silver (Spot)", "$64.12", "-7.56%")
-    m4.metric("Brent Crude", "$113.13", "+0.84%")
-
-with st.expander("💱 Foreign Exchange (SGD Base)", expanded=True):
-    f1, f2, f3, f4, f5 = st.columns(5)
-    f1.metric("USD/SGD", "1.3369", "+0.22%")
-    f2.metric("CNY/SGD", "5.3975", "-0.07%")
-    f3.metric("MYR/SGD", "3.4412", "+0.12%")
-    f4.metric("JPY/SGD", "118.55", "-0.43%")
-    f5.metric("THB/SGD", "26.85", "+0.15%")
-
-# 7. COE Bidding Results
+# 6. COE Results
 with st.expander("🚗 COE Bidding (Mar 2026 2nd Round)", expanded=True):
     coe_data = [
         ("Cat A", 111890, 3670, 1264, 1895, 133),
@@ -138,16 +175,16 @@ with st.expander("🚗 COE Bidding (Mar 2026 2nd Round)", expanded=True):
         c_cols[i].markdown(f"""
             <div class="c-card">
                 <b>{cat}</b><br>
-                <span style="color:#d32f2f;font-size:1.1rem;font-weight:bold;">${p:,}</span><br>
+                <span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br>
                 <small class="up">▲ ${d:,}</small>
-                <hr style="margin:8px 0; opacity:0.1;">
+                <hr style="margin:8px 0; opacity:0.1; border-color: var(--border-color);">
                 <span class="stat-label">Quota:</span> <b>{q:,}</b><br>
                 <span class="stat-label">Bids:</span> <b>{b:,}</b><br>
                 <small class="{b_cls}">{b_sym} {abs(bd)}</small>
             </div>
             """, unsafe_allow_html=True)
 
-# 8. Fuel Prices
+# 7. Fuel Prices
 with st.expander("⛽ Fuel Prices", expanded=True):
     f_cols = st.columns(5)
     for i, ftype in enumerate(list(fuel_data.keys())):
