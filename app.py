@@ -89,7 +89,7 @@ for i, label in enumerate(fx_tickers.keys()):
 st.divider()
 
 # 8. News Section
-st.header("🇸🇬 Singapore Headline News")
+st.header("Singapore Headline News")
 st.info("News feeds update every 3 mins.")
 
 sources = {
