@@ -37,7 +37,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 4. Data Functions (Condensed)
+# 4. Data Functions
 def get_tz_time(zone_name):
     return datetime.now(pytz.timezone(zone_name)).strftime("%H:%M")
 
@@ -52,6 +52,13 @@ def get_market_data():
             data[label] = {"p": p, "d": p - t.fast_info['regular_market_previous_close']}
         except: data[label] = {"p": 0, "d": 0}
     return data
+
+def fetch_feed(name, url):
+    try:
+        res = requests.get(url, timeout=6)
+        feed = feedparser.parse(res.content)
+        return [{"source": name, "title": e.title, "link": e.link, "date": e.get('published', 'Recent')} for e in feed.entries]
+    except: return []
 
 # 5. UI Layout - Clocks & Markets
 st.title("Singapore Info Monitor 2.2")
@@ -68,13 +75,28 @@ for i, (l, k) in enumerate([("STI INDEX", "STI INDEX"), ("Gold", "Gold"), ("Silv
 
 st.divider()
 
-# 6. News Headlines
+# 6. Singapore Headline News
 st.header("🇸🇬 Singapore Headline News")
-# ... (Unified Feed Logic from 2.1) ...
-st.info("News Feed Syncing... (Refer to individual tabs for specific outlets)")
+sources = {
+    "The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
+    "Lianhe Zaobao": "https://www.zaobao.com.sg/rss/realtime/singapore",
+    "The Business Times": "https://www.businesstimes.com.sg/rss/singapore"
+}
 
-st.divider()
+tab1, tab2 = st.tabs(["📊 Unified Top 9", "📰 Individual Sources"])
 
-# 7. CURRENT COE STATS (With Quota Information)
-st.header("🚗 CURRENT COE STATS")
-st.caption("Latest Results: 2nd Bidding Exercise - March 202
+with tab1:
+    all_news = []
+    for name, url in sources.items(): all_news.extend(fetch_feed(name, url))
+    if all_news:
+        for item in all_news[:9]:
+            st.markdown(f"**{item['source']}**: [{item['title']}]({item['link']})")
+            st.caption(f"🕒 {item['date']}")
+            st.write("---")
+    else: st.info("Syncing News Feed...")
+
+with tab2:
+    sel = st.selectbox("Select Source", list(sources.keys()))
+    for item in fetch_feed(sel, sources[sel])[:5]:
+        st.markdown(f
