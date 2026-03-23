@@ -8,71 +8,87 @@ st.set_page_config(page_title="SG INFO MON 1.1", page_icon="🇸🇬", layout="w
 # 2. Adaptive CSS
 st.markdown("""
     <style>
-    .block-container { padding-top: 1rem; max-width: 1100px; }
-    .news-card { margin-bottom: 1.5rem; }
+    .block-container { padding-top: 1rem; max-width: 1200px; }
+    .source-tag { 
+        background-color: #ff4b4b; color: white; padding: 2px 8px; 
+        border-radius: 4px; font-size: 0.7rem; font-weight: bold; 
+        margin-right: 10px; vertical-align: middle;
+    }
+    .news-item { margin-bottom: 1.2rem; border-bottom: 1px solid #eeeeee33; padding-bottom: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Header & Top-Right Toggle
+# 3. Header & UI Toggle
 col_title, col_mode = st.columns([4, 1])
 with col_title:
     st.title("Singapore Info Monitor 1.1")
 with col_mode:
     st.selectbox("Mode", ["Default", "Light", "Dark"], label_visibility="collapsed")
 
-st.write(f"**System Status:** Online | {datetime.now().strftime('%H:%M:%S')} SGT")
 st.divider()
 
-# 4. Enhanced News Function with Keyword Filtering
-def get_news(url, limit=5, filter_keyword=None):
+# 4. News Processing Engine
+def fetch_news(name, url):
     try:
         feed = feedparser.parse(url)
-        entries = feed.entries
-        
-        if filter_keyword:
-            # Filter entries where keyword is in title or description (case-insensitive)
-            filtered = [
-                e for e in entries 
-                if filter_keyword.lower() in e.title.lower() or 
-                (hasattr(e, 'summary') and filter_keyword.lower() in e.summary.lower())
-            ]
-            return filtered[:limit]
-        
-        return entries[:limit]
-    except Exception:
+        results = []
+        for entry in feed.entries:
+            results.append({
+                "source": name,
+                "title": entry.title,
+                "link": entry.link,
+                "date": entry.get('published', 'Recently')
+            })
+        return results
+    except:
         return []
 
-# 5. Panel 1: Singapore Headline News
-st.header("Singapore Headline News")
+# Define Sources (SPH & Mediacorp)
+sources = {
+    "The Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
+    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
+    "Lianhe Zaobao": "https://www.zaobao.com.sg/rss/realtime/singapore",
+    "The Business Times": "https://www.businesstimes.com.sg/rss/singapore",
+    "Berita Harian": "https://www.beritaharian.sg/rss/singapura",
+    "Tamil Murasu": "https://www.tamilmurasu.com.sg/rss/singapore",
+    "Shin Min Daily": "https://www.shinmin.sg/rss/news"
+}
 
-tab_cna, tab_zb, tab_cnn = st.tabs(["CNA", "Lianhe Zaobao", "CNN (Filtered)"])
+# 5. Main Panels
+tab_combined, tab_individual = st.tabs(["📊 Unified Top 9 Headlines", "📰 Source Specific (Top 5)"])
 
-with tab_cna:
-    items = get_news("https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416")
-    for e in items:
-        st.markdown(f"### [{e.title}]({e.link})")
-        st.caption(f"🕒 {e.published if 'published' in e else 'Recent'}")
+# Collect all news for the Unified view
+all_news = []
+for name, url in sources.items():
+    all_news.extend(fetch_news(name, url))
 
-with tab_zb:
-    items = get_news("https://www.zaobao.com.sg/rss/realtime/singapore")
-    for e in items:
-        st.markdown(f"### [{e.title}]({e.link})")
-        st.caption(f"📅 {e.published if 'published' in e else '最新'}")
-
-with tab_cnn:
-    # CNN World RSS
-    cnn_url = "http://rss.cnn.com/rss/edition_world.rss"
-    # We filter specifically for "Singapore"
-    items = get_news(cnn_url, filter_keyword="Singapore")
-    
-    if items:
-        st.subheader("Global Perspective on Singapore")
-        for e in items:
-            st.markdown(f"### [{e.title}]({e.link})")
-            st.caption(f"🌍 CNN World | {e.published if 'published' in e else ''}")
+with tab_combined:
+    st.subheader("Latest Across All Singapore Media")
+    # Take the top 9 from the combined list
+    top_9 = all_news[:9]
+    if top_9:
+        for item in top_9:
+            st.markdown(f"""
+            <div class="news-item">
+                <span class="source-tag">{item['source']}</span>
+                <strong><a href="{item['link']}" style="text-decoration:none;">{item['title']}</a></strong>
+                <br><small>🕒 {item['date']}</small>
+            </div>
+            """, unsafe_allow_html=True)
     else:
-        st.info("No Singapore-specific news found on CNN World in the last 24 hours.")
+        st.info("Aggregating latest news... please refresh in a moment.")
+
+with tab_individual:
+    # Let user pick the specific source to see Top 5
+    source_choice = st.radio("Select News Source:", list(sources.keys()), horizontal=True)
+    st.write(f"### Top 5 Headlines from {source_choice}")
+    
+    source_news = fetch_news(source_choice, sources[source_choice])
+    for item in source_news[:5]:
+        st.markdown(f"**[{item['title']}]({item['link']})**")
+        st.caption(f"Published: {item['date']}")
+        st.write("---")
 
 # 6. Footer
 st.divider()
-st.caption("Version 1.2 | Multi-Source News Monitor")
+st.caption(f"Sync: {datetime.now().strftime('%H:%M:%S')} SGT | Sources: SPH Media, Mediacorp")
