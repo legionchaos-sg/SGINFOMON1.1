@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # 1. Page Config
-st.set_page_config(page_title="SG INFO MON 3.4", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SG INFO MON 3.5", page_icon="🇸🇬", layout="wide")
 
 # 2. Auto-Refresh (3 mins)
 st_autorefresh(interval=3 * 60 * 1000, key="global_monitor_refresh")
@@ -54,7 +54,7 @@ def fetch_news(url):
     except: return None
 
 # --- UI START ---
-st.title("Singapore Info Monitor 3.4")
+st.title("Singapore Info Monitor 3.5")
 
 # 5. REGIONAL CLOCKS
 t_cols = st.columns(6)
@@ -75,19 +75,22 @@ for i, (line, status) in enumerate(train_lines.items()):
 
 st.write("")
 
-# 7. COMBINED: MARKETS, COE & FOREX
+# 7. COMBINED: MARKETS (STI, Gold, Silver, Crude), COE & FOREX
 with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
-    # A. Markets
-    m_data = get_financial_data({"Gold": "GC=F", "Crude": "CL=F", "STI": "^STI"})
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Gold Price", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
-    m2.metric("Crude Oil", f"${m_data['Crude']['p']:,.2f}", f"{m_data['Crude']['change']:+.2f}")
-    m3.metric("STI INDEX", f"{m_data['STI']['p']:,.2f}", f"{m_data['STI']['change']:+.2f}")
+    # A. Market Data Ordered: STI, Gold, Silver, Crude
+    m_tickers = {"STI Index": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Crude Oil": "CL=F"}
+    m_data = get_financial_data(m_tickers)
+    
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("STI Index", f"{m_data['STI Index']['p']:,.2f}", f"{m_data['STI Index']['change']:+.2f}")
+    m2.metric("Gold", f"${m_data['Gold']['p']:,.2f}", f"{m_data['Gold']['change']:+.2f}")
+    m3.metric("Silver", f"${m_data['Silver']['p']:,.2f}", f"{m_data['Silver']['change']:+.2f}")
+    m4.metric("Crude Oil", f"${m_data['Crude Oil']['p']:,.2f}", f"{m_data['Crude Oil']['change']:+.2f}")
     
     st.markdown("---")
     
     # B. COE Premiums
-    st.write("**Latest COE Results**")
+    st.write("**Latest COE Results (Mar 2026)**")
     coe_cols = st.columns(5)
     coe_list = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
     for i, (cat, price) in enumerate(coe_list):
@@ -104,7 +107,7 @@ with st.expander("📊 Markets, COE & Forex Overview", expanded=True):
 
 st.divider()
 
-# 8. NEWS SECTION (RE-STRUCTURED)
+# 8. NEWS SECTION (RESTORED SOURCES)
 st.header("🇸🇬 Singapore Headline News")
 sources = {
     "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml",
