@@ -5,5 +5,6 @@ feedparser
 streamlit-autorefresh
 PYTZ
 yfinance
+deep-translator
 
 
