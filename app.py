@@ -3,14 +3,14 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-# Page Config
+# 1. Page Config
 st.set_page_config(
     page_title="SG INFO MON 1.1",
     page_icon="🇸🇬",
     layout="wide"
 )
 
-# Custom CSS for a clean look
+# 2. Custom CSS (Fixed Syntax)
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
@@ -18,84 +18,62 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Header
+# 3. Header
 st.title("🇸🇬 Singapore Info Monitor 1.1")
-st.caption(f"Real-time Data Dashboard | Last System Check: {datetime.now().strftime('%d %b %Y, %H:%M:%S')}")
+st.caption(f"Real-time Data | Last System Check: {datetime.now().strftime('%d %b %Y, %H:%M:%S')}")
 
-# --- Data Fetching Functions ---
+# 4. Data Functions
 def get_weather():
     try:
         url = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast"
-        response = requests.get(url)
-        return response.json()['items'][0]['forecasts']
+        res = requests.get(url, timeout=5)
+        return res.json()['items'][0]['forecasts']
     except:
         return None
 
-def get_psi(): # --- Data Fetching Functions ---
-    try:
-        url = "https://api.data.gov.sg/v1/environment/psi"
-        response = requests.get(url)
-        # Pull the national PSI value
-        val = response.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
-        return int(val) # Convert to number here
-    except Exception:
-        return None # Return None if something goes wrong
-
-# ... (down in the layout section) ...
-
-# --- Data Fetching Functions ---
 def get_psi():
     try:
         url = "https://api.data.gov.sg/v1/environment/psi"
-        response = requests.get(url)
-        # Pull the national PSI value
-        val = response.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
-        return int(val) # Convert to number here
-    except Exception:
-        return None # Return None if something goes wrong
+        res = requests.get(url, timeout=5)
+        val = res.json()['items'][0]['readings']['psi_twenty_four_hourly']['national']
+        return int(val)
+    except:
+        return None
 
-# ... (down in the layout section) ...
+# 5. Layout (Defining the columns clearly)
+col_left, col_right = st.columns([1, 2])
 
-with col_a:
-    st.subheader("📡 Environment Status")
+with col_left:
+    st.subheader("📡 Environment")
     psi_val = get_psi()
-    
     if psi_val is not None:
         status = "Healthy" if psi_val < 50 else "Moderate"
         st.metric(label="24h PSI (National)", value=psi_val, delta=status)
     else:
-        st.metric(label="24h PSI (National)", value="Offline", delta="Sensor Issue")
-
-# --- Layout ---
-col_a, col_b = st.columns([1, 2])
-
-with col_a:
-    st.subheader("📡 Environment Status")
-    psi_val = get_psi()
-    st.metric(label="24h PSI (National)", value=psi_val, delta="Healthy" if int(psi_val) < 50 else "Moderate")
+        st.metric(label="24h PSI (National)", value="Offline", delta="API Error")
     
     st.write("---")
-    st.info("💡 **Tip:** This dashboard is portable. To run locally, use `streamlit run app.py` after installing requirements.")
+    st.info("💡 **Portable Build:** This app is running via GitHub + Streamlit Cloud.")
 
-with col_b:
+with col_right:
     st.subheader("🌦️ 2-Hour Weather Forecast")
     weather_data = get_weather()
     if weather_data:
         df = pd.DataFrame(weather_data)
-        # Displaying a selection of key areas
-        key_areas = ["Orchard", "Changi", "Tuas", "Woodlands", "Ang Mo Kio"]
+        # Show key areas in a grid
+        key_areas = ["Orchard", "Changi", "Tuas", "Woodlands"]
         display_df = df[df['area'].isin(key_areas)]
         
-        cols = st.columns(len(key_areas))
+        m_cols = st.columns(len(key_areas))
         for i, area in enumerate(key_areas):
             forecast = display_df[display_df['area'] == area]['forecast'].values[0]
-            cols[i].metric(area, forecast)
+            m_cols[i].metric(area, forecast)
             
-        with st.expander("Show All Areas"):
+        with st.expander("View All Singapore Areas"):
             st.dataframe(df, use_container_width=True)
     else:
-        st.error("Weather API currently unavailable.")
+        st.error("Weather data currently unavailable.")
 
-# Footer
+# 6. Footer
 st.markdown("---")
 st.markdown("Data Source: [data.gov.sg](https://data.gov.sg)")
