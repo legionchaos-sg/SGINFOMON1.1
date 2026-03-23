@@ -1,70 +1,84 @@
+‎app.py‎
++2
+Lines changed: 2 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+@@ -1,73 +1,75 @@
 import streamlit as st
-import pytz
+import feedparser, requests, pytz
+import pandas as pd
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
+from deep_translator import GoogleTranslator
 
-# --- TAB 2 INDEPENDENT LOGIC ---
-# Using @st.fragment ensures interactions here don't reset Tab 1
-@st.fragment(run_every="300s") # Auto-refresh Tab 2 every 5 mins for outages
-def render_public_services_tab():
-    st.header("🏢 SG PUBLIC SERVICES")
-    
-    # 1. INTERNET SERVICE STATUS
-    st.subheader("🌐 Internet Service Status (By Provider)")
-    
-    # Live data state for March 23, 2026
-    isp_data = {
-        "Provider": ["Singtel", "M1", "StarHub", "Simba", "SPTel"],
-        "Uptime": [94.5, 99.8, 99.5, 96.2, 100.0],
-        "Status": ["Investigating", "Stable", "Stable", "Degraded", "Stable"]
-    }
-    
-    col_left, col_right = st.columns([1, 1])
-    
-    with col_left:
-        for i, provider in enumerate(isp_data["Provider"]):
-            uptime = isp_data["Uptime"][i]
-            status = isp_data["Status"][i]
-            # Color coding based on status
-            s_color = "red" if uptime < 95 else "orange" if uptime < 98 else "#28a745"
-            
-            st.markdown(f"**{provider}** — <span style='color:{s_color}; font-weight:bold;'>{status}</span>", unsafe_allow_html=True)
-            st.progress(uptime/100)
+#TAB2 WITH INTERNET SERVICE 
+# 1. Page Configuration
+st.set_page_config(page_title="SG INFO MON 11.0", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_110_stable")
 
-    with col_right:
-        st.markdown("<b>📅 Daily Outage Tracker (Mar 23)</b>", unsafe_allow_html=True)
-        # Detailed log of today's incidents
-        outages = [
-            ("15:42", "Singtel", "CRITICAL: 9,800+ reports. International routing 'optimisation' issue. Resolved in 15m but latency persists."),
-            ("14:30", "Simba", "Intermittent 4G/5G drops reported in Jurong East/West districts."),
-            ("09:15", "StarHub", "Broadband latency reported in Tampines. Resolved by 10:45."),
-        ]
-        for time, isp, desc in outages:
-            # Highlight Singtel specifically as requested
-            border_color = "#ff4b4b" if isp == "Singtel" else "#444"
-            st.markdown(f"""
-                <div style="background:#1e1e1e; border-left:4px solid {border_color}; padding:12px; margin-bottom:8px; border-radius:4px;">
-                    <span style="color:#888; font-size:0.8rem;">⏰ {time}</span> | <b>{isp}</b><br>
-                    <span style="font-size:0.9rem;">{desc}</span>
-                </div>
-            """, unsafe_allow_html=True)
+# 2. Adaptive CSS
+st.markdown("""
+    <style>
+    .main .block-container { max-width: 95%; color: var(--text-color); }
+    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
+    .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
+    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
+    .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
+    .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
+    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
+    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
+    .status-up { color: #28a745; font-weight: bold; }
+    .status-down { color: #ff4b4b; font-weight: bold; }
+    
+    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
+    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 3. Logic Functions
+def get_upcoming_holiday():
+    sg_tz = pytz.timezone('Asia/Singapore')
+    now = datetime.now(sg_tz).date()
+    holidays_2026 = [("New Year's Day", datetime(2026, 1, 1).date()), ("Chinese New Year", datetime(2026, 2, 17).date()), ("Hari Raya Puasa", datetime(2026, 3, 21).date()), ("Good Friday", datetime(2026, 4, 3).date()), ("Labour Day", datetime(2026, 5, 1).date()), ("Hari Raya Haji", datetime(2026, 5, 27).date()), ("Vesak Day", datetime(2026, 5, 31).date()), ("National Day", datetime(2026, 8, 9).date()), ("Deepavali", datetime(2026, 11, 8).date()), ("Christmas Day", datetime(2026, 12, 25).date())]
+    for name, h_date in holidays_2026:
+        if h_date >= now:
+            return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
+    return ""
+
+fuel_data = {
+    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
+    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05), "Cnergy": (2.80, 0.05), "Sinopec": (3.97, 0.05), "Smart Energy": (2.99, -0.12)},
+    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
+}
+
+# --- UI START ---
+st.title("🇸🇬 SG Info Monitor 11.0")
+
+tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
+
+with tab1:
+    # 1. Clocks
+    t_cols = st.columns(6)
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
     st.divider()
-    
-    # 2. GOVT SERVICES QUICK LINKS
-    ps_c1, ps_c2, ps_c3 = st.columns(3)
-    with ps_c1:
-        st.markdown('### 🔐 Identity\n* [Singpass](https://www.singpass.gov.sg)\n* [CPF Board](https://www.cpf.gov.sg)\n* [IRAS](https://www.iras.gov.sg)')
-    with ps_c2:
-        st.markdown('### 🏠 Living\n* [HDB InfoWEB](https://www.hdb.gov.sg)\n* [HealthHub](https://www.healthhub.sg)\n* [ICA](https://www.ica.gov.sg)')
-    with ps_c3:
-        st.markdown('### 🚆 Utilities\n* [OneMotoring](https://www.lta.gov.sg)\n* [SP Group](https://www.spgroup.com.sg)\n* [NEA Weather](https://www.nea.gov.sg)')
 
-    st.error("🚨 **Emergency:** Police 999 | SCDF 995 | Non-Emergency 1777")
+    # 2. News & Holidays
+    holiday_info = get_upcoming_holiday()
+    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
 
-# --- INTEGRATION INTO MAIN TABS ---
-# Inside your existing tab setup:
-# tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
-# with tab1:
-#     render_tab1_content() # Your original Tab 1 code remains untouched
-# with tab2:
-#     render_public_services_tab() # This calls the fragment above
+    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
+    headers = {'User-Agent': 'Mozilla/5.0'}
+
+    nc1, nc2 = st.columns([2, 1])
+    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
+0 commit comments
+Comments
+0
+ (0)
+Comment
