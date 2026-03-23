@@ -4,3 +4,6 @@ requests
 feedparser
 streamlit-autorefresh
 PYTZ
+yfinance
+
+
