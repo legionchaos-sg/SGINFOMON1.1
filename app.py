@@ -1,70 +1,53 @@
 import streamlit as st
-import pandas as pd
-import requests
 from datetime import datetime
 
-# 1. Page Config (Keeps the emoji in the browser tab ONLY)
+# 1. Page Config
 st.set_page_config(
     page_title="SG INFO MON 1.1",
     page_icon="🇸🇬",
     layout="wide"
 )
 
-# 2. Custom CSS (Cleaner & Professional)
+# 2. Adaptive CSS 
 st.markdown("""
     <style>
-    .block-container { padding-top: 2rem; }
-    .stMetric { background-color: #ffffff; border: 1px solid #eeeeee; padding: 15px; border-radius: 8px; }
+    /* Remove extra space at top */
+    .block-container { padding-top: 1rem; max-width: 1200px; }
+    
+    /* Small styling for the toggle area */
+    div[data-testid="stColumn"] {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Header (Cleaned Title - No Emoji)
-st.title("Singapore Info Monitor 1.1")
-st.caption(f"Last Sync: {datetime.now().strftime('%H:%M:%S')} SGT")
+# 3. Header & Top Right Toggle
+# We create two columns: one for the Title, one for the Mode
+col_title, col_mode = st.columns([3, 1])
 
-# 4. Data Functions (Improved PSI Logic)
-def get_psi():
-    try:
-        url = "https://api.data.gov.sg/v1/environment/psi"
-        res = requests.get(url, timeout=5)
-        data = res.json()
-        # In 2026, we drill down carefully into the JSON layers
-        val = data['items'][0]['readings']['psi_twenty_four_hourly']['national']
-        return int(val)
-    except Exception as e:
-        return None
+with col_title:
+    st.title("Singapore Info Monitor 1.1")
 
-def get_weather():
-    try:
-        url = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast"
-        res = requests.get(url, timeout=5)
-        return res.json()['items'][0]['forecasts']
-    except:
-        return None
+with col_mode:
+    # This creates a small dropdown in the top right
+    theme = st.selectbox(
+        "Display Mode",
+        ["Default", "Light", "Dark"],
+        label_visibility="collapsed" # Hides the label for a cleaner look
+    )
 
-# 5. Layout
-col_left, col_right = st.columns([1, 2])
+st.write(f"**System Status:** Online | {datetime.now().strftime('%H:%M:%S')} SGT")
+st.divider()
 
-with col_left:
-    st.subheader("Environment")
-    psi = get_psi()
-    if psi:
-        color = "normal" if psi < 50 else "off"
-        st.metric(label="National PSI (24h)", value=psi, delta="Healthy" if psi < 50 else "Moderate")
-    else:
-        st.info("PSI Data currently updating...")
+# 4. Logic for the Toggle (Informational)
+if theme == "Dark":
+    st.warning("🌙 **Dark Mode Tip:** Streamlit's engine follows your Browser/System. To force Dark Mode, go to Settings > Theme > Dark.")
+elif theme == "Light":
+    st.info("☀️ **Light Mode Tip:** Go to Settings > Theme > Light to keep this look permanently.")
+else:
+    st.success("🏗️ **Adaptive Mode:** Your app is currently following your system's look.")
 
-with col_right:
-    st.subheader("Weather Forecast")
-    weather = get_weather()
-    if weather:
-        df = pd.DataFrame(weather)
-        # Showing key hubs
-        hubs = ["Orchard", "Changi", "Tuas", "Woodlands"]
-        m_cols = st.columns(len(hubs))
-        for i, area in enumerate(hubs):
-            row = df[df['area'] == area]
-            if not row.empty:
-                m_cols[i].metric(area, row['forecast'].values[0])
-    else:
-        st.warning("Awaiting Weather API response...")
+# 5. Footer
+st.caption("Version 1.1 | Top-Right UI Layout")
