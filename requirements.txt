@@ -6,5 +6,6 @@ streamlit-autorefresh
 PYTZ
 yfinance
 deep-translator
-
+numpy
+scikit-learn
 
