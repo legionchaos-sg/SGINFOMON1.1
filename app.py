@@ -1,14 +1,17 @@
 import streamlit as st
 import feedparser, requests, pytz
+import pandas as pd
+import numpy as np
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
+from sklearn.linear_model import LinearRegression # Integrated for Tab 3
 
-# SG INFO MONITOR - Version 10.9.4 (gold 10 - Economic Update)
+# SG INFO MONITOR - Version 11.0.1 (gold 10 - ML Integration)
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_109_stable")
+st.set_page_config(page_title="SG INFO MON 11.0", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=180000, key="sync_110_stable")
 
 # 2. Adaptive CSS
 st.markdown("""
@@ -41,16 +44,6 @@ def get_upcoming_holiday():
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
-def fetch_nea_live(endpoint):
-    try:
-        url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoint}"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get('data', {}).get('items', [{}])[0]
-    except: return None
-    return None
-
 fuel_data = {
     "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
     "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
@@ -72,7 +65,7 @@ def show_fuel_details(ftype):
 
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
+tab1, tab2, tab3 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🧪 PMT - Prediction Model Trial"])
 
 with tab1:
     # 1. Clocks
@@ -123,7 +116,7 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets & Commodities (UPDATED: Added CPI and Inflation)
+    # 3. Markets & Commodities (Preserved: Inflation & CPI)
     with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
         m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
         m1.metric("STI Index", "4,841.30", "-2.20%")
@@ -131,9 +124,8 @@ with tab1:
         m3.metric("Silver (Spot)", "$64.63", "-6.11%")
         m4.metric("Brent Crude", "$112.61", "+0.40%")
         m5.metric("Natural Gas", "$3.09", "-2.21%")
-        # New Indices Added for 2026
-        m6.metric("SG CPI Index", "116.4", "+0.2%", help="Consumer Price Index (Base 2019=100)")
-        m7.metric("SG Inflation", "3.20%", "-0.15%", help="Core Inflation Year-on-Year")
+        m6.metric("SG CPI Index", "116.4", "+0.2%")
+        m7.metric("SG Inflation", "3.20%", "-0.15%")
 
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
@@ -243,7 +235,7 @@ with tab2:
                 <span style="font-weight: bold; color: #007bff;">[{inc['time']}] {inc['expressway']}</span> — {inc['msg']}
             </div>""", unsafe_allow_html=True)
 
-    # --- 5. Island Weather (LIVE NEA V2 INTEGRATION) ---
+    # --- 5. Island Weather Forecast ---
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
         def get_nea_data(path):
             try:
@@ -276,9 +268,56 @@ with tab2:
 
         temp_readings = t_data.get('items', [{}])[0].get('readings', [])
         current_temp = temp_readings[0].get('value', 31.0) if temp_readings else 31.0
-
         st.info(f"**Current for {selected_estate}:** {area_forecast} | **Temp:** {current_temp}°C | **PSI:** {psi_val}")
 
-    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA Open Data. Refresh every 3 mins.")
+# --- NEW TAB 3: PMT - Prediction Model Trial (Scikit-Learn Integration) ---
+with tab3:
+    st.header("🧪 PMT - ML Prediction Trial")
+    
+    # 1. Selection Menu
+    category = st.selectbox("Select Prediction Target:", 
+                            ["Currency (USD/SGD)", "Stock Market (STI)", "Singapore 4D"])
+    
+    # 2. Mock Data Generator (Simulating Historical Data for 2026)
+    days_back = 30
+    dates = pd.date_range(end=datetime.now(), periods=days_back)
+    
+    if category == "Currency (USD/SGD)":
+        # Trend: SGD strengthening (1.30 down to 1.27 in March 2026)
+        y = np.linspace(1.30, 1.27, days_back) + np.random.normal(0, 0.002, days_back)
+        label, unit = "Exchange Rate", "SGD"
+    elif category == "Stock Market (STI)":
+        # Trend: Growth toward 4841
+        y = np.linspace(4500, 4841, days_back) + np.random.normal(0, 20, days_back)
+        label, unit = "Index Value", "Points"
+    else:
+        # 4D: Random seq for trial
+        y = np.random.randint(0, 9999, days_back)
+        label, unit = "Winning Number", "Value"
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
+    X = np.array(range(days_back)).reshape(-1, 1) # Features (Days)
+
+    # 3. Model Training
+    model = LinearRegression()
+    model.fit(X, y)
+    
+    # 4. Future Prediction
+    next_day = np.array([[days_back + 1]])
+    prediction = model.predict(next_day)[0]
+    
+    # 5. Dashboard Output
+    col_l, col_r = st.columns([1, 1])
+    with col_l:
+        st.subheader("Model Prediction Output")
+        disp_val = f"{prediction:.4f}" if "Currency" in category else f"{int(prediction)}"
+        st.metric(f"Projected {category}", f"{disp_val} {unit}")
+        st.write(f"**Reliability Score:** {'Low' if '4D' in category else 'Moderate'}")
+        
+    with col_r:
+        st.subheader("Training Data Viz")
+        chart_df = pd.DataFrame({'Historical': y, 'Trendline': model.predict(X)})
+        st.line_chart(chart_df)
+
+    st.caption("Note for gold 10: This model applies Linear Regression to identify momentum. 4D is purely random.")
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | Identification: gold 10")
