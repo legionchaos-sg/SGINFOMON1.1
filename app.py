@@ -286,13 +286,13 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
 
-    for adv in advisories:
-        color = "#fff3cd" if adv['status'] == "In Progress" else "#f8f9fa"
-        st.markdown(f"""
-            <div style="background-color: {color}; border: 1px solid #ddd; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                <span style="font-weight: bold; color: #333;">{adv['line']} - {adv['impact']}</span>
-                <p style="font-size: 0.85rem; margin: 4px 0;">{adv['details']}</p>
-            </div>
+    #for adv in advisories:
+    #    color = "#fff3cd" if adv['status'] == "In Progress" else "#f8f9fa"
+    #    st.markdown(f"""
+    #        <div style="background-color: {color}; border: 1px solid #ddd; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+    #            <span style="font-weight: bold; color: #333;">{adv['line']} - {adv['impact']}</span>
+    #            <p style="font-size: 0.85rem; margin: 4px 0;">{adv['details']}</p>
+    #        </div>
         """, unsafe_allow_html=True)
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
