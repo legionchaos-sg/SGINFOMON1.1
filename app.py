@@ -215,6 +215,32 @@ with tab2:
                 </div>
             """, unsafe_allow_html=True)
 
+    st.divider()
+    st.subheader("🚆 Rail Service & Maintenance Monitor")
+
+    # 1. MRT/LRT Line Status Grid
+    # We use columns to show the "Health" of each line
+    line_cols = st.columns(6)
+    lines = [
+        {"name": "EWL", "status": "Normal", "color": "#009530"},
+        {"name": "NSL", "status": "Normal", "color": "#d42e12"},
+        {"name": "NEL", "status": "Normal", "color": "#744199"},
+        {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, # Advisory for Tunnel Works
+        {"name": "DTL", "status": "Normal", "color": "#005ec4"},
+        {"name": "TEL", "status": "Normal", "color": "#9d5b25"}
+    ]
+
+    for i, line in enumerate(lines):
+        with line_cols[i]:
+            status_icon = "✅" if line['status'] == "Normal" else "⚠️"
+            st.markdown(f"""
+                <div style="background-color: {line['color']}; padding: 10px; border-radius: 5px; text-align: center; color: white; height: 80px;">
+                    <div style="font-size: 0.75rem; font-weight: bold;">{line['name']}</div>
+                    <div style="font-size: 1.1rem;">{status_icon}</div>
+                    <div style="font-size: 0.65rem;">{line['status']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
