@@ -172,4 +172,4 @@ with tab2:
     ps_c1, ps_c2, ps_c3 = st.columns(3)
     
     with ps_c1:
-        st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https
+        st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
