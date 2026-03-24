@@ -330,7 +330,7 @@ with tab3:
         st.metric("Sentiment", f"{score}%", "Active")
         if score < 40: st.error("🚨 SELL SIGNAL")
 
-    st.divider()
+    #st.divider()
 
     # 3. INTERACTIVE TRIGGER
     pair = st.selectbox("Pair:", list(rates.keys()), key="live_final")
