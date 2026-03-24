@@ -4,7 +4,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Weather & Traffic Update 10.9.5 (Wide Mode & Section Relocation)
+# SG INFO MONITOR - Weather & Traffic Update 10.9.6 (Added Inflation & CPI)
 
 # 1. Page Configuration - FORCED WIDE
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
@@ -104,14 +104,17 @@ with tab1:
 
         st.divider()
 
-        # 3. Markets & COE
-        with st.expander("📈 Market Indices & Forex", expanded=True):
-            m1, m2, m3, m4, m5 = st.columns(5)
+        # 3. Markets, Forex & Economic Indices (REVISED SECTION)
+        with st.expander("📈 Market Indices & Economic Data", expanded=True):
+            m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
             m1.metric("STI Index", "4,841.30", "-2.20%")
             m2.metric("Gold", "$4,391.00", "+1.66%")
             m3.metric("SGD/MYR", "3.4412", "+0.12%")
             m4.metric("SGD/USD", "0.7480", "-0.22%")
-            m5.metric("Brent Crude", "$112.61", "+0.40%")
+            # New Economic Metrics
+            m5.metric("SG Inflation", "2.10%", "-0.30%", help="Singapore Annual Inflation Rate")
+            m6.metric("SG CPI Index", "116.40", "+0.05", delta_color="inverse", help="Consumer Price Index")
+            m7.metric("Brent Crude", "$112.61", "+0.40%")
 
         with st.expander("🚗 COE Bidding Results", expanded=True):
             coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
@@ -129,7 +132,7 @@ with tab1:
                 fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
                 if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
 
-        # 5. NEW LOCATION: Network & Connectivity Status
+        # 5. Network & Connectivity Status (Relocated to Tab 1)
         with st.expander("🌐 Internet & Mobile Connectivity (Live Monitor)", expanded=False):
             providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
             uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
