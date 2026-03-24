@@ -306,20 +306,6 @@ with tab3:
 # ==========================================
 # UPDATED CSS: Global Font Reduction (-10pt)
 # ==========================================
-st.markdown("""
-    <style>
-    html, body, [class*="css"], .stMarkdown, p, span, div { 
-        font-size: 0.85rem !important; /* Reduced from standard ~1.0rem */
-    }
-    .main .block-container { max-width: 92%; padding-top: 1rem; }
-    h1 { font-size: 1.4rem !important; }
-    h2 { font-size: 1.1rem !important; }
-    h3 { font-size: 0.9rem !important; }
-    .stMetric label { font-size: 0.65rem !important; }
-    .stMetric div { font-size: 0.9rem !important; }
-    .svc-card, .c-card, .f-card { padding: 5px !important; margin-bottom: 3px !important; }
-    </style>
-    """, unsafe_allow_html=True)
 
 # ... (Tab 1 and Tab 2 remain fully intact above) ...
 
