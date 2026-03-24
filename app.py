@@ -4,13 +4,13 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - GOLD VERSION 10.0 (STABLE RESTORED)
+# SG INFO MONITOR - GOLD VERSION 10.0 (STABLE)
 
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.0", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_10_gold_revert")
+st_autorefresh(interval=180000, key="sync_10_gold")
 
-# 2. Adaptive CSS (Ver 10 Original)
+# 2. Adaptive CSS (Preserved)
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
@@ -71,7 +71,7 @@ def show_fuel_details(ftype):
 st.title("🇸🇬 SG Info Monitor 10.0 (GOLD)")
 tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
 
-# TAB 1: FULL RESTORE
+# TAB 1: PRESERVED
 with tab1:
     t_cols = st.columns(6)
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
@@ -134,10 +134,49 @@ with tab1:
             fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
             if fc[i].button("Details", key=f"fbtn_{ftype}"): show_fuel_details(ftype)
 
-# TAB 2: FULL RESTORE + LIVE WEATHER (SAFE MODE)
+# TAB 2: PRESERVED + LIVE WEATHER
 with tab2:
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
     with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS</a></ul></div>', unsafe_allow_html=True)
     with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a></ul></div>', unsafe_allow_html=True)
-    with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.nea.gov.
+    with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.nea.gov.sg">NEA</a><li><a href="https://www.police.gov.sg">SPF</a></ul></div>', unsafe_allow_html=True)
+    st.error("🚨 Police: 999 | 🚒 SCDF: 995")
+
+    st.divider()
+    with st.expander("🌐 Internet Connectivity Monitor", expanded=False):
+        for p, s in [("Singtel", 99.8), ("M1", 92.1), ("Starhub", 98.5), ("Simba", 97.4)]:
+            st.write(f"**{p}**: {s}% Uptime")
+
+    st.divider()
+    with st.expander("🚆 Rail Service Status", expanded=False):
+        l_cols = st.columns(6)
+        lines = [("EWL", "✅"), ("NSL", "✅"), ("NEL", "✅"), ("CCL", "⚠️"), ("DTL", "✅"), ("TEL", "✅")]
+        for i, (n, s) in enumerate(lines): l_cols[i].metric(n, s)
+
+    st.divider()
+    with st.expander("🚦 Traffic Info", expanded=False):
+        tr_cols = st.columns(6)
+        expr = [("CTE", "Optimal", "#28a745"), ("PIE", "Heavy", "#ffc107"), ("AYE", "Congested", "#dc3545"), ("ECP", "Optimal", "#28a745"), ("KJE", "Moderate", "#ffc107"), ("MCE", "Optimal", "#28a745")]
+        for i, (n, c, clr) in enumerate(expr):
+            tr_cols[i].markdown(f'<div class="traffic-pill" style="background:{clr}">{n}<br>{c}</div>', unsafe_allow_html=True)
+        st.markdown("<br>#### ⚠️ Traffic Incidents (FIFO)", unsafe_allow_html=True)
+        incidents = [("14:21", "ECP", "Road Works"), ("14:48", "CTE", "Road Works"), ("15:22", "MCE", "Obstacle")]
+        for t, e, m in incidents: st.write(f"**[{t}] {e}** — {m}")
+
+    # LIVE WEATHER REPLACING MOCK CODE
+    st.divider()
+    with st.expander("🌤️ Island Weather & Air Quality (LIVE)", expanded=False):
+        f_data = fetch_nea_api("two-hr-forecast")
+        t_data = fetch_nea_api("air-temperature")
+        p_data = fetch_nea_api("psi")
+        if f_data:
+            estates = sorted([f['area'] for f in f_data['forecasts']])
+            sel_est = st.selectbox("📍 Select Estate:", estates)
+            status = next((f['forecast'] for f in f_data['forecasts'] if f['area'] == sel_est), "Cloudy")
+            temp = f"{t_data['readings'][0]['value']}°C" if (t_data and 'readings' in t_data) else "N/A"
+            psi = p_data['readings']['psi_twenty_four_hourly']['national'] if (p_data and 'readings' in p_data) else "N/A"
+            st.info(f"**{sel_est} Status:** {status} | **Temp:** {temp} | **PSI:** {psi}")
+        else: st.warning("Connecting to NEA Feed...")
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
