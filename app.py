@@ -4,7 +4,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Weather & Traffic Update 10.9.2
+# SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
@@ -15,7 +15,7 @@ st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
     .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150_px; color: var(--text-color); line-height: 1.1; }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
     .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
@@ -40,6 +40,17 @@ def get_upcoming_holiday():
         if h_date >= now:
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
+
+# NEW: Reliable NEA Data Fetcher
+def fetch_nea_live(endpoint):
+    try:
+        url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoint}"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get('data', {}).get('items', [{}])[0]
+    except: return None
+    return None
 
 fuel_data = {
     "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
@@ -157,7 +168,6 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status ---
-    #st.divider()
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
         uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
@@ -175,7 +185,6 @@ with tab2:
                 st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-   # st.divider()
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
         line_cols = st.columns(6)
         lines = [
@@ -200,7 +209,6 @@ with tab2:
             st.markdown(f"""<div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span><span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span></div><div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">{adv['details']}</div></div>""", unsafe_allow_html=True)
 
     # --- 4. Traffic Info ---
-    #st.divider()
     with st.expander("🚦 Traffic Info", expanded=False):
         st.markdown("#### 🛣️ Expressway Traffic Condition")
         tr_cols = st.columns(6)
@@ -233,25 +241,37 @@ with tab2:
                 <span style="font-weight: bold; color: #007bff;">[{inc['time']}] {inc['expressway']}</span> — {inc['msg']}
             </div>""", unsafe_allow_html=True)
 
-    # --- 5. Island Weather (NEW SECTION) ---
-    #st.divider()
-    with st.expander("🌤️ Island Weather Forecast", expanded=False):
-        w_c1, w_c2 = st.columns(2)
-        with w_c1:
-            st.markdown('<div class="weather-box"><b>Next 60 Mins</b><br><span style="font-size:1.5rem;">🌥️</span><br><b>Partly Cloudy</b><br></div>', unsafe_allow_html=True)
-        with w_c2:
-            st.markdown('<div class="weather-box"><b>Next 120 Mins</b><br><span style="font-size:1.5rem;">⛈️</span><br><b>Thundery Showers</b><br></div>', unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
-        selected_estate = st.selectbox("📍 Select Estate / Housing Town:", estates)
-        
-        # Mock logic for estate-specific weather
-        estate_weather = {"Ang Mo Kio": "Cloudy (32°C)", "Bedok": "Sunny Intervals (31°C)", "Jurong West": "Light Rain (29°C)", "Woodlands": "Fair (33°C)"}
-        current_est_w = estate_weather.get(selected_estate, "Cloudy (31°C)")
-        
-        st.info(f"**Current Status for {selected_estate}:** {current_est_w}")
+    # --- 5. LIVE Island Weather (UPDATED SECTION) ---
+    with st.expander("🌤️ Island Weather & PSI Forecast (LIVE)", expanded=True):
+        # Fetching Live Data from NEA API v2
+        f_data = fetch_nea_live("two-hr-forecast")
+        t_data = fetch_nea_live("air-temperature")
+        p_data = fetch_nea_live("psi")
 
-    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA. Refresh every 3 mins.")
+        # Static list of estates (same as user original)
+        est_list = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
+        
+        selected_estate = st.selectbox("📍 Select Estate / Housing Town:", sorted(est_list))
+        
+        # 1. Forecast Mapping
+        current_status = "Data Unavailable"
+        if f_data and 'forecasts' in f_data:
+            current_status = next((f['forecast'] for f in f_data['forecasts'] if f['area'] == selected_estate), "Cloudy")
+
+        # 2. Real-time Temp Mapping (Closest sensor or first index)
+        current_temp = "N/A"
+        if t_data and 'readings' in t_data:
+            current_temp = f"{t_data['readings'][0].get('value', 'N/A')}°C"
+
+        # 3. PSI Level Mapping
+        current_psi = "N/A"
+        if p_data and 'readings' in p_data:
+            psi_readings = p_data['readings'].get('psi_twenty_four_hourly', {})
+            current_psi = psi_readings.get('national', "N/A")
+            
+        # Display Logic
+        st.info(f"**Current Status for {selected_estate}:** {current_status} | **Temp:** {current_temp} | **PSI:** {current_psi}")
+
+    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA Open Data. Refresh every 3 mins.")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
