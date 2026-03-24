@@ -124,14 +124,17 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets & Commodities
+    # 3. Markets & Commodities (UPDATED with SG CPI & Inflation)
     with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
-        m1, m2, m3, m4, m5 = st.columns(5)
+        m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
         m1.metric("STI Index", "4,841.30", "-2.20%")
         m2.metric("Gold (Spot)", "$4,391.00", "+1.66%")
         m3.metric("Silver (Spot)", "$64.63", "-6.11%")
         m4.metric("Brent Crude", "$112.61", "+0.40%")
         m5.metric("Natural Gas", "$3.09", "-2.21%")
+        # New additions for gold 10
+        m6.metric("SG CPI (All)", "100.7", "-0.20%", help="Base Year 2024=100")
+        m7.metric("SG Inflation", "1.40%", "+0.40%", help="MAS Core Inflation YoY")
 
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
@@ -241,30 +244,24 @@ with tab2:
                 <span style="font-weight: bold; color: #007bff;">[{inc['time']}] {inc['expressway']}</span> — {inc['msg']}
             </div>""", unsafe_allow_html=True)
 
-    # --- 5. LIVE Island Weather (UPDATED SECTION) ---
-   # --- 5. Island Weather (LIVE NEA V2 INTEGRATION) ---
+    # --- 5. LIVE Island Weather ---
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
-        # API Utility to fetch data
         def get_nea_data(path):
             try:
-                # Using the latest v2 Open Data endpoint
                 r = requests.get(f"https://api-open.data.gov.sg/v2/real-time/api/{path}", timeout=5)
                 return r.json().get('data', {}) if r.status_code == 200 else {}
             except: return {}
 
-        # Fetch all 3 datasets
         f_data = get_nea_data("two-hr-forecast")
         t_data = get_nea_data("air-temperature")
         p_data = get_nea_data("psi")
 
         w_c1, w_c2 = st.columns(2)
-        # Global Forecast Summary (First 2 available periods)
         items = f_data.get('items', [{}])[0]
         valid_period = items.get('valid_period', {})
         with w_c1:
             st.markdown(f'<div class="weather-box"><b>Period: {valid_period.get("start", "Now")[-8:-4]}-2hrs</b><br><span style="font-size:1.5rem;">🌥️</span><br><b>Live Updates</b></div>', unsafe_allow_html=True)
         with w_c2:
-             # National PSI
              psi_val = p_data.get('items', [{}])[0].get('readings', {}).get('psi_twenty_four_hourly', {}).get('national', "N/A")
              st.markdown(f'<div class="weather-box"><b>Air Quality (PSI)</b><br><span style="font-size:1.5rem;">🍃</span><br><b>{psi_val} (Healthy)</b></div>', unsafe_allow_html=True)
         
@@ -272,23 +269,16 @@ with tab2:
         estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
         selected_estate = st.selectbox("📍 Select Estate / Housing Town:", sorted(estates))
         
-        # Logic to extract specific values
-        # 1. Forecast for Area
         area_forecast = "Cloudy"
         for f in items.get('forecasts', []):
             if f['area'] == selected_estate:
                 area_forecast = f['forecast']
                 break
 
-        # 2. Temperature (Find nearest or use first sensor)
         temp_readings = t_data.get('items', [{}])[0].get('readings', [])
         current_temp = temp_readings[0].get('value', 31.0) if temp_readings else 31.0
 
-        # Final Display
         st.info(f"**Current for {selected_estate}:** {area_forecast} | **Temp:** {current_temp}°C | **PSI:** {psi_val}")
-            
-        # Display Logic
-        #st.info(f"**Current Status for {selected_estate}:** {current_status} | **Temp:** {current_temp} | **PSI:** {current_psi}")
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA Open Data. Refresh every 3 mins.")
 
