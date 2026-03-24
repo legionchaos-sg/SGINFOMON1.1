@@ -160,7 +160,7 @@ with tab1:
             if fc[i].button("Details", key=f"fbtn_109_{ftype}"):
                 show_fuel_details(ftype)
 
-  with tab2:
+ with tab2:
     # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
@@ -172,9 +172,7 @@ with tab1:
     with ps_c3:
         st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
 
-st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
-    
-      # --- 2. Network & Connectivity Status ---
+    # --- 2. Network & Connectivity Status ---
     st.divider()
     st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
 
@@ -218,7 +216,7 @@ st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
             """, unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-    #st.divider()
+    st.divider()
     st.subheader("🚆 Rail Service & Engineering Advisory")
 
     line_cols = st.columns(6)
@@ -261,6 +259,7 @@ st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / ISP Status Feeds.")
     st.divider()
+    st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
    
 
             
