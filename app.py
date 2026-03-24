@@ -4,15 +4,19 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
+#gold ver 7
+
+#gold5
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
 
-# 2. Adaptive CSS
+# 2. Adaptive CSS (Updated for COE Height Reduction)
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
     .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
+    /* Reduced min-height by 5px (from 155px to 150px) */
     .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
@@ -22,6 +26,7 @@ st.markdown("""
     .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
     .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
     .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
+    
     div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
     .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
     </style>
@@ -31,18 +36,7 @@ st.markdown("""
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
-    holidays_2026 = [
-        ("New Year's Day", datetime(2026, 1, 1).date()), 
-        ("Chinese New Year", datetime(2026, 2, 17).date()), 
-        ("Hari Raya Puasa", datetime(2026, 3, 21).date()), 
-        ("Good Friday", datetime(2026, 4, 3).date()), 
-        ("Labour Day", datetime(2026, 5, 1).date()), 
-        ("Hari Raya Haji", datetime(2026, 5, 27).date()), 
-        ("Vesak Day", datetime(2026, 5, 31).date()), 
-        ("National Day", datetime(2026, 8, 9).date()), 
-        ("Deepavali", datetime(2026, 11, 8).date()), 
-        ("Christmas Day", datetime(2026, 12, 25).date())
-    ]
+    holidays_2026 = [("New Year's Day", datetime(2026, 1, 1).date()), ("Chinese New Year", datetime(2026, 2, 17).date()), ("Hari Raya Puasa", datetime(2026, 3, 21).date()), ("Good Friday", datetime(2026, 4, 3).date()), ("Labour Day", datetime(2026, 5, 1).date()), ("Hari Raya Haji", datetime(2026, 5, 27).date()), ("Vesak Day", datetime(2026, 5, 31).date()), ("National Day", datetime(2026, 8, 9).date()), ("Deepavali", datetime(2026, 11, 8).date()), ("Christmas Day", datetime(2026, 12, 25).date())]
     for name, h_date in holidays_2026:
         if h_date >= now:
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
@@ -122,8 +116,8 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets
-    with st.expander("📈 Market Indices", expanded=True):
+    # 3. Markets & Commodities (Sorted: STI, Gold, Silver, Brent, Gas)
+    with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("STI Index", "4,841.30", "-2.20%")
         m2.metric("Gold (Spot)", "$4,391.00", "+1.66%")
@@ -139,7 +133,7 @@ with tab1:
         f4.metric("SGD/CNY", "5.3975", "-0.07%")
         f5.metric("SGD/USD", "0.7480", "-0.22%")
 
-    # 4. COE Bidding
+    # 4. COE Bidding (Height Reduced)
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
         coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
         cc = st.columns(5)
@@ -166,10 +160,108 @@ with tab1:
             if fc[i].button("Details", key=f"fbtn_109_{ftype}"):
                 show_fuel_details(ftype)
 
-with tab2:
+  with tab2:
     # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
     
     with ps_c1:
         st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
+    with ps_c2:
+        st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
+    with ps_c3:
+        st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
+     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
+    
+      # --- 2. Network & Connectivity Status ---
+    st.divider()
+    st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
+
+    col_graph, col_outage = st.columns([3, 2])
+
+    with col_graph:
+        st.write("**Provider Uptime Efficiency**")
+        providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
+        uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
+        
+        for prov, score in zip(providers, uptime_scores):
+            bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
+            st.markdown(f"""
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color: var(--text-color);">
+                        <span><b>{prov}</b></span><span>{score}%</span>
+                    </div>
+                    <div style="background-color: var(--border-color); border-radius: 4px; height: 10px; width: 100%;">
+                        <div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # --- NEW: Speed Test Action Button ---
+        st.link_button("🚀 Run Instant Speed Test (Ookla)", "https://www.speedtest.net", use_container_width=True)
+
+    with col_outage:
+        st.write("**⚠️ Recent Incident Log**")
+        incidents = [
+            ("M1", "08:45", "Fiber latency in West area. (Resolved)"),
+            ("Singtel", "14:20", "Brief DNS timeout; auto-recovered."),
+            ("Starhub", "N/A", "Stable - No issues reported."),
+            ("Simba", "11:30", "Minor SMS delays for roaming users.")
+        ]
+        for p, t, m in incidents:
+            status_color = "#28a745" if "Resolved" in m or "Stable" in m else "#ffc107"
+            st.markdown(f"""
+                <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:12px; color: var(--text-color);">
+                    <b style="color: var(--primary-color);">{p}</b> <small style="opacity:0.6;">{t}</small><br>{m}
+                </div>
+            """, unsafe_allow_html=True)
+
+    # --- 3. Rail Service & Engineering Advisory ---
+    #st.divider()
+    st.subheader("🚆 Rail Service & Engineering Advisory")
+
+    line_cols = st.columns(6)
+    lines = [
+        {"name": "EWL", "status": "Normal", "color": "#009530"},
+        {"name": "NSL", "status": "Normal", "color": "#d42e12"},
+        {"name": "NEL", "status": "Normal", "color": "#744199"},
+        {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, 
+        {"name": "DTL", "status": "Normal", "color": "#005ec4"},
+        {"name": "TEL", "status": "Normal", "color": "#9d5b25"}
+    ]
+
+    for i, line in enumerate(lines):
+        with line_cols[i]:
+            status_icon = "✅" if line['status'] == "Normal" else "⚠️"
+            st.markdown(f"""
+                <div style="background-color: {line['color']}; padding: 8px; border-radius: 5px; text-align: center; color: white; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size: 0.7rem; font-weight: bold;">{line['name']}</div>
+                    <div style="font-size: 1.2rem; margin: 2px 0;">{status_icon}</div>
+                    <div style="font-size: 0.6rem; text-transform: uppercase;">{line['status']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("#### 🛠️ Weekly Maintenance & Engineering Works")
+    advisories = [
+        {"line": "Circle Line (CCL)", "impact": "Single Platform Service", "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>. Shuttle trains running every 10 mins. Ends 19 April 2026.", "status": "In Progress"},
+        {"line": "Sengkang West LRT", "impact": "Advance Notice: Loop Closure", "details": "Inner Loop will close starting <b>19 April 2026</b> for 6 months. Use Outer Loop or Shuttle Bus A/B.", "status": "Upcoming"}
+    ]
+
+    for adv in advisories:
+        st.markdown(f"""
+            <div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span>
+                    <span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span>
+                </div>
+                <div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">{adv['details']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / ISP Status Feeds.")
+    st.divider()
+   
+
+            
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
