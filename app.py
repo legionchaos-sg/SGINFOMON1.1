@@ -5,6 +5,7 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
 #gold ver 7
+#good but with 2x weeklt rain works
 
 #gold5
 # 1. Page Configuration
