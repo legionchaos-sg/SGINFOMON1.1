@@ -177,7 +177,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status ---
-    st.divider()
+    #st.divider()
     st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
 
     providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
@@ -217,7 +217,7 @@ with tab2:
             """, unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-    st.divider()
+    #st.divider()
     st.subheader("🚆 Rail Service & Engineering Advisory")
 
     line_cols = st.columns(6)
