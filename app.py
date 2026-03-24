@@ -161,7 +161,7 @@ with tab1:
                 show_fuel_details(ftype)
 
 with tab2:
-    # --- SG Public Services Workspace ---
+    # --- 1. Government & Public Services (Existing) ---
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
     
@@ -171,7 +171,50 @@ with tab2:
         st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
     with ps_c3:
         st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
+
+    # --- 2. NEW: Network & Connectivity Status ---
+    st.divider()
+    st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
+
+    # Data for the graph
+    providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
+    uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] # Simulated for today
     
+    col_graph, col_outage = st.columns([3, 2])
+
+    with col_graph:
+        st.write("**Provider Uptime Efficiency**")
+        for prov, score in zip(providers, uptime_scores):
+            # Dynamic color logic: Green (>98), Yellow (>95), Red (<95)
+            bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
+            st.markdown(f"""
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span><b>{prov}</b></span><span>{score}%</span>
+                    </div>
+                    <div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;">
+                        <div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+    with col_outage:
+        st.write("**⚠️ Recent Incident Log**")
+        # You can manually update this list or scrape from a news feed
+        incidents = [
+            ("M1", "08:45", "Fiber latency in West area. (Resolved)"),
+            ("Singtel", "14:20", "Brief DNS timeout; auto-recovered."),
+            ("Starhub", "N/A", "Stable - No issues reported."),
+            ("Simba", "11:30", "Minor SMS delays for roaming users.")
+        ]
+        for p, t, m in incidents:
+            status_color = "#28a745" if "Resolved" in m or "Stable" in m else "#ffc107"
+            st.markdown(f"""
+                <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;">
+                    <b>{p}</b> <small style="color:gray;">{t}</small><br>{m}
+                </div>
+            """, unsafe_allow_html=True)
+
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
