@@ -293,7 +293,7 @@ with tab2:
     #            <span style="font-weight: bold; color: #333;">{adv['line']} - {adv['impact']}</span>
     #            <p style="font-size: 0.85rem; margin: 4px 0;">{adv['details']}</p>
     #        </div>
-        """, unsafe_allow_html=True)
+    #    """, unsafe_allow_html=True)
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
     st.divider()
