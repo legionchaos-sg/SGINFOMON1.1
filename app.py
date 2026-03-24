@@ -161,8 +161,6 @@ with tab1:
                 show_fuel_details(ftype)
 
 with tab2:
-    # --- 1. Government & Public Services (Existing) ---
-   with tab2:
     # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
@@ -176,48 +174,46 @@ with tab2:
 
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
-    # --- 2. Network & Connectivity Status ---
-    #st.divider()
-    st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
+    # --- 2. Network & Connectivity Status (NOW EXPANDABLE) ---
+    st.divider()
+    with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
+        providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
+        uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
+        
+        col_graph, col_outage = st.columns([3, 2])
 
-    providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-    uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
-    
-    col_graph, col_outage = st.columns([3, 2])
-
-    with col_graph:
-        st.write("**Provider Uptime Efficiency**")
-        for prov, score in zip(providers, uptime_scores):
-            bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
-            st.markdown(f"""
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
-                        <span><b>{prov}</b></span><span>{score}%</span>
+        with col_graph:
+            st.write("**Provider Uptime Efficiency**")
+            for prov, score in zip(providers, uptime_scores):
+                bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
+                st.markdown(f"""
+                    <div style="margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                            <span><b>{prov}</b></span><span>{score}%</span>
+                        </div>
+                        <div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;">
+                            <div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div>
+                        </div>
                     </div>
-                    <div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;">
-                        <div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-    with col_outage:
-        st.write("**⚠️ Recent Incident Log**")
-        incidents = [
-            ("M1", "08:45", "Fiber latency in West area. (Resolved)"),
-            ("Singtel", "14:20", "Brief DNS timeout; auto-recovered."),
-            ("Starhub", "N/A", "Stable - No issues reported."),
-            ("Simba", "11:30", "Minor SMS delays for roaming users.")
-        ]
-        for p, t, m in incidents:
-            status_color = "#28a745" if "Resolved" in m or "Stable" in m else "#ffc107"
-            st.markdown(f"""
-                <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;">
-                    <b>{p}</b> <small style="color:gray;">{t}</small><br>{m}
-                </div>
-            """, unsafe_allow_html=True)
+        with col_outage:
+            st.write("**⚠️ Recent Incident Log**")
+            incidents = [
+                ("M1", "08:45", "Fiber latency in West area. (Resolved)"),
+                ("Singtel", "14:20", "Brief DNS timeout; auto-recovered."),
+                ("Starhub", "N/A", "Stable - No issues reported."),
+                ("Simba", "11:30", "Minor SMS delays for roaming users.")
+            ]
+            for p, t, m in incidents:
+                status_color = "#28a745" if "Resolved" in m or "Stable" in m else "#ffc107"
+                st.markdown(f"""
+                    <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;">
+                        <b>{p}</b> <small style="color:gray;">{t}</small><br>{m}
+                    </div>
+                """, unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-    #st.divider()
     st.subheader("🚆 Rail Service & Engineering Advisory")
 
     line_cols = st.columns(6)
@@ -259,8 +255,6 @@ with tab2:
     ]
 
     for adv in advisories:
-        # We use var(--secondary-background-color) for the box 
-        # and var(--text-color) for the text to ensure it flips with the theme.
         st.markdown(f"""
             <div style="
                 background-color: var(--secondary-background-color); 
@@ -286,18 +280,7 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
 
-    #for adv in advisories:
-    #    color = "#fff3cd" if adv['status'] == "In Progress" else "#f8f9fa"
-    #    st.markdown(f"""
-    #        <div style="background-color: {color}; border: 1px solid #ddd; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-    #            <span style="font-weight: bold; color: #333;">{adv['line']} - {adv['impact']}</span>
-    #            <p style="font-size: 0.85rem; margin: 4px 0;">{adv['details']}</p>
-    #        </div>
-    #    """, unsafe_allow_html=True)
-
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
     st.divider()
-
-            
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
