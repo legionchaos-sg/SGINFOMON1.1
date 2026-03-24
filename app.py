@@ -309,7 +309,7 @@ with tab3:
 st.markdown("""
     <style>
     html, body, [class*="css"], .stMarkdown, p, span, div { 
-        font-size: 0.75rem !important; /* Reduced from standard ~1.0rem */
+        font-size: 0.85rem !important; /* Reduced from standard ~1.0rem */
     }
     .main .block-container { max-width: 92%; padding-top: 1rem; }
     h1 { font-size: 1.4rem !important; }
