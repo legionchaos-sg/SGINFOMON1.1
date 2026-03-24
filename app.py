@@ -242,11 +242,49 @@ with tab2:
             """, unsafe_allow_html=True)
 
     st.markdown("#### 🛠️ Weekly Maintenance & Engineering Works")
+    
     advisories = [
-        {"line": "Circle Line (CCL)", "impact": "Single Platform Service", "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>. Shuttle trains running every 10 mins. Ends 19 April 2026.", "status": "In Progress"},
-        {"line": "Sengkang West LRT", "impact": "Advance Notice: Loop Closure", "details": "Inner Loop will close starting <b>19 April 2026</b> for 6 months. Use Outer Loop.", "status": "Upcoming"},
-        {"line": "Downtown/East-West", "impact": "Early Closure/Late Opening", "details": "System integration works for DTL3 extension. Check station posters.", "status": "Scheduled"}
+        {
+            "line": "Circle Line (CCL)",
+            "impact": "Single Platform Service",
+            "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>. Shuttle trains running every 10 mins. Ends 19 April 2026.",
+            "status": "In Progress"
+        },
+        {
+            "line": "Sengkang West LRT",
+            "impact": "Advance Notice: Loop Closure",
+            "details": "Inner Loop (via Cheng Lim) will close starting <b>19 April 2026</b> for 6 months. Use Outer Loop or Shuttle Bus A/B.",
+            "status": "Upcoming"
+        }
     ]
+
+    for adv in advisories:
+        # We use var(--secondary-background-color) for the box 
+        # and var(--text-color) for the text to ensure it flips with the theme.
+        st.markdown(f"""
+            <div style="
+                background-color: var(--secondary-background-color); 
+                border: 1px solid var(--border-color); 
+                padding: 12px; 
+                border-radius: 8px; 
+                margin-bottom: 10px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span>
+                    <span style="
+                        font-size: 0.65rem; 
+                        background: #ff4b4b; 
+                        color: white; 
+                        padding: 2px 8px; 
+                        border-radius: 12px;
+                        font-weight: bold;
+                    ">{adv['status']}</span>
+                </div>
+                <div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">
+                    {adv['details']}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
     for adv in advisories:
         color = "#fff3cd" if adv['status'] == "In Progress" else "#f8f9fa"
