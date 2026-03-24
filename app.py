@@ -288,7 +288,7 @@ with tab2:
         st.info(f"**Current for {selected_estate}:** {area_forecast} | **Temp:** {current_temp}°C | **PSI:** {psi_val}")
             
         # Display Logic
-        st.info(f"**Current Status for {selected_estate}:** {current_status} | **Temp:** {current_temp} | **PSI:** {current_psi}")
+        #st.info(f"**Current Status for {selected_estate}:** {current_status} | **Temp:** {current_temp} | **PSI:** {current_psi}")
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA Open Data. Refresh every 3 mins.")
 
