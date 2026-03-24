@@ -295,7 +295,7 @@ with tab2:
 # TAB 3: SYSTEM TOOLS (Safely Appended)
 # ==========================================
 with tab3:
-    st.header("🛠️ System Utilities")
+    st.header("PMT Trial")
     
     col_u1, col_u2 = st.columns([1, 1])
     
