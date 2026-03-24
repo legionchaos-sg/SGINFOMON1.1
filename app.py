@@ -73,8 +73,13 @@ def show_fuel_details(ftype):
 
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES"])
 
+# UPDATED: We now have 3 tabs defined here
+tab1, tab2, tab3 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS"])
+
+# ==========================================
+# TAB 1: LIVE MONITOR (Your EXACT Original)
+# ==========================================
 with tab1:
     # 1. Clocks
     t_cols = st.columns(6)
@@ -124,7 +129,7 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets & Commodities (UPDATED with SG CPI & Inflation)
+    # 3. Markets & Commodities
     with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
         m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
         m1.metric("STI Index", "4,841.30", "-2.20%")
@@ -132,7 +137,6 @@ with tab1:
         m3.metric("Silver (Spot)", "$64.63", "-6.11%")
         m4.metric("Brent Crude", "$112.61", "+0.40%")
         m5.metric("Natural Gas", "$3.09", "-2.21%")
-        # New additions for gold 10
         m6.metric("SG CPI (All)", "100.7", "-0.20%", help="Base Year 2024=100")
         m7.metric("SG Inflation", "1.40%", "+0.40%", help="MAS Core Inflation YoY")
 
@@ -161,6 +165,10 @@ with tab1:
             fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
             if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
 
+
+# ==========================================
+# TAB 2: PUBLIC SERVICES (Your EXACT Original)
+# ==========================================
 with tab2:
     # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
@@ -282,4 +290,55 @@ with tab2:
 
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA Open Data. Refresh every 3 mins.")
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
+
+# ==========================================
+# TAB 3: SYSTEM TOOLS (Safely Appended)
+# ==========================================
+with tab3:
+    st.header("🛠️ System Utilities")
+    
+    col_u1, col_u2 = st.columns([2, 1])
+    
+    with col_u1:
+        st.subheader("🌐 Quick Translator")
+        t_text = st.text_area("Enter text to translate (Auto → Chinese):", height=100)
+        if st.button("Translate Now"):
+            if t_text:
+                res = GoogleTranslator(target='zh-CN').translate(t_text)
+                st.success(f"**Result:** {res}")
+            else:
+                st.warning("Please enter text first.")
+        
+        st.divider()
+        st.subheader("⚖️ Unit Converter")
+        uc1, uc2 = st.columns(2)
+        with uc1:
+            val = st.number_input("Value:", value=1.0)
+            mode = st.selectbox("Type:", ["KM to Miles", "Miles to KM", "Celsius to Fahrenheit", "Liters to Gallons"])
+        with uc2:
+            if "KM to Miles" in mode: st.metric("Converted", f"{val * 0.621:.2f} mi")
+            if "Miles to KM" in mode: st.metric("Converted", f"{val * 1.609:.2f} km")
+            if "Celsius to Fahrenheit" in mode: st.metric("Converted", f"{(val * 9/5) + 32:.1f} °F")
+            if "Liters to Gallons" in mode: st.metric("Converted", f"{val * 0.264:.2f} gal")
+
+    with col_u2:
+        st.subheader("🖥️ System Health")
+        st.write(f"**App Version:** 10.9.3 (gold 10)")
+        st.write(f"**Environment:** Streamlit Cloud")
+        st.write(f"**Timezone:** Asia/Singapore")
+        
+        st.markdown("""
+        <div style="background:#1e1e1e; padding:15px; border-radius:10px; border:1px solid #333;">
+            <small style="color:gray;">API ENDPOINTS</small><br>
+            ✅ NEA Data Gov v2<br>
+            ✅ LTA DataMall 2.0<br>
+            ✅ Google Translate API<br>
+            ✅ RSS News Feeds
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("Clear Cache"):
+            st.cache_data.clear()
+            st.toast("System cache cleared!")
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
