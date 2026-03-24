@@ -162,6 +162,8 @@ with tab1:
 
 with tab2:
     # --- 1. Government & Public Services (Existing) ---
+   with tab2:
+    # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
     ps_c1, ps_c2, ps_c3 = st.columns(3)
     
@@ -172,20 +174,18 @@ with tab2:
     with ps_c3:
         st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
 
-    # --- 2. NEW: Network & Connectivity Status ---
-    #st.divider()
+    # --- 2. Network & Connectivity Status ---
+    st.divider()
     st.subheader("🌐 Internet & Mobile Connectivity (24h Monitor)")
 
-    # Data for the graph
     providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-    uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] # Simulated for today
+    uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
     
     col_graph, col_outage = st.columns([3, 2])
 
     with col_graph:
         st.write("**Provider Uptime Efficiency**")
         for prov, score in zip(providers, uptime_scores):
-            # Dynamic color logic: Green (>98), Yellow (>95), Red (<95)
             bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
             st.markdown(f"""
                 <div style="margin-bottom:12px;">
@@ -200,7 +200,6 @@ with tab2:
 
     with col_outage:
         st.write("**⚠️ Recent Incident Log**")
-        # You can manually update this list or scrape from a news feed
         incidents = [
             ("M1", "08:45", "Fiber latency in West area. (Resolved)"),
             ("Singtel", "14:20", "Brief DNS timeout; auto-recovered."),
@@ -215,18 +214,16 @@ with tab2:
                 </div>
             """, unsafe_allow_html=True)
 
-    #st.divider()
-   st.divider()
+    # --- 3. Rail Service & Engineering Advisory ---
+    st.divider()
     st.subheader("🚆 Rail Service & Engineering Advisory")
 
-    # 1. LIVE MRT/LRT STATUS GRID
     line_cols = st.columns(6)
-    # Status data updated for Mar 24, 2026
     lines = [
         {"name": "EWL", "status": "Normal", "color": "#009530"},
         {"name": "NSL", "status": "Normal", "color": "#d42e12"},
         {"name": "NEL", "status": "Normal", "color": "#744199"},
-        {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, # Advisory for Tunnel Works
+        {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, 
         {"name": "DTL", "status": "Normal", "color": "#005ec4"},
         {"name": "TEL", "status": "Normal", "color": "#9d5b25"}
     ]
@@ -242,47 +239,25 @@ with tab2:
                 </div>
             """, unsafe_allow_html=True)
 
-    # 2. WEEKLY WORK ADVISORY (Immediately Below)
     st.markdown("#### 🛠️ Weekly Maintenance & Engineering Works")
-    
-    # Accurate maintenance data for March 2026
     advisories = [
-        {
-            "line": "Circle Line (CCL)",
-            "impact": "Single Platform Service",
-            "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>. Shuttle trains running every 10 mins. Ends 19 April 2026.",
-            "status": "In Progress"
-        },
-        {
-            "line": "Sengkang West LRT",
-            "impact": "Advance Notice: Loop Closure",
-            "details": "Inner Loop (via Cheng Lim) will close starting <b>19 April 2026</b> for 6 months. Use Outer Loop or Shuttle Bus A/B.",
-            "status": "Upcoming"
-        },
-        {
-            "line": "Downtown/East-West",
-            "impact": "Early Closure/Late Opening",
-            "details": "System integration works for DTL3 extension and TEL Stage 5. Check local station posters for specific weekend timings.",
-            "status": "Scheduled"
-        }
+        {"line": "Circle Line (CCL)", "impact": "Single Platform Service", "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>. Shuttle trains running every 10 mins. Ends 19 April 2026.", "status": "In Progress"},
+        {"line": "Sengkang West LRT", "impact": "Advance Notice: Loop Closure", "details": "Inner Loop will close starting <b>19 April 2026</b> for 6 months. Use Outer Loop.", "status": "Upcoming"},
+        {"line": "Downtown/East-West", "impact": "Early Closure/Late Opening", "details": "System integration works for DTL3 extension. Check station posters.", "status": "Scheduled"}
     ]
 
     for adv in advisories:
-        color = "#fff3cd" if adv['status'] == "In Progress" else "#e2e3e5"
-        border = "#ffeeba" if adv['status'] == "In Progress" else "#d6d8db"
-        
+        color = "#fff3cd" if adv['status'] == "In Progress" else "#f8f9fa"
         st.markdown(f"""
-            <div style="background-color: {color}; border: 1px solid {border}; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="font-weight: bold; color: #856404;">{adv['line']} - {adv['impact']}</span>
-                    <span style="font-size: 0.7rem; background: #856404; color: white; padding: 2px 6px; border-radius: 4px;">{adv['status']}</span>
-                </div>
-                <div style="font-size: 0.85rem; margin-top: 5px; color: #333;">{adv['details']}</div>
+            <div style="background-color: {color}; border: 1px solid #ddd; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                <span style="font-weight: bold; color: #333;">{adv['line']} - {adv['impact']}</span>
+                <p style="font-size: 0.85rem; margin: 4px 0;">{adv['details']}</p>
             </div>
         """, unsafe_allow_html=True)
 
-    # 3. QUICK LINKS
     st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
+    st.divider()
+    st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
             
     st.divider()
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
