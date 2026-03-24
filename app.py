@@ -7,124 +7,115 @@ from sklearn.linear_model import LinearRegression
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Version 11.0.9 (gold 10 - FULL RESTORE)
+# SG INFO MONITOR - Version 11.1.0 (gold 10 - STABLE RESTORE)
 
-# 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 11.0", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_gold10_v9")
+st_autorefresh(interval=180000, key="sync_gold10_v10")
 
-# 2. Adaptive CSS
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; color: var(--text-color); }
-    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 120px; color: var(--text-color); line-height: 1.1; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
-    .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
-    .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; margin-bottom: 5px; width: 100%; text-align: center;}
-    .incident-box { font-size: 0.82rem; border-left: 4px solid #ff4b4b; padding: 8px; margin-bottom: 6px; background: rgba(255, 75, 75, 0.05); border-radius: 0 6px 6px 0; border: 1px solid var(--border-color); border-left-width: 4px; }
-    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
-    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
+    .main .block-container { max-width: 95%; }
+    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 100px; }
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; }
+    .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; width: 100%; text-align: center;}
+    .incident-box { font-size: 0.82rem; border-left: 4px solid #ff4b4b; padding: 8px; margin-bottom: 6px; background: rgba(255, 75, 75, 0.05); border-radius: 0 6px 6px 0; border: 1px solid var(--border-color); }
+    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Logic Functions
-def get_upcoming_holiday():
-    sg_tz = pytz.timezone('Asia/Singapore')
-    now = datetime.now(sg_tz).date()
-    # 2026 Singapore Holidays
-    holidays_2026 = [("Hari Raya Puasa", datetime(2026, 3, 21).date()), ("Good Friday", datetime(2026, 4, 3).date()), ("Labour Day", datetime(2026, 5, 1).date()), ("Vesak Day", datetime(2026, 5, 31).date()), ("National Day", datetime(2026, 8, 9).date())]
-    for name, h_date in holidays_2026:
-        if h_date >= now: return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
-    return ""
-
+# Data Preserved
 fuel_data = {
-    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32)},
-    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04)},
-    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05)},
-    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05)},
-    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10)}
+    "92": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32)},
+    "95": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04)},
+    "98": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05)},
+    "Pre": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05)},
+    "Die": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10)}
 }
 
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    for brand, (price, change) in fuel_data[ftype].items():
-        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff;'>${price:.2f}</b> <small style='color:{'red' if change > 0 else 'green'}'>({change:+.2f})</small></span></div>", unsafe_allow_html=True)
+@st.dialog("Fuel Details")
+def show_fuel(ftype):
+    for b, (p, c) in fuel_data[ftype].items():
+        st.write(f"**{b}**: ${p:.2f} ({c:+.2f})")
 
-# --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2, tab3 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🧪 PMT - Prediction Model Trial"])
+tab1, tab2, tab3 = st.tabs(["📊 MONITOR", "🏢 SERVICES", "🧪 PMT"])
 
 with tab1:
-    # --- 1. World Clocks ---
+    # 1. Clocks
     t_cols = st.columns(6)
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    for i, (n, tz) in enumerate([("SG", "Asia/Singapore"), ("TH", "Asia/Bangkok"), ("JP", "Asia/Tokyo"), ("ID", "Asia/Jakarta"), ("PH", "Asia/Manila"), ("AU", "Australia/Brisbane")]):
+        t_cols[i].markdown(f'<div class="t-card"><small>{n}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
+    # 2. Headlines
     st.divider()
-    
-    # --- 2. News Headlines ---
-    holiday_info = get_upcoming_holiday()
-    st.markdown(f'### 🗞️ Headlines <span style="color:#28a745; font-size:0.9rem; margin-left:10px;">{holiday_info}</span>', unsafe_allow_html=True)
-    
-    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
     nc1, nc2 = st.columns([2, 1])
-    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
-    with nc2: do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
+    with nc1: q = st.text_input("🔍 Search News:", key="news_q")
+    with nc2: tr_on = st.checkbox("CN Trans")
     
-    for src, url in news_sources.items():
+    for src, url in {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "ST": "https://www.straitstimes.com/news/singapore/rss.xml"}.items():
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:2]:
-                if not search_q or search_q.lower() in entry.title.lower():
-                    st.write(f"<span class='news-tag'>{src}</span> **[{entry.title}]({entry.link})**", unsafe_allow_html=True)
-                    if do_tr and src != "8world":
-                        tr = GoogleTranslator(target='zh-CN').translate(entry.title)
-                        st.markdown(f"<div class='trans-box'>🇨🇳 {tr}</div>", unsafe_allow_html=True)
+            for e in feed.entries[:2]:
+                if not q or q.lower() in e.title.lower():
+                    st.write(f"**{src}**: [{e.title}]({e.link})")
+                    if tr_on: st.caption(GoogleTranslator(target='zh-CN').translate(e.title))
         except: pass
 
-    st.divider()
-
-    # --- 3. Markets & COE ---
-    with st.expander("📈 Markets & COE Results (Mar 2026)", expanded=True):
+    # 3. Markets & COE
+    with st.expander("📈 Markets & COE", expanded=True):
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("STI Index", "4,948.87", "-0.38%")
         m2.metric("USD/SGD", "1.2793", "+0.36%")
-        m3.metric("Gold (Spot)", "$4,335.00", "-1.66%")
-        m4.metric("SG Inflation", "1.20%", "Stable")
-        
+        m3.metric("Gold", "$4,335", "-1.66%")
+        m4.metric("Inflation", "1.20%", "Stable")
         st.markdown("---")
         cc = st.columns(5)
-        coe = [("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]
-        for i, (cat, val) in enumerate(coe):
-            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${val:,}</span></div>', unsafe_allow_html=True)
+        for i, (c, v) in enumerate([("Cat A", 111890), ("Cat B", 115568), ("Cat C", 78000), ("Cat D", 9589), ("Cat E", 118119)]):
+            cc[i].markdown(f'<div class="c-card"><b>{c}</b><br><span style="color:#ff4b4b;">${v:,}</span></div>', unsafe_allow_html=True)
 
-    # --- 4. Fuel Prices ---
-    with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
+    # 4. Fuel
+    with st.expander("⛽ Fuel Prices", expanded=True):
         fc = st.columns(5)
-        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-        for i, ftype in enumerate(ftypes):
-            prices = [v[0] for v in fuel_data[ftype].values()]
-            avg = sum(prices) / len(prices)
-            fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff; font-size:1.1rem; font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if fc[i].button("Details", key=f"f_{ftype}"): show_fuel_details(ftype)
+        for i, f in enumerate(["92", "95", "98", "Pre", "Die"]):
+            avg = sum([v[0] for v in fuel_data[f].values()]) / len(fuel_data[f])
+            fc[i].markdown(f'<div class="f-card"><b>{f}</b><br><b>${avg:.2f}</b></div>', unsafe_allow_html=True)
+            if fc[i].button("Info", key=f"btn_{f}"): show_fuel(f)
 
 with tab2:
-    st.header("🏢 Government & Public Services")
-    
-    # --- 1. Quick Access & Network ---
-    sc1, sc2 = st.columns([1, 1])
-    with sc1:
-        st.markdown('<div class="svc-card"><h4>🔐 Quick Access</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a></ul></div>', unsafe_allow_html=True)
-    with sc2:
-        st.markdown('**🌐 Connectivity Monitor**')
-        st.caption("Singtel: 99.8% | M1: 92.1% | Starhub: 98.5%")
-        st.progress(0.98)
+    st.header("🏢 Public Services")
+    # 1. Links & Net
+    sc1, sc2 = st.columns(2)
+    with sc1: st.markdown('<div class="svc-card"><b>Links:</b> [Singpass](https://www.singpass.gov.sg) | [CPF](https://www.cpf.gov.sg) | [HDB](https://www.hdb.gov.sg)</div>', unsafe_allow_html=True)
+    with sc2: st.write("**Network Status:** Singtel: 99.8% ✅ | M1: 92.1% ⚠️")
 
-    # --- 2. Unified Expressway & Incident Section ---
-    with st.expander("🛣️ Expressway Traffic & Incident Command", expanded=True):
-        st.markdown("<b>🚦 Current Flow Speeds</b>", unsafe_allow_html=True)
+    # 2. Traffic (Unified & FIXED)
+    with st.expander("🛣️ Expressway Traffic & Incidents", expanded=True):
         t_cols = st.columns(6)
-        ex_data = [{"n": "CTE", "s": "58km/h", "c": "#28a745"}, {"n": "PIE", "s": "32km/h", "c": "#ffc107"}, {"n": "
+        exs = [("CTE", "58", "#28a745"), ("PIE", "32", "#ffc107"), ("AYE", "24", "#dc3545"), ("ECP", "62", "#28a745"), ("KJE", "48", "#ffc107"), ("MCE", "60", "#28a745")]
+        for i, (n, s, c) in enumerate(exs):
+            t_cols[i].markdown(f'<div style="text-align:center; border:1px solid #444; border-radius:8px; padding:5px;"><b>{n}</b><div class="traffic-pill" style="background-color:{c};">{s}km/h</div></div>', unsafe_allow_html=True)
+        
+        st.divider()
+        st.markdown("<b>⚠️ Incident Log (Latest Top)</b>", unsafe_allow_html=True)
+        incs = [{"t": "22:15", "e": "KPE", "m": "Accident after Bartley Exit. Avoid lane 2."}, {"t": "22:02", "e": "PIE", "m": "Breakdown after Bedok North Exit."}]
+        for inc in incs:
+            st.markdown(f'<div class="incident-box"><b>[{inc["t"]}] {inc["e"]}</b>: {inc["m"]}</div>', unsafe_allow_html=True)
+
+    # 3. Rail & Weather
+    with st.expander("🚆 Rail & 🌤️ Weather", expanded=True):
+        rc1, rc2 = st.columns(2)
+        with rc1: st.write("**MRT:** EWL: ✅ | NSL: ✅ | CCL: ⚠️ Works")
+        with rc2: st.info("**NEA:** Partly Cloudy. 28°C - 31°C")
+
+with tab3:
+    st.header("🧪 PMT Trial")
+    target = st.selectbox("Target:", ["Currency (USD/SGD)", "Stock Market (STI)", "4D"])
+    days = 30
+    X = np.array(range(days)).reshape(-1, 1)
+    y = np.linspace(100, 110, days) + np.random.normal(0, 1, days)
+    model = LinearRegression().fit(X, y)
+    pred = model.predict(np.array([[days + 1]]))[0]
+    st.metric(f"ML Predicted {target}", f"{pred:.2f}")
+    st.line_chart(pd.DataFrame({'History': y, 'Trend': model.predict(X)}))
+
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | ID: gold 10")
