@@ -240,7 +240,7 @@ with tab2:
         with w_c1:
             st.markdown('<div class="weather-box"><b>Next 60 Mins</b><br><span style="font-size:1.5rem;">🌥️</span><br><b>Partly Cloudy</b><br></div>', unsafe_allow_html=True)
         with w_c2:
-            st.markdown('<div class="weather-box"><b>Next 120 Mins</b><br><span style="font-size:1.5rem;">⛈️</span><br><b>Thundery Showers</b><br><</div>', unsafe_allow_html=True)
+            st.markdown('<div class="weather-box"><b>Next 120 Mins</b><br><span style="font-size:1.5rem;">⛈️</span><br><b>Thundery Showers</b><br></div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
