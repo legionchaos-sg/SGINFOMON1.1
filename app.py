@@ -157,7 +157,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status ---
-    st.divider()
+    #st.divider()
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
         uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
@@ -175,7 +175,7 @@ with tab2:
                 st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-    st.divider()
+   # st.divider()
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
         line_cols = st.columns(6)
         lines = [
@@ -200,7 +200,7 @@ with tab2:
             st.markdown(f"""<div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span><span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span></div><div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">{adv['details']}</div></div>""", unsafe_allow_html=True)
 
     # --- 4. Traffic Info ---
-    st.divider()
+    #st.divider()
     with st.expander("🚦 Traffic Info", expanded=False):
         st.markdown("#### 🛣️ Expressway Traffic Condition")
         tr_cols = st.columns(6)
@@ -234,7 +234,7 @@ with tab2:
             </div>""", unsafe_allow_html=True)
 
     # --- 5. Island Weather (NEW SECTION) ---
-    st.divider()
+    #st.divider()
     with st.expander("🌤️ Island Weather Forecast", expanded=False):
         w_c1, w_c2 = st.columns(2)
         with w_c1:
