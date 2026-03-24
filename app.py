@@ -384,6 +384,5 @@ with tab3:
     st.caption("Machine Learning Status: Tracking Open Market Benchmarks via Stochastic Gradient Descent. Convergence rate 0.001.")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
-    pass
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
+#st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
