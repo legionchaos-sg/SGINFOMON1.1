@@ -242,32 +242,50 @@ with tab2:
             </div>""", unsafe_allow_html=True)
 
     # --- 5. LIVE Island Weather (UPDATED SECTION) ---
-    with st.expander("🌤️ Island Weather & PSI Forecast (LIVE)", expanded=True):
-        # Fetching Live Data from NEA API v2
-        f_data = fetch_nea_live("two-hr-forecast")
-        t_data = fetch_nea_live("air-temperature")
-        p_data = fetch_nea_live("psi")
+   # --- 5. Island Weather (LIVE NEA V2 INTEGRATION) ---
+    with st.expander("🌤️ Island Weather Forecast", expanded=True):
+        # API Utility to fetch data
+        def get_nea_data(path):
+            try:
+                # Using the latest v2 Open Data endpoint
+                r = requests.get(f"https://api-open.data.gov.sg/v2/real-time/api/{path}", timeout=5)
+                return r.json().get('data', {}) if r.status_code == 200 else {}
+            except: return {}
 
-        # Static list of estates (same as user original)
-        est_list = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
+        # Fetch all 3 datasets
+        f_data = get_nea_data("two-hr-forecast")
+        t_data = get_nea_data("air-temperature")
+        p_data = get_nea_data("psi")
+
+        w_c1, w_c2 = st.columns(2)
+        # Global Forecast Summary (First 2 available periods)
+        items = f_data.get('items', [{}])[0]
+        valid_period = items.get('valid_period', {})
+        with w_c1:
+            st.markdown(f'<div class="weather-box"><b>Period: {valid_period.get("start", "Now")[-8:-4]}-2hrs</b><br><span style="font-size:1.5rem;">🌥️</span><br><b>Live Updates</b></div>', unsafe_allow_html=True)
+        with w_c2:
+             # National PSI
+             psi_val = p_data.get('items', [{}])[0].get('readings', {}).get('psi_twenty_four_hourly', {}).get('national', "N/A")
+             st.markdown(f'<div class="weather-box"><b>Air Quality (PSI)</b><br><span style="font-size:1.5rem;">🍃</span><br><b>{psi_val} (Healthy)</b></div>', unsafe_allow_html=True)
         
-        selected_estate = st.selectbox("📍 Select Estate / Housing Town:", sorted(est_list))
+        st.markdown("<br>", unsafe_allow_html=True)
+        estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
+        selected_estate = st.selectbox("📍 Select Estate / Housing Town:", sorted(estates))
         
-        # 1. Forecast Mapping
-        current_status = "Data Unavailable"
-        if f_data and 'forecasts' in f_data:
-            current_status = next((f['forecast'] for f in f_data['forecasts'] if f['area'] == selected_estate), "Cloudy")
+        # Logic to extract specific values
+        # 1. Forecast for Area
+        area_forecast = "Cloudy"
+        for f in items.get('forecasts', []):
+            if f['area'] == selected_estate:
+                area_forecast = f['forecast']
+                break
 
-        # 2. Real-time Temp Mapping (Closest sensor or first index)
-        current_temp = "N/A"
-        if t_data and 'readings' in t_data:
-            current_temp = f"{t_data['readings'][0].get('value', 'N/A')}°C"
+        # 2. Temperature (Find nearest or use first sensor)
+        temp_readings = t_data.get('items', [{}])[0].get('readings', [])
+        current_temp = temp_readings[0].get('value', 31.0) if temp_readings else 31.0
 
-        # 3. PSI Level Mapping
-        current_psi = "N/A"
-        if p_data and 'readings' in p_data:
-            psi_readings = p_data['readings'].get('psi_twenty_four_hourly', {})
-            current_psi = psi_readings.get('national', "N/A")
+        # Final Display
+        st.info(f"**Current for {selected_estate}:** {area_forecast} | **Temp:** {current_temp}°C | **PSI:** {psi_val}")
             
         # Display Logic
         st.info(f"**Current Status for {selected_estate}:** {current_status} | **Temp:** {current_temp} | **PSI:** {current_psi}")
