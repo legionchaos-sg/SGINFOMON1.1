@@ -8,7 +8,7 @@ from deep_translator import GoogleTranslator
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
 
-# 2. Adaptive CSS
+# 2. Adaptive CSS (Theme-Aware & Responsive)
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; color: var(--text-color); }
@@ -16,7 +16,7 @@ st.markdown("""
     .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150px; color: var(--text-color); line-height: 1.1; }
     .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
     .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
-    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
+    .trans-box { font-size: 0.85rem; color: gray; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid var(--border-color); padding-left: 10px; }
     .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
     .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
     .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
@@ -56,7 +56,7 @@ def show_fuel_details(ftype):
         price, change = data
         if brand == "Shell" and ftype == "92 Octane": continue
         display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid var(--border-color);'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
 
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
@@ -77,19 +77,17 @@ with tab1:
     st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
 
     news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
     nc1, nc2 = st.columns([2, 1])
     with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
     with nc2: 
         v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
         do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
-    
+
     news_list = []
     for src, url in news_sources.items():
         if "Unified" in v_mode or src in v_mode:
             try:
-                resp = requests.get(url, headers=headers, timeout=5)
+                resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
                 if resp.status_code == 200:
                     feed = feedparser.parse(resp.content)
                     for entry in feed.entries[:(1 if "Unified" in v_mode else 10)]:
@@ -134,79 +132,4 @@ with tab1:
         coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
         cc = st.columns(5)
         for i, (cat, p, d, q, b) in enumerate(coe_data):
-            cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
-
-    with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-        fc = st.columns(5)
-        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-        for i, ftype in enumerate(ftypes):
-            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-            avg = sum(prices) / len(prices) if prices else 0
-            fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if fc[i].button("Details", key=f"fbtn_109_{ftype}"):
-                show_fuel_details(ftype)
-
-with tab2:
-    # --- 1. Government & Public Services ---
-    st.header("🏢 Government & Public Services")
-    ps_c1, ps_c2, ps_c3 = st.columns(3)
-    
-    with ps_c1:
-        st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
-    with ps_c2:
-        st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
-    with ps_c3:
-        st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
-
-    st.error("🚨 Emergency: Police 999 | SCDF 995 | Non-Emergency 1777")
-
-    # --- 2. Major Expressway Traffic (EXPANDABLE) ---
-    with st.expander("🛣️ Major Expressway Traffic (CTE, PIE, ECP, KJE)", expanded=True):
-        expressways = [
-            {"id": "CTE", "name": "Central Expressway", "color": "#1565C0"},
-            {"id": "PIE", "name": "Pan Island Expressway", "color": "#2E7D32"},
-            {"id": "ECP", "name": "East Coast Parkway", "color": "#00838F"},
-            {"id": "KJE", "name": "Kranji Expressway", "color": "#6A1B9A"}
-        ]
-        traffic_status = {
-            "CTE": ("Normal", "✅ Smooth flow throughout."),
-            "PIE": ("Heavy", "⚠️ Slow moving near Bedok North."),
-            "ECP": ("Normal", "✅ No incidents reported."),
-            "KJE": ("Advisory", "🚧 Maintenance near CCK exit.")
-        }
-        ex_cols = st.columns(4)
-        for i, ex in enumerate(expressways):
-            status, detail = traffic_status.get(ex['id'])
-            status_bg = "rgba(40, 167, 69, 0.2)" if "Normal" in status else "rgba(220, 53, 69, 0.2)" if "Heavy" in status else "rgba(255, 193, 7, 0.2)"
-            with ex_cols[i]:
-                st.markdown(f"""<div style="background-color: var(--secondary-background-color); border-top: 4px solid {ex['color']}; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); height: 140px; color: var(--text-color);"><div style="font-size: 0.9rem; font-weight: bold; color: {ex['color']};">{ex['id']}</div><div style="font-size: 0.7rem; opacity: 0.7; margin-bottom: 8px;">{ex['name']}</div><span style="background-color: {status_bg}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">{status}</span><div style="font-size: 0.75rem; margin-top: 10px; line-height: 1.2;">{detail}</div></div>""", unsafe_allow_html=True)
-        st.link_button("📹 Open OneMotoring Traffic Cameras", "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/traffic_information/traffic-cameras.html", use_container_width=True)
-
-    # --- 3. Network & Internet Status (EXPANDABLE) ---
-    with st.expander("🌐 Internet & Mobile Status", expanded=False):
-        col_graph, col_outage = st.columns([3, 2])
-        with col_graph:
-            st.write("**Uptime Efficiency**")
-            providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-            scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
-            for prov, s in zip(providers, scores):
-                b_color = "#28a745" if s > 98 else "#ffc107" if s > 95 else "#dc3545"
-                st.markdown(f"""<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem; color: var(--text-color);"><span><b>{prov}</b></span><span>{s}%</span></div><div style="background-color: var(--border-color); border-radius: 4px; height: 10px; width: 100%;"><div style="background-color: {b_color}; width: {s}%; height: 100%; border-radius: 4px;"></div></div></div>""", unsafe_allow_html=True)
-        with col_outage:
-            st.write("**⚠️ Incident Log**")
-            logs = [("M1", "08:45", "Fiber latency in West."), ("Singtel", "14:20", "Brief DNS timeout."), ("Starhub", "Stable", "No issues reported.")]
-            for p, t, m in logs:
-                st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid #007bff; padding-left:8px; margin-bottom:10px; color: var(--text-color);"><b>{p}</b> <small style="opacity:0.6;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
-
-    # --- 4. Rail Engineering Advisory (EXPANDABLE) ---
-    with st.expander("🚆 Rail Engineering & Maintenance Advisory", expanded=False):
-        advisories = [
-            {"line": "Circle Line (CCL)", "impact": "Single Platform Service", "details": "Tunnel strengthening between Mountbatten and Paya Lebar.", "status": "In Progress"},
-            {"line": "Sengkang West LRT", "impact": "Loop Closure", "details": "Inner Loop will close starting 19 April 2026 for 6 months.", "status": "Upcoming"}
-        ]
-        for adv in advisories:
-            st.markdown(f"""<div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px; color: var(--text-color);"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span><span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span></div><div style="font-size: 0.85rem; margin-top: 8px; line-height: 1.4;">{adv['details']}</div></div>""", unsafe_allow_html=True)
-
-    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
-
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
+            cc[i].markdown(f"""<div class="c-card"><b>{
