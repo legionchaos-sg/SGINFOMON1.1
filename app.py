@@ -4,7 +4,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Traffic Update 10.9.1
+# SG INFO MONITOR - Weather & Traffic Update 10.9.2
 
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
@@ -27,6 +27,7 @@ st.markdown("""
     div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
     .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
     .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; margin-bottom: 5px; width: 100%; text-align: center;}
+    .weather-box { background: var(--secondary-background-color); border-radius: 10px; padding: 15px; text-align: center; border: 1px solid var(--border-color); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -156,7 +157,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status ---
-    #st.divider()
+    st.divider()
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
         uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
@@ -174,7 +175,7 @@ with tab2:
                 st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory ---
-    #st.divider()
+    st.divider()
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
         line_cols = st.columns(6)
         lines = [
@@ -199,11 +200,10 @@ with tab2:
             st.markdown(f"""<div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span><span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span></div><div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">{adv['details']}</div></div>""", unsafe_allow_html=True)
 
     # --- 4. Traffic Info ---
-    #st.divider()
+    st.divider()
     with st.expander("🚦 Traffic Info", expanded=False):
         st.markdown("#### 🛣️ Expressway Traffic Condition")
         tr_cols = st.columns(6)
-        # Specified order: CTE, PIE, AYE, ECP, KJE, MCE
         expr_stats = [
             {"name": "CTE", "cond": "Optimal", "speed": "58km/h", "color": "#28a745"},
             {"name": "PIE", "cond": "Heavy", "speed": "32km/h", "color": "#ffc107"},
@@ -221,7 +221,6 @@ with tab2:
                 </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>#### ⚠️ Traffic Incidents (Last 60 Mins - FIFO)", unsafe_allow_html=True)
-        # Incidents listed in First-In First-Out order (oldest within the hour to newest)
         traffic_incidents = [
             {"time": "14:21", "expressway": "ECP", "msg": "Road Works on ECP (towards City) after Marine Parade. Avoid lane 1."},
             {"time": "14:48", "expressway": "CTE", "msg": "Road Works on CTE (towards AYE) at PIE(Tuas) Exit."},
@@ -229,12 +228,30 @@ with tab2:
             {"time": "15:19", "expressway": "PIE", "msg": "Vehicle Breakdown on PIE (towards Tuas) after Stevens Rd."},
             {"time": "15:22", "expressway": "MCE", "msg": "Obstacle on MCE (towards AYE) after Central Boulevard."}
         ]
-        
         for inc in traffic_incidents:
             st.markdown(f"""<div style="font-size:0.85rem; border-left: 4px solid #007bff; padding: 8px; margin-bottom: 8px; background: var(--secondary-background-color); border-radius: 0 6px 6px 0;">
                 <span style="font-weight: bold; color: #007bff;">[{inc['time']}] {inc['expressway']}</span> — {inc['msg']}
             </div>""", unsafe_allow_html=True)
 
-    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit. Refresh every 3 mins.")
+    # --- 5. Island Weather (NEW SECTION) ---
+    st.divider()
+    with st.expander("🌤️ Island Weather Forecast", expanded=False):
+        w_c1, w_c2 = st.columns(2)
+        with w_c1:
+            st.markdown('<div class="weather-box"><b>Next 60 Mins</b><br><span style="font-size:1.5rem;">🌥️</span><br><b>Partly Cloudy</b><br><small>島内概ね曇り</small></div>', unsafe_allow_html=True)
+        with w_c2:
+            st.markdown('<div class="weather-box"><b>Next 120 Mins</b><br><span style="font-size:1.5rem;">⛈️</span><br><b>Thundery Showers</b><br><small>午後の雷雨の可能性</small></div>', unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
+        selected_estate = st.selectbox("📍 Select Estate / Housing Town:", estates)
+        
+        # Mock logic for estate-specific weather
+        estate_weather = {"Ang Mo Kio": "Cloudy (32°C)", "Bedok": "Sunny Intervals (31°C)", "Jurong West": "Light Rain (29°C)", "Woodlands": "Fair (33°C)"}
+        current_est_w = estate_weather.get(selected_estate, "Cloudy (31°C)")
+        
+        st.info(f"**Current Status for {selected_estate}:** {current_est_w}")
+
+    st.caption("Data source: LTA MyTransport / SMRT / SBS Transit / NEA. Refresh every 3 mins.")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT")
