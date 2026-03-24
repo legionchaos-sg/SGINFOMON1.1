@@ -7,11 +7,11 @@ from sklearn.linear_model import LinearRegression
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Version 11.0.4 (gold 10 - Full Logic Restoration)
+# SG INFO MONITOR - Version 11.0.5 (gold 10 - Full Restore: Internet & Traffic)
 
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 11.0", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_full_restore")
+st_autorefresh(interval=180000, key="sync_full_restore_v5")
 
 # 2. Adaptive CSS
 st.markdown("""
@@ -32,7 +32,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Logic Functions
+# 3. Logic Functions (Fuel & Holidays)
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
@@ -113,7 +113,7 @@ with tab1:
 
     st.divider()
 
-    # 3. Markets (Restored CPI/Inflation)
+    # 3. Markets (CPI/Inflation Restored)
     with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
         m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
         m1.metric("STI Index", "4,841.30", "-2.20%")
@@ -139,7 +139,7 @@ with tab1:
         for i, (cat, p, d, q, b) in enumerate(coe_data):
             cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
-    # 5. Fuel Prices (Restored Detail Buttons)
+    # 5. Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
         fc = st.columns(5)
         ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
@@ -150,15 +150,30 @@ with tab1:
             if fc[i].button("Details", key=f"fbtn_full_{ftype}"): show_fuel_details(ftype)
 
 with tab2:
-    # --- 1. Government & Public Services ---
     st.header("🏢 Government & Public Services")
+    # --- 1. Service Links ---
     ps_c1, ps_c2, ps_c3 = st.columns(3)
-    with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
-    with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
-    with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
+    with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a></ul></div>', unsafe_allow_html=True)
+    with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a></ul></div>', unsafe_allow_html=True)
+    with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
-    # --- 2. Rail Status (Restored Advisory Section) ---
+    # --- 2. RESTORED: Network & Connectivity Status ---
+    with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
+        providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
+        uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
+        col_graph, col_outage = st.columns([3, 2])
+        with col_graph:
+            for prov, score in zip(providers, uptime_scores):
+                bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
+                st.markdown(f"""<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem;"><span><b>{prov}</b></span><span>{score}%</span></div><div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;"><div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div></div></div>""", unsafe_allow_html=True)
+        with col_outage:
+            st.write("**⚠️ Incident Log**")
+            incidents = [("M1", "08:45", "Fiber latency in West area."), ("Singtel", "14:20", "Brief DNS timeout.")]
+            for p, t, m in incidents:
+                st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid #ffc107; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
+
+    # --- 3. Rail Status & Advisories ---
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=True):
         line_cols = st.columns(6)
         lines = [{"name": "EWL", "status": "Normal", "color": "#009530"}, {"name": "NSL", "status": "Normal", "color": "#d42e12"}, {"name": "NEL", "status": "Normal", "color": "#744199"}, {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, {"name": "DTL", "status": "Normal", "color": "#005ec4"}, {"name": "TEL", "status": "Normal", "color": "#9d5b25"}]
@@ -167,16 +182,27 @@ with tab2:
                 status_icon = "✅" if line['status'] == "Normal" else "⚠️"
                 st.markdown(f"""<div style="background-color: {line['color']}; padding: 8px; border-radius: 5px; text-align: center; color: white;"><div style="font-size: 0.7rem; font-weight: bold;">{line['name']}</div><div style="font-size: 1.2rem;">{status_icon}</div></div>""", unsafe_allow_html=True)
 
-    # --- 3. Weather (Restored Estate Selector) ---
+    # --- 4. RESTORED: Expressway Traffic Condition ---
+    with st.expander("🚦 Traffic Info", expanded=True):
+        tr_cols = st.columns(6)
+        expr_stats = [{"name": "CTE", "cond": "Optimal", "speed": "58km/h", "color": "#28a745"}, {"name": "PIE", "cond": "Heavy", "speed": "32km/h", "color": "#ffc107"}, {"name": "AYE", "cond": "Congested", "speed": "24km/h", "color": "#dc3545"}, {"name": "ECP", "cond": "Optimal", "speed": "62km/h", "color": "#28a745"}, {"name": "KJE", "cond": "Moderate", "speed": "48km/h", "color": "#ffc107"}, {"name": "MCE", "cond": "Optimal", "speed": "60km/h", "color": "#28a745"}]
+        for i, ex in enumerate(expr_stats):
+            with tr_cols[i]:
+                st.markdown(f"""<div style="text-align: center; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px;">
+                    <div style="font-size: 0.75rem; font-weight: bold;">{ex['name']}</div>
+                    <div class="traffic-pill" style="background-color: {ex['color']};">{ex['cond']}</div>
+                    <div style="font-size: 0.8rem;">{ex['speed']}</div>
+                </div>""", unsafe_allow_html=True)
+
+    # --- 5. Weather (NEA Live) ---
     with st.expander("🌤️ Island Weather Forecast (NEA Live)", expanded=True):
         def get_nea_data(path):
             try:
                 r = requests.get(f"https://api-open.data.gov.sg/v2/real-time/api/{path}", timeout=5)
                 return r.json().get('data', {}) if r.status_code == 200 else {}
             except: return {}
-        
         f_data = get_nea_data("two-hr-forecast")
-        estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Central Area", "Clementi", "Hougang", "Jurong West", "Punggol", "Tampines", "Woodlands", "Yishun"]
+        estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Panjang", "Clementi", "Hougang", "Jurong West", "Tampines", "Woodlands"]
         sel_est = st.selectbox("📍 Select Estate:", sorted(estates))
         forecast = "Cloudy"
         for f in f_data.get('items', [{}])[0].get('forecasts', []):
@@ -184,11 +210,10 @@ with tab2:
         st.info(f"**Current for {sel_est}:** {forecast}")
 
 with tab3:
-    # --- ML Prediction Trial ---
+    # --- PMT - Prediction Model Trial ---
     st.header("🧪 PMT - Machine Learning Prediction")
     target = st.selectbox("Target:", ["Currency (USD/SGD)", "Stock Market (STI)", "Singapore 4D"])
     
-    # ML Logic
     days = 30
     X = np.array(range(days)).reshape(-1, 1)
     if target == "Currency (USD/SGD)":
@@ -211,4 +236,4 @@ with tab3:
     with cl2:
         st.line_chart(pd.DataFrame({'Historical': y, 'Trend': model.predict(X)}))
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | Identification: gold 10")
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | ID: gold 10")
