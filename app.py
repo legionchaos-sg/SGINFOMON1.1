@@ -302,18 +302,11 @@ with tab3:
 # ==========================================
 # TAB 3: SYSTEM TOOLS - Live Learning & Alerts
 # ==========================================
-
-# ==========================================
-# UPDATED CSS: Global Font Reduction (-10pt)
-# ==========================================
-
-# ... (Tab 1 and Tab 2 remain fully intact above) ...
-
 # ==========================================
 # TAB 3: SYSTEM TOOLS - Profit Calculator
 # ==========================================
 with tab3:
-    st.header("🎯 Tactical Trade Scheduler & Profit Calc")
+    st.header("🎯 Tactical Trade Scheduler")
     
     # 1. Market Context (Live 2026 Rates)
     market_data = {
