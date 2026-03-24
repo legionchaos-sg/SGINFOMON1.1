@@ -155,7 +155,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status ---
-    st.divider()
+    #st.divider()
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
         uptime_scores = [99.8, 92.1, 98.5, 100.0, 97.4] 
@@ -173,7 +173,7 @@ with tab2:
                 st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">{t}</small><br>{m}</div>""", unsafe_allow_html=True)
 
     # --- 3. Rail Service & Engineering Advisory (NOW EXPANDABLE) ---
-    st.divider()
+    #st.divider()
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
         line_cols = st.columns(6)
         lines = [
