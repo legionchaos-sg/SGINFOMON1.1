@@ -404,3 +404,9 @@ with tab3:
     if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
         st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
         st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
+
+# ==========================================
+# TAB 3: OMT COE
+# ==========================================
+with tab4:
+    st.header("PMT Trial")
