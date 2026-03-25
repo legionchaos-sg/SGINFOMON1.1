@@ -163,96 +163,78 @@ with tab2:
 # TAB 3: SYSTEM TOOLS (STABLE)
 # ==========================================
 # ==========================================
-# TAB 3: SYSTEM TOOLS - Execution Strategy
-# ==========================================
-# ==========================================
-# TAB 3: SYSTEM TOOLS - Execution Strategy
-# ==========================================
-# ==========================================
-# TAB 3: SYSTEM TOOLS - Execution Strategy
+# TAB 3: SYSTEM TOOLS - Macro & Custom Pair
 # ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. LIVE FEED & MACRO OVERLAY
-    def fetch_market_with_bias(target_iso):
-        # 2026 Macro Sentiment Scores (1.0 = Neutral)
-        # > 1.0 = Tailwind (Faster Convergence) | < 1.0 = Headwind (Slower)
-        macro_factors = {
-            "CNY": {"bias": 1.12, "note": "Hawkish MAS vs Loose PBoC (+)"},
-            "THB": {"bias": 0.95, "note": "Tourism Seasonal Volatility (-)"},
-            "JPY": {"bias": 1.25, "note": "Yield Gap Widening (++)"}
-        }
-        
+    # 1. LIVE FETCH WITH CUSTOM PAIR SUPPORT
+    def fetch_live_market(target_iso):
         try:
             url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
             response = requests.get(url, timeout=5).json()
-            rate = response['rates'][target_iso]
-            status, date = "LIVE SYNC", response['date']
+            return {"rate": response['rates'][target_iso], "date": response['date'], "status": "LIVE SYNC"}
         except:
             fallbacks = {"CNY": 5.3895, "THB": 25.5533, "JPY": 124.1885}
-            rate = fallbacks.get(target_iso, 1.0)
-            status, date = "STABLE FALLBACK", "OFFLINE CACHE"
-            
-        return {**macro_factors.get(target_iso, {"bias": 1.0, "note": "Neutral"}), 
-                "rate": rate, "status": status, "date": date}
+            return {"rate": fallbacks.get(target_iso, 1.3540), "date": "OFFLINE CACHE", "status": "STABLE"}
 
     # 2. SELECTION UI
+    c_pol1, c_pol2 = st.columns([2, 1])
+    with c_pol1:
+        # gold 10a: Manual Policy Override
+        policy_stance = st.radio("MAS Policy Stance Override:", ["Hawkish (Appreciate)", "Neutral", "Dovish (Ease)"], horizontal=True)
+    
+    st.markdown("---")
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
-        pair = st.selectbox("Currency Pair:", ["SGD/CNY", "SGD/THB", "SGD/JPY"], key="p_calc_pair")
+        # ALLOW USER TO CREATE/SELECT NEW CURRENCY PAIR
+        # List of ISO codes supported by Frankfurter
+        supported = ["CNY", "THB", "JPY", "MYR", "EUR", "GBP", "USD", "AUD", "HKD"]
+        target_iso = st.selectbox("Select/Add Target Currency:", supported, index=0)
         trade_amt = st.number_input("Trade Amount (SGD):", min_value=0, value=1000)
-    
-    target_iso = pair.split("/")[1]
-    curr = fetch_market_with_bias(target_iso)
+
+    market = fetch_live_market(target_iso)
     
     with c2:
-        user_target = st.number_input("User Target Price:", value=curr['rate'] * 1.002, format="%.4f")
+        user_target = st.number_input("User Target Price:", value=market['rate'] * 1.002, format="%.4f")
         
-        # 3. REALISTIC ALGO: Convergence based on Volatility + Macro Bias
-        v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
-        # Calculation: Days = Gap / (Daily Vol * Macro Bias)
-        adj_vol = v_map.get(target_iso, 0.01) * curr['bias']
-        price_diff = abs(user_target - curr['rate'])
-        est_days = int(np.ceil(price_diff / adj_vol)) if price_diff > 0 else 0
+        # 3. MACRO BIAS CALCULATION
+        # Hawkish = +15% speed | Neutral = 0% | Dovish = -20% speed
+        policy_mult = {"Hawkish (Appreciate)": 1.15, "Neutral": 1.0, "Dovish (Ease)": 0.80}
+        v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500, "MYR": 0.0025, "EUR": 0.0005}
+        
+        active_bias = policy_mult[policy_stance]
+        daily_vol = v_map.get(target_iso, market['rate'] * 0.0005)
+        
+        price_gap = abs(user_target - market['rate'])
+        est_days = int(np.ceil(price_gap / (daily_vol * active_bias))) if price_gap > 0 else 0
         model_exec_date = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=est_days)).strftime('%d %b %Y')
 
     with c3:
-        st.write(f"**Macro Sentiment: {curr['status']}**")
+        st.write(f"**{target_iso} Macro Sentiment**")
+        color = "#ff4b4b" if active_bias < 1.0 else "#00ff7f"
         st.markdown(f"""
-            <div style="font-size: 0.8rem; line-height: 1.3; background: rgba(0,255,127,0.1); padding: 10px; border-radius: 8px; border-left: 4px solid #00ff7f;">
-                <b>Live Rate:</b> {curr['rate']:.4f}<br>
-                <b>Macro Bias:</b> {curr['bias']}x ({curr['note']})<br>
-                <b>Credit Rating:</b> High (MAS AAA)
+            <div style="background: {color}22; padding: 10px; border-radius: 8px; border: 1px solid {color};">
+                <b>Live Rate:</b> {market['rate']:.4f}<br>
+                <b>Bias Multiplier:</b> {active_bias}x<br>
+                <b>Status:</b> {policy_stance}
             </div>
         """, unsafe_allow_html=True)
 
-    # 4. CALCULATION & VISUALS
-    profit_raw = (trade_amt * user_target) - (trade_amt * curr['rate'])
-    st.markdown("---")
+    # 4. RESULTS & VISUALS
+    profit_raw = (trade_amt * user_target) - (trade_amt * market['rate'])
     res_c1, res_c2 = st.columns([1, 2])
     
     with res_c1:
-        st.metric("📅 Model Suggested Date", model_exec_date, help="Adjusted for MAS Policy & Market Credibility")
-        st.metric("🎯 User Target", f"{user_target:.4f}")
-        st.metric("Est. Profit", f"+{profit_raw:.2f} {target_iso}", delta=f"{(user_target/curr['rate']-1)*100:.2f}%")
+        st.metric("Model Suggested Date", model_exec_date)
+        st.metric("Est. Profit", f"+{profit_raw:.2f} {target_iso}", delta=f"{(active_bias-1)*100:.1f}% Bias")
 
     with res_c2:
-        st.write(f"**{pair} Realistic Convergence Path**")
-        # Generate non-linear path to simulate market 'noise'
-        steps = 15
-        base_path = np.linspace(curr['rate'], user_target, steps)
-        noise = np.random.normal(0, v_map.get(target_iso, 0.01)*0.2, steps)
-        st.line_chart(pd.DataFrame({
-            "Market Path": base_path + noise,
-            "Target Baseline": [user_target] * steps
-        }), height=220)
+        path = np.linspace(market['rate'], user_target, 15)
+        st.line_chart(pd.DataFrame({"Market Path": path, "Target": [user_target]*15}), height=200)
 
-    # 5. RECORD LOGGING
-    if st.button(f"💾 Lock Plan: Execute {pair} on {model_exec_date}", use_container_width=True):
-        st.success(f"Plan Locked. Target {user_target} validated against 2026 Macro Bias.")
-
-    st.info(f"💡 **gold 10 Analysis:** The model accounts for **{curr['note']}**. Expected reach in **{est_days} days**.")
+    if st.button(f"💾 Lock Plan: SGD/{target_iso} for {model_exec_date}", use_container_width=True):
+        st.success(f"Execution plan for {target_iso} locked at {user_target} target.")
 # ==========================================
 # TAB 4: PMT COE (API Prediction Model) - Gold 10a
 # ==========================================
