@@ -600,3 +600,11 @@ with tab5:
     weeks = list(range(22, 0, -1))
     prices = [total_price * (1.25 if w > 18 else 0.88 if w > 8 else 1.15) for w in weeks]
     st.area_chart(pd.DataFrame({"Price (SGD)": prices}, index=weeks), color="#ffd700")
+    
+   
+
+    # 6. PRICE TREND CHART (Original Syntax)
+    st.write(f"**Price Projection: Weeks leading to {d_dep.strftime('%d/%m/%y')}**")
+    weeks = list(range(22, 0, -1))
+    prices = [total_price * (1.25 if w > 18 else 0.88 if w > 8 else 1.15) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price (SGD)": prices}, index=weeks), color="#ffd700")
