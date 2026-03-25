@@ -505,10 +505,7 @@ with tab4:
     st.markdown("---")
     st.write(f"**{v_cat} Price Flux Stream**")
 
-# ==========================================
-# TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
-# ==========================================
-
+from datetime import date, timedelta
 
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
@@ -516,84 +513,91 @@ with tab4:
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     
-    # 1. TRAVEL CONFIGURATION
+    # 1. TRIP TYPE & DESTINATION
+    t_col1, t_col2 = st.columns([1, 2])
+    with t_col1:
+        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
+    with t_col2:
+        dest_input = st.text_input("Destination (from SIN):", value="Japan", key="g10_t5_dest")
+
+    # 2. DYNAMIC ROUTING & DATES
     col_a1, col_a2 = st.columns([2, 1.2])
     
     with col_a1:
-        dest_input = st.text_input("Destination (Origin: SIN):", value="Japan", key="g10_t5_dest")
-        
-        # Multi-Airport Mapping
         airport_map = {
             "Japan": ["Tokyo (NRT/HND)", "Osaka (KIX)", "Nagoya (NGO)"],
             "USA": ["New York (JFK/EWR)", "Los Angeles (LAX)", "San Francisco (SFO)"],
-            "China": ["Shanghai (PVG)", "Beijing (PEK/PKX)"]
+            "UK": ["London (LHR/LGW)", "Manchester (MAN)"]
         }
         targets = airport_map.get(dest_input, ["Main International Hub"])
         v_airports = st.multiselect("Analyze Hubs:", targets, default=targets[0], key="g10_t5_airports")
+        
+        # Display Route Logic
+        if v_trip_type == "Round Trip":
+            st.caption(f"🔄 Route: SIN ➔ {v_airports[0] if v_airports else '...'} ➔ SIN")
+        else:
+            st.caption(f"➡️ Route: SIN ➔ {v_airports[0] if v_airports else '...'}")
 
     with col_a2:
-        # ✅ STABILITY FIX: Changed to "DD/MM/YYYY" 
-        # Streamlit 1.40+ strictly requires 4-digit years in the format string.
-        d_input = st.date_input(
-            "Travel Date (Departure):", 
-            value=date(2026, 6, 15),
-            format="DD/MM/YYYY",  
-            key="g10_t5_date"
-        )
+        # DEPARTURE DATE (Fixed YYYY format for stability)
+        d_input = st.date_input("Departure Date:", value=date(2026, 6, 15), format="DD/MM/YYYY", key="g10_t5_dep")
         
-        # DISPLAY: Still showing your preferred dd/mm/yy format below the widget
-        st.write(f"📅 **Confirmed Date:** {d_input.strftime('%d/%m/%y')}")
+        # RETURN DATE (Conditional)
+        if v_trip_type == "Round Trip":
+            r_input = st.date_input("Return Date:", value=d_input + timedelta(days=7), format="DD/MM/YYYY", key="g10_t5_ret")
+        else:
+            st.info("Single Leg: No Return Required")
 
-    # 2. PASSENGER DEMOGRAPHICS
+    # 3. PASSENGER DEMOGRAPHICS (2026 Age Rules)
+    # Note: SIA/ANA charge Adult fares for 12+; Child (2-11) gets ~25% off.
     st.write("**Passenger Breakdown:**")
     p1, p2, p3 = st.columns(3)
-    with p1: adults = st.number_input("Adults (18+):", 1, 10, 1, key="g10_t5_ad")
-    with p2: children = st.number_input("Children (2-11):", 0, 10, 0, key="g10_t5_ch")
-    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0, key="g10_t5_te")
+    with p1: adults = st.number_input("Adults (18+):", 1, 10, 1)
+    with p2: children = st.number_input("Children (2-11):", 0, 10, 0)
+    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0)
 
     st.divider()
 
-    # 3. CARRIER ANALYSIS LOGIC
-    is_peak = d_input.month in [6, 12]
-    # Prediction multipliers based on SIN school holiday cycles
-    multiplier = 1.38 if is_peak else 1.02
+    # 4. PREDICTION ENGINE (Singapore 2026 Holiday Sync)
+    # Peak: June (30 May - 28 Jun) | Dec (21 Nov - 31 Dec)
+    is_june_peak = date(2026, 5, 30) <= d_input <= date(2026, 6, 28)
+    is_dec_peak = date(2026, 11, 21) <= d_input <= date(2026, 12, 31)
     
+    multiplier = 1.45 if (is_june_peak or is_dec_peak) else 1.0
+    trip_mult = 1.0 if v_trip_type == "Round Trip" else 0.65 # Single leg is ~65% of RT price
+
     carriers = {
-        "Singapore Airlines": {"base": 920, "c_disc": 0.25, "type": "Direct"},
-        "ANA / JAL": {"base": 890, "c_disc": 0.25, "type": "Direct"},
-        "Cathay Pacific": {"base": 720, "c_disc": 0.15, "type": "1-Stop"},
-        "Air China": {"base": 560, "c_disc": 0.10, "type": "1-Stop"}
+        "Singapore Airlines": {"base": 950, "c_disc": 0.25},
+        "ANA / JAL": {"base": 910, "c_disc": 0.25},
+        "Cathay Pacific": {"base": 740, "c_disc": 0.15},
+        "Thai Airways": {"base": 650, "c_disc": 0.25}
     }
 
-    # 4. STRATEGIC OUTPUTS
+    # 5. STRATEGIC OUTPUTS
     res_l, res_r = st.columns([1.8, 1])
-    
     with res_l:
-        st.markdown(f"#### 🔮 Market Analysis for {d_input.strftime('%d/%m/%y')}")
+        status_color = "red" if multiplier > 1.2 else "green"
         st.markdown(f"""
-            <div style="background: rgba(0,255,127,0.08); padding: 20px; border-radius: 12px; border: 1px solid #00ff7f;">
-                <strong>Recommended Buy Window:</strong> { '18 Weeks Before' if is_peak else '7 Weeks Before'}
-                <br><small>Status: {'High Volatility' if is_peak else 'Stable Market'}</small>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border-left: 5px solid {status_color};">
+                <strong>Market Sentiment:</strong> {'⚠️ PEAK SEASON DETECTED' if multiplier > 1.2 else '✅ OFF-PEAK STABILITY'}<br>
+                <strong>Recommended Buy Lead:</strong> {'18-22 Weeks' if multiplier > 1.2 else '6-8 Weeks'}
             </div>
         """, unsafe_allow_html=True)
 
     with res_r:
-        # SIA Total Calc: (Adults+Teens)*Price + Children*(Price*0.75)
-        base_p = 920 * multiplier
-        total_val = ((adults + teens) * base_p) + (children * base_p * 0.75)
-        st.metric("Est. Total (SIA)", f"S${total_val:,.0f}")
+        # Pricing logic: (Adults+Teens)*Base + Children*(Base*0.75)
+        base_calc = 950 * multiplier * trip_mult
+        total_val = ((adults + teens) * base_calc) + (children * base_calc * 0.75)
+        st.metric(f"Total Est. ({v_trip_type})", f"S${total_val:,.0f}")
 
-    # 5. CARRIER PRICE GRID
+    # 6. COMPETITIVE MATRIX
     comp_list = []
     for name, info in carriers.items():
-        p = info['base'] * multiplier
+        p = info['base'] * multiplier * trip_mult
         comp_list.append({
             "Carrier": name,
             "Adult/Teen": f"${p:,.0f}",
             "Child (<12)": f"${p*(1-info['c_disc']):,.0f}",
-            "Flight Type": info['type']
+            "Status": "Direct" if "Airlines" in name or "ANA" in name else "1-Stop"
         })
     st.table(comp_list)
-
-    if st.button("📡 Finalize Flight Analysis", use_container_width=True):
-        st.toast("Logic synced across all tabs.")
