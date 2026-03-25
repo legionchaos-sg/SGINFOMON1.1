@@ -407,102 +407,101 @@ with tab3:
 
 # [APPEND IMMEDIATELY AFTER TAB 3 BLOCK]
 # ==========================================
-# TAB 4: PMT: COE - AUTOMATED PREDICTION
-# ==========================================
-# ==========================================
-# TAB 4: PMT: COE - STRATEGIC FEASIBILITY
+# TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
 # ==========================================
 with tab4:
-    st.header("🔮 COE Strategic Feasibility & Prediction")
-    
-    # 1. LIVE GROUND DATA (March 2nd Bidding 2026 Results)
+    # 1. LIVE GROUND DATA (March 2nd 2026 Actuals)
     g10_coe_stats = {
-        "Cat A": {"p": 111890, "q": 1264, "b": 1895, "date": "06 Apr 2026", "vol": 0.04},
-        "Cat B": {"p": 115568, "q": 812, "b": 1185, "date": "06 Apr 2026", "vol": 0.05},
-        "Cat C": {"p": 78000, "q": 290, "b": 438, "date": "06 Apr 2026", "vol": 0.03},
-        "Cat D": {"p": 9589, "q": 546, "b": 726, "date": "06 Apr 2026", "vol": 0.08},
-        "Cat E": {"p": 118119, "q": 246, "b": 422, "date": "06 Apr 2026", "vol": 0.06}
+        "Cat A": {"p": 111890, "q": 1264, "b": 1895, "date": "06 Apr 2026"},
+        "Cat B": {"p": 115568, "q": 812, "b": 1185, "date": "06 Apr 2026"},
+        "Cat C": {"p": 78000, "q": 290, "b": 438, "date": "06 Apr 2026"},
+        "Cat D": {"p": 9589, "q": 546, "b": 726, "date": "06 Apr 2026"},
+        "Cat E": {"p": 118119, "q": 246, "b": 422, "date": "06 Apr 2026"}
     }
 
-    # 2. ROW 1: INPUTS & SENTIMENT
+    # 2. USER INTERFACE & INPUT
+    st.header("🤖 COE Intelligence & Feasibility")
     p_c1, p_c2, p_c3 = st.columns([1.2, 1.3, 1.5], vertical_alignment="center")
     
     with p_c1:
-        v_cat_s = st.selectbox("Market Category:", list(g10_coe_stats.keys()), key="g10_t4_cat_s")
-        u_desire = st.number_input("Your Desired COE ($):", min_value=1, value=95000, key="g10_t4_user_target")
+        v_cat = st.selectbox("Category:", list(g10_coe_stats.keys()), key="g10_t4_vcat")
+        u_target = st.number_input("Desired COE ($):", min_value=0, value=0, help="Set to 0 for Model Auto-Prediction", key="g10_t4_target")
     
-    # FETCH MAS STANCE & BQ RATIO
+    # FETCH CONTEXTUAL DATA
     current_mas = st.session_state.get("g10_t3_p_final", "Neutral")
-    bq_ratio = g10_coe_stats[v_cat_s]['b'] / g10_coe_stats[v_cat_s]['q']
+    bq_ratio = g10_coe_stats[v_cat]['b'] / g10_coe_stats[v_cat]['q']
+    last_p = g10_coe_stats[v_cat]['p']
     
     with p_c2:
-        m_bias_s = st.select_slider(
+        # Automated Sentiment Slider
+        m_sent = st.select_slider(
             "Model Market Sentiments:", 
             options=["Bearish", "Neutral", "Bullish"], 
-            value="Bullish" if bq_ratio > 1.6 else "Bearish" if bq_ratio < 1.3 else "Neutral",
-            key="g10_t4_bias_s"
+            value="Bullish" if bq_ratio > 1.5 or "3-week gap" in "Cycle Info" else "Neutral",
+            key="g10_t4_sent"
         )
-        st.caption(f"Sync: BQ Ratio {bq_ratio:.2f}x | MAS: {current_mas}")
+        st.caption(f"BQ Ratio: {bq_ratio:.2f}x | Gap: 3-Weeks (High Demand)")
 
     with p_c3:
-        last_val = g10_coe_stats[v_cat_s]['p']
         st.markdown(f"""
             <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid #444; text-align:center;">
                 <small>Latest Settled Price</small><br>
-                <strong style="font-size:1.4rem; color:#007bff;">${last_val:,.0f}</strong><br>
-                <small>Next Tender: {g10_coe_stats[v_cat_s]['date']}</small>
+                <strong style="font-size:1.4rem; color:#007bff;">${last_p:,.0f}</strong><br>
+                <small>Next: {g10_coe_stats[v_cat]['date']}</small>
             </div>
         """, unsafe_allow_html=True)
 
     st.divider()
 
-    # 3. ANALYSIS LOGIC: GROUND INTEL & POLICY SYNC
-    price_gap_pct = (last_val - u_desire) / last_val
+    # 3. CORE LOGIC SWITCH
+    if u_target == 0:
+        # MODE A: FORMER PREDICTION LOGIC
+        st.subheader("📡 Next Bidding Prediction (Automated)")
+        s_mult = {"Bearish": 0.97, "Neutral": 1.02, "Bullish": 1.06}[m_sent]
+        # Factor in the 3-week selling window (+2% pressure)
+        pred_val = last_p * (1 + (bq_ratio - 1.4) * 0.05) * s_mult * 1.02
+        p_diff = pred_val - last_p
+        
+        l_res, r_res = st.columns([2, 1])
+        with l_res:
+            st.markdown(f"""
+                <div style="background: rgba(0,255,127,0.08); padding: 25px; border-radius: 12px; border: 1px solid #00ff7f; text-align: center;">
+                    <small>MODEL PROJECTED PRICE</small><br>
+                    <span style="font-size: 2.8rem; font-weight: bold; color: #00ff7f;">${pred_val:,.0f}</span><br>
+                    <span style="font-size: 1.2rem; color: #00ff7f;">▲ ${p_diff:,.0f} (+{(p_diff/last_p)*100:.1f}%)</span>
+                </div>
+            """, unsafe_allow_html=True)
+        with r_res:
+            st.metric("Bidding Volume", f"{g10_coe_stats[v_cat]['b']:,}")
+            st.metric("Quota Available", f"{g10_coe_stats[v_cat]['q']:,}")
     
-    # Real-world Feasibility Logic (Quota Cycles + ERP 2.0 Injections)
-    if price_gap_pct <= 0:
-        status, s_color, est_window = "REALITY (Immediate)", "#00ff7f", "Current Cycle"
-    elif price_gap_pct < 0.12:
-        status, s_color, est_window = "PROBABLE (Market Correction)", "#ffaa00", "Q3 - Q4 2026"
-    elif price_gap_pct < 0.25:
-        status, s_color, est_window = "STRATEGIC (Supply Dependent)", "#ff4b4b", "Mid 2027 (Peak Cycle)"
     else:
-        status, s_color, est_window = "SPECULATIVE (Long-Term)", "#7d7d7d", "2028 (Supply Peak)"
+        # MODE B: STRATEGIC FEASIBILITY LOGIC
+        gap_pct = (last_p - u_target) / last_p
+        if gap_pct <= 0:
+            status, s_col, window = "REALITY", "#00ff7f", "Immediate"
+        elif gap_pct < 0.15:
+            status, s_col, window = "PROBABLE", "#ffaa00", "Late 2026"
+        else:
+            status, s_col, window = "STRATEGIC", "#ff4b4b", "2027-2028 (Peak Supply)"
 
-    # 4. OUTPUT ROW: PREDICTION vs USER TARGET
-    res_l, res_r = st.columns([2, 1.2])
-    
-    with res_l:
-        st.markdown(f"#### 🔍 Feasibility Analysis for ${u_desire:,}")
+        st.subheader(f"🔍 Analysis for Target: ${u_target:,}")
         st.markdown(f"""
-            <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border-left: 5px solid {s_color};">
-                <div style="display:flex; justify-content:space-between;">
-                    <span>Market Status:</span> <b style="color:{s_color};">{status}</b>
+            <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border-left: 5px solid {s_col};">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>Feasibility Status:</span> <b style="color:{s_col};">{status}</b>
+                    <span>Probable Year: <b>{window}</b></span>
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                    <span>Probable Reality Window:</span> <b>{est_window}</b>
-                </div>
-                <hr style="opacity:0.1; margin:10px 0;">
-                <p style="font-size:0.85rem; line-height:1.4; color:#ccc;">
-                    <b>Ground Intel:</b> Demand pressure is {bq_ratio:.2f}x. For ${u_desire:,} to be a reality, 
-                    the market requires a {price_gap_pct*100:.1f}% correction. Historically, this aligns with 
-                    {'the upcoming 20,000 COE injection phase' if price_gap_pct < 0.20 else 'the 10-year deregistration peak'}.
+                <p style="font-size:0.85rem; color:#ccc; margin:0;">
+                    <b>Ground Intel:</b> Demand exceeds supply by {(bq_ratio-1)*100:.0f}%. 
+                    A target of ${u_target:,} requires a {gap_pct*100:.1f}% correction, 
+                    likely during the 2026/27 deregistration peak.
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
-    with res_r:
-        s_mult = {"Bearish": 0.96, "Neutral": 1.01, "Bullish": 1.05}[m_bias_s]
-        pred_next = last_val * (1 + (bq_ratio - 1.4) * 0.04) * s_mult
-        st.metric("Model Next Prediction", f"${pred_next:,.0f}", f"{pred_next-last_val:+,.0f}")
-        st.metric("Quota/Bid Saturation", f"{(g10_coe_stats[v_cat_s]['q']/g10_coe_stats[v_cat_s]['b'])*100:.1f}%")
-
-    # 5. CONTINUOUS ANALYSIS CHART
+    # 4. DATA VISUALIZATION (ON-THE-FLY)
     st.markdown("---")
-    st.write("**COE Price Trajectory towards User Target**")
-    sim_steps = np.linspace(last_val, u_desire, 12)
-    st.area_chart(pd.DataFrame({"Model Flux": sim_steps}), height=180, color=s_color)
-
-    if st.button("📡 Execute On-the-Fly Analysis", use_container_width=True, key="g10_t4_deep"):
-        st.toast("Syncing with LTA/MAS Ground Data...")
-        st.success(f"Analysis complete. Target ${u_desire:,} is currently {status}.")
+    st.write(f"**{v_cat} Price Flux Stream**")
+    chart_data = [last_p * (0.98 if i < 5 else 1.03) for i in range(10)]
+    st.line_chart(chart_data, height=150, color="#00ff7f")
