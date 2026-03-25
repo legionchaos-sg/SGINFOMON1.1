@@ -55,6 +55,48 @@ def fetch_nea_live(endpoint):
     except: return None
     return None
 
+# --- NEW: LIVE MARKET ENGINE (gold 10) ---
+@st.cache_data(ttl=300)
+def fetch_live_market_data():
+    """Fetches STI, Gold, Silver, Brent, and Nat Gas from Yahoo Finance"""
+    tickers = {
+        "STI": "^STI", 
+        "Gold": "GC=F", 
+        "Silver": "SI=F", 
+        "Brent": "BZ=F", 
+        "NatGas": "NG=F"
+    }
+    results = {}
+    for label, sym in tickers.items():
+        try:
+            ticker = yf.Ticker(sym)
+            # Fetch 2 days to calculate delta even if market is currently closed
+            hist = ticker.history(period="2d")
+            if not hist.empty:
+                current_val = hist['Close'].iloc[-1]
+                prev_val = hist['Close'].iloc[-2]
+                delta_pct = ((current_val - prev_val) / prev_val) * 100
+                results[label] = (current_val, delta_pct)
+            else:
+                results[label] = (0.0, 0.0)
+        except:
+            results[label] = (0.0, 0.0)
+    return results
+
+# --- NEW: SENTIMENT LOGIC ---
+def get_market_sentiment(m_data):
+    # Aggregating signals from STI and Brent (Proxy for global/local health)
+    sti_perf = m_data.get("STI", (0,0))[1]
+    brent_perf = m_data.get("Brent", (0,0))[1]
+    
+    score = sti_perf + (brent_perf * 0.5)
+    
+    if score > 0.8: return ":green[🚀 BULLISH]", "STRONG BUY"
+    elif score < -0.8: return ":red[📉 BEARISH]", "RISK OFF"
+    else: return ":orange[⚖️ CAUTIOUS]", "NEUTRAL"
+
+# [Logic Functions for Holidays and Fuel remain as per original code]
+
 fuel_data = {
     "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
     "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
@@ -133,15 +175,37 @@ with tab1:
     st.divider()
 
     # 3. Markets & Commodities
-    with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
+# 3. Markets & Commodities (DYNAMIC UPDATE)
+    m_live = fetch_live_market_data()
+    sentiment_icon, sentiment_text = get_market_sentiment(m_live)
+    
+    with st.expander(f"📈 Market Indices | Sentiment: {sentiment_icon} {sentiment_text}", expanded=True):
         m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
-        m1.metric("STI Index", "4,841.30", "-2.20%")
-        m2.metric("Gold (Spot)", "$4,391.00", "+1.66%")
-        m3.metric("Silver (Spot)", "$64.63", "-6.11%")
-        m4.metric("Brent Crude", "$112.61", "+0.40%")
-        m5.metric("Natural Gas", "$3.09", "-2.21%")
-        m6.metric("SG CPI (All)", "100.7", "-0.20%", help="Base Year 2024=100")
-        m7.metric("SG Inflation", "1.40%", "+0.40%", help="MAS Core Inflation YoY")
+        
+        # STI Logic: Shows Live if open, Last Close if closed
+        m1.metric("STI Index", 
+                  f"{m_live['STI'][0]:,.2f}", 
+                  f"{m_live['STI'][1]:+.2f}%")
+        
+        m2.metric("Gold (Spot)", 
+                  f"${m_live['Gold'][0]:,.2f}", 
+                  f"{m_live['Gold'][1]:+.2f}%")
+        
+        m3.metric("Silver (Spot)", 
+                  f"${m_live['Silver'][0]:,.2f}", 
+                  f"{m_live['Silver'][1]:+.2f}%")
+        
+        m4.metric("Brent Crude", 
+                  f"${m_live['Brent'][0]:,.2f}", 
+                  f"{m_live['Brent'][1]:+.2f}%")
+        
+        m5.metric("Natural Gas", 
+                  f"${m_live['NatGas'][0]:.3f}", 
+                  f"{m_live['NatGas'][1]:+.2f}%")
+        
+        # Static Macro remain for reference
+        m6.metric("SG CPI (All)", "100.7", "-0.20%")
+        m7.metric("SG Inflation", "1.40%", "+0.40%")
 
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
