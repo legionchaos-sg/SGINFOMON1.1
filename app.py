@@ -307,7 +307,7 @@ with tab3:
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. DATA ENGINE (Remains Isolated)
+    # 1. DATA ENGINE (Isolated for gold 10)
     @st.cache_data(ttl=300)
     def fetch_market_engine_g10(target_iso, days_lookback):
         try:
@@ -332,13 +332,13 @@ with tab3:
     
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_t3_p_v3")
+                            horizontal=True, key="g10_t3_p_final")
     
     with r1_col2:
-        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_v3")
+        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_final")
 
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_v3", label_visibility="collapsed")
+    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
     with r1_col3:
@@ -358,9 +358,9 @@ with tab3:
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_v3")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
     with r2_col2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_v3")
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
     # 4. PROBABILITY & ACTION DATE LOGIC
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
@@ -371,11 +371,11 @@ with tab3:
     z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
     prob_val = max(5, min(99, 100 * (1 - (z_score / 3))))
 
-    # 5. OUTPUT DISPLAY (Updated Font for Suggest Action Date)
+    # 5. OUTPUT DISPLAY
     st.markdown("---")
     out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
-        # FONT SIZE INCREASED BY 2pts (approx 2.66px)
+        # ENLARGED FONT FOR ACTION DATE
         st.markdown(f"""
             <div style="margin-bottom: 15px;">
                 <span style="font-size: 1.15rem; font-weight: bold; color: #ffffff;">
@@ -397,12 +397,10 @@ with tab3:
         st.metric("Live Market Rate", f"{m_data['rate']:.4f}")
 
     with out_c2:
-        # Chart with Bounds
         path = np.linspace(m_data['rate'], u_target, 10)
         st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=180)
 
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_l_v3"):
-        st.success(f"Strategy locked for {action_dt}.")
-
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_l_final"):
+    # SINGLE CONSOLIDATED EXECUTION BUTTON
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
+        st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
         st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
