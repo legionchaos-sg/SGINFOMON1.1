@@ -155,15 +155,13 @@ def get_market_sentiment(m_data):
 
 # [Logic Functions for Holidays and Fuel remain as per original code]
 
-#fuel_data = {
-#    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
-#    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
-#    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05), "Cnergy": (2.80, 0.05), "Sinopec": (3.97, 0.05), "Smart Energy": (2.99, -0.12)},
-#    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
-#    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
-#}
-fuel_live = fetch_live_petrol_feed() # The new professional engine
-
+fuel_data = {
+    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
+    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05), "Cnergy": (2.80, 0.05), "Sinopec": (3.97, 0.05), "Smart Energy": (2.99, -0.12)},
+    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
+}
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
@@ -277,6 +275,31 @@ with tab1:
         # --- 2. UI IMPLEMENTATION ---
     fx_data = fetch_live_forex()
     
+    # f1: SGD/MYR
+    #f1.metric("SGD/MYR", 
+              #f"{fx_data['MYR'][0]:.2f}", 
+              #f"{fx_data['MYR'][1]:+.2f}%")
+    
+    # f2: SGD/JPY
+    #f2.metric("SGD/JPY", 
+              #f"{fx_data['JPY'][0]:.2f}", 
+              #f"{fx_data['JPY'][1]:+.2f}%")
+    
+    # f3: SGD/THB
+    #f3.metric("SGD/THB", 
+              #f"{fx_data['THB'][0]:.2f}", 
+              #f"{fx_data['THB'][1]:+.2f}%")
+    
+    # f4: SGD/CNY
+    #f4.metric("SGD/CNY", 
+              #f"{fx_data['CNY'][0]:.2f}", 
+              #f"{fx_data['CNY'][1]:+.2f}%")
+    
+    # f5: SGD/USD
+    #f5.metric("SGD/USD", 
+              #f"{fx_data['USD'][0]:.2f}", 
+              #f"{fx_data['USD'][1]:+.2f}%")
+
     # Rounded to 2 decimal places as requested
     f1.metric("SGD/MYR", f"{fx_data['MYR'][0]:.2f}", f"{fx_data['MYR'][1]:+.2f}%")
     f2.metric("SGD/JPY", f"{fx_data['JPY'][0]:.2f}", f"{fx_data['JPY'][1]:+.2f}%")
@@ -296,27 +319,10 @@ with tab1:
         fc = st.columns(5)
         ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
         for i, ftype in enumerate(ftypes):
-            #prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-            #avg = sum(prices) / len(prices) if prices else 0
-            #3fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            #if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
-        # A. CALCULATE AVERAGE
-        # Filters out "N/A" strings to ensure math works
-        raw_prices = [v[0] for v in fuel_live[ftype].values() if isinstance(v[0], (float, int))]
-        avg_price = sum(raw_prices) / len(raw_prices) if raw_prices else 0
-        
-        # B. DISPLAY SUMMARY CARD
-        fc[i].markdown(f'''
-            <div class="f-card">
-                <small style="font-size:0.65rem; opacity:0.8;">{ftype}</small><br>
-                <span style="color:#007bff; font-weight:bold; font-size:1.1rem;">${avg_price:.2f}</span>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        # C. DETAILS BUTTON (Remains Available)
-        # This calls your original show_fuel_details function
-        if fc[i].button("View Brands", key=f"details_{ftype}"):
-            show_fuel_details(ftype)
+            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+            avg = sum(prices) / len(prices) if prices else 0
+            fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
+            if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
 
 
 # ==========================================
