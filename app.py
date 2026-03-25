@@ -505,10 +505,93 @@ with tab4:
     st.markdown("---")
     st.write(f"**{v_cat} Price Flux Stream**")
 
+from datetime import date, timedelta
+import pandas as pd
+
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
 # ==========================================
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
+    
+    # 1. TRIP & LOCATION CONFIG
+    t_col1, t_col2 = st.columns([1, 2])
+    with t_col1:
+        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
+    with t_col2:
+        u_input = st.text_input("Enter Country or City (Origin: SIN):", value="China", key="g10_t5_loc")
+
+    # 2. INTERNAL AIRPORT ENGINE (Fixed Hubs for Stability)
+    geo_atlas = {
+        "China": ["Guangzhou Baiyun (CAN)", "Shanghai Pudong (PVG)", "Beijing Capital (PEK)", "Shenzhen Bao'an (SZX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka Kansai (KIX)"],
+        "USA": ["New York (JFK)", "Los Angeles (LAX)", "San Francisco (SFO)"],
+        "Thailand": ["Bangkok Suvarnabhumi (BKK)", "Phuket (HKT)"]
+    }
+    
+    # Auto-find airports based on user input
+    found_hubs = geo_atlas.get(u_input, [f"{u_input} Intl (Primary)"])
+    v_selected_hubs = st.multiselect("Available Hubs:", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
+
+    # 3. DATE & PASSENGER DATA
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+        dep_day = d_dep.strftime('%A')
+    with col_d2:
+        if v_trip_type == "Round Trip":
+            d_ret = st.date_input("Return (to SIN):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
+        else:
+            st.info("Direct Leg Selected")
+
+    p1, p2, p3 = st.columns(3)
+    with p1: adults = st.number_input("Adults (18+):", 1, 10, 1)
+    with p2: children = st.number_input("Children (2-11):", 0, 10, 0)
+    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0)
+
+    st.divider()
+
+    # 4. PREDICTION LOGIC (Cheapest Day & Best Window)
+    # 2026 Trend: Tues/Wed are ~12% cheaper. Peak months: June/Dec.
+    is_peak = d_dep.month in [6, 12]
+    is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
+    
+    rec_buy_week = "18-20 weeks out" if is_peak else "7-9 weeks out"
+    predicted_cheapest_day = "Wednesday" if "China" in u_input else "Tuesday"
+    
+    # Output Analytics
+    res_l, res_r = st.columns([1.8, 1])
+    with res_l:
+        st.markdown(f"#### 🔮 Strategic Forecast: {v_selected_hubs[0] if v_selected_hubs else 'Destination'}")
+        st.info(f"""
+            **Optimal Purchase Window:** {rec_buy_week} before {d_dep.strftime('%d/%m/%y')}  
+            **Predicted Cheapest Day to Fly:** {predicted_cheapest_day}  
+            **Status:** Current departure ({dep_day}) is {'✅ Optimal' if is_cheap_day else '⚠️ Peak Day Pricing'}.
+        """)
+
+    with res_r:
+        # Multipliers: Base (980) * Peak (1.45) * TripType (0.65 for One-way) * Day (0.88 if CheapDay)
+        day_mod = 0.88 if is_cheap_day else 1.05
+        trip_mod = 1.0 if v_trip_type == "Round Trip" else 0.65
+        peak_mod = 1.45 if is_peak else 1.0
+        
+        base_unit = 980 * peak_mod * trip_mod * day_mod
+        total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
+        st.metric("Model Prediction (SGD)", f"${total_price:,.0f}")
+
+    # 5. CARRIER PERFORMANCE GRID
+    carriers = {"Singapore Airlines": 1.0, "ANA / JAL": 0.94, "Cathay Pacific": 0.81, "Air China": 0.62}
+    grid_data = []
+    for c, v in carriers.items():
+        p = base_unit * v
+        grid_data.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Trend": "Rising" if is_peak else "Stable"})
+    st.table(grid_data)
+
+    # 6. PRICE TREND CHART (Original Syntax)
+    st.write(f"**Price Projection: Weeks leading to {d_dep.strftime('%d/%m/%y')}**")
+    weeks = list(range(22, 0, -1))
+    # Simulated trend showing price dip at the recommended window
+    prices = [total_price * (1.2 if w > 18 else 0.9 if w > 8 else 1.1) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price": prices}, index=weeks), color="#ffd700")
     
    
