@@ -305,73 +305,73 @@ with tab3:
 # TAB 3: SYSTEM TOOLS - Live Learning & Alerts
 # ==========================================
 
+# ==========================================
+# TAB 3: SYSTEM TOOLS - Macro & Custom Pair
+# ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. TAB-SAFE LIVE FETCH
-    # Uses a unique cache key to avoid interfering with Tab 2's data stream
-    @st.cache_data(ttl=60) 
-    def fetch_market_gold10(target_iso):
+    # 1. ISOLATED DATA FETCH (Tab-Safe for gold 10)
+    @st.cache_data(ttl=60)
+    def fetch_isolated_market(target_iso):
         try:
             url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
             response = requests.get(url, timeout=5).json()
-            return {"rate": response['rates'][target_iso], "status": "LIVE"}
+            return {"rate": response['rates'][target_iso], "status": "LIVE SYNC"}
         except:
-            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "status": "STABLE"}
+            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "status": "STABLE FALLBACK"}
 
-    # 2. MACRO & PAIR SELECTION
-    # Unique keys (gold10_*) prevent session state 'crosstalk' with Tab 2
-    pol_c1, pol_c2 = st.columns([2, 1])
-    with pol_c1:
+    # 2. ROW 1: POLICY STANCE & LIVE RATE
+    r1_col1, r1_col2 = st.columns([2, 1], vertical_alignment="center")
+    with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="gold10_policy_radio")
+                            horizontal=True, key="g10_tab3_policy")
     
-    st.divider()
-    
-    ui_c1, ui_c2, ui_c3 = st.columns([1, 1, 1])
-    with ui_c1:
-        supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-        t_iso = st.selectbox("Target Currency:", supported_iso, key="gold10_pair_select")
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="gold10_amt_input")
+    # Selection for logic calculation
+    supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
+    t_iso = st.selectbox("Currency Selection:", supported_iso, key="g10_tab3_iso", label_visibility="collapsed")
+    m_data = fetch_isolated_market(t_iso)
 
-    # Ad-hoc fetch
-    m_data = fetch_market_gold10(t_iso)
-    
-    with ui_c2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="gold10_target_val")
-        
-        # 3. REALISTIC ALGO (Macro Bias + Volatility)
-        # Hawkish = 1.15x (Speed up) | Dovish = 0.8x (Slow down)
-        bias_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
-        v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
-        
-        vol = v_map.get(t_iso, m_data['rate'] * 0.0005)
-        days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * bias_mult))) if abs(u_target - m_data['rate']) > 0 else 0
-        exec_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
-
-    with ui_c3:
-        b_color = "#00ff7f" if bias_mult >= 1.0 else "#ff4b4b"
+    with r1_col2:
+        b_color = "#00ff7f" if p_stance != "Dovish" else "#ff4b4b"
         st.markdown(f"""
-            <div style="background:{b_color}15; padding:10px; border-radius:8px; border:1px solid {b_color};">
-                <small>SGD/{t_iso} Live Rate</small><br>
-                <strong style="font-size:1.4rem;">{m_data['rate']:.4f}</strong><br>
-                <small>Policy Bias: {bias_mult}x</small>
+            <div style="background:{b_color}15; padding:8px; border-radius:5px; border:1px solid {b_color}; text-align:center;">
+                <small>Live SGD/{t_iso}</small><br>
+                <strong style="font-size:1.2rem;">{m_data['rate']:.4f}</strong>
             </div>
         """, unsafe_allow_html=True)
 
-    # 4. OUTPUTS & PROJECTION
+    st.divider()
+
+    # 3. ROW 2: AMOUNT & TARGET PRICE
+    r2_col1, r2_col2 = st.columns(2)
+    with r2_col1:
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_tab3_amt")
+    with r2_col2:
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_tab3_target")
+
+    # 4. CALCULATION LOGIC (Suggest Action Date)
+    bias_map = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}
+    v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
+    
+    speed = bias_map[p_stance]
+    vol = v_map.get(t_iso, m_data['rate'] * 0.0005)
+    days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * speed))) if abs(u_target - m_data['rate']) > 0 else 0
+    action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
+
+    # 5. OUTPUTS
     st.markdown("---")
-    res_1, res_2 = st.columns([1, 2])
-    with res_1:
-        st.metric("Suggested Date", exec_dt, delta=f"{p_stance} Impact", delta_color="normal")
-        st.metric("Est. Profit", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
+    out_c1, out_c2 = st.columns([1, 2])
+    with out_c1:
+        st.metric("Suggest Action Date", action_dt, help="Optimized based on MAS Bias")
+        st.metric("Expected Profit", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
 
-    with res_2:
-        # Convergence Chart
-        c_path = np.linspace(m_data['rate'], u_target, 10)
-        st.line_chart(pd.DataFrame({"Market Path": c_path, "Target": [u_target]*10}), height=180)
+    with out_c2:
+        # Mini Convergence Graph
+        path = np.linspace(m_data['rate'], u_target, 10)
+        st.line_chart(pd.DataFrame({"Market Path": path, "Target": [u_target]*10}), height=180)
 
-    if st.button("🔒 Lock Macro Execution Plan", use_container_width=True, key="gold10_lock_btn"):
-        st.success(f"Execution plan for {t_iso} locked for {exec_dt} based on {p_stance} bias.")
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_tab3_lock"):
+        st.success(f"Action Date: {action_dt} | Target: {u_target}")
 
 #st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
