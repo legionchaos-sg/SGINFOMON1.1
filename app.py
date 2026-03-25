@@ -77,7 +77,7 @@ def show_fuel_details(ftype):
 st.title("🇸🇬 SG Info Monitor 10.9")
 
 # UPDATED: We now have 3 tabs defined here
-tab1, tab2, tab3,tab4 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "PMT COE""])
+tab1, tab2, tab3,tab4 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "PMT COE"])
 
 # ==========================================
 # TAB 1: LIVE MONITOR (Your EXACT Original)
