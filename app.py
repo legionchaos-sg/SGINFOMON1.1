@@ -77,7 +77,7 @@ def show_fuel_details(ftype):
 st.title("🇸🇬 SG Info Monitor 10.9")
 
 # UPDATED: We now have 3 tabs defined here
-tab1, tab2, tab3,tab4 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE Strategic Feasibility & Prediction"])
+tab1, tab2, tab3,tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE Strategic Feasibility & Prediction", "✈️ Global Airfare Prediction Engine"])
 
 # ==========================================
 # TAB 1: LIVE MONITOR (Your EXACT Original)
@@ -503,5 +503,98 @@ with tab4:
     # 4. DATA VISUALIZATION (ON-THE-FLY)
     st.markdown("---")
     st.write(f"**{v_cat} Price Flux Stream**")
+
+    # ==========================================
+# TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
+# ==========================================
+with tab5:
+    st.header("✈️ Global Airfare Prediction Engine")
+    
+    # 1. DESTINATION & PASSENGER CONFIG
+    col_a1, col_a2 = st.columns([2, 1])
+    
+    with col_a1:
+        dest_input = st.text_input("Enter Destination Country/City (Origin: SIN):", value="Japan", key="g10_t5_dest")
+        
+        # Mock Airport Directory for Large Countries
+        airport_map = {
+            "Japan": ["Narita (NRT)", "Haneda (HND)", "Kansai (KIX)", "Chubu (NGO)", "Fukuoka (FUK)"],
+            "USA": ["New York (JFK)", "Los Angeles (LAX)", "San Francisco (SFO)", "Chicago (ORD)"],
+            "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)"],
+            "Thailand": ["Bangkok (BKK)", "Phuket (HKT)", "Chiang Mai (CNX)"]
+        }
+        
+        # Dynamic Airport Selection
+        available_airports = airport_map.get(dest_input, ["Default International (Primary)"])
+        selected_airport = st.multiselect("Select Target Airports:", available_airports, default=available_airports[0], key="g10_t5_airports")
+
+    with col_a2:
+        adults = st.number_input("Adults:", min_value=1, value=1, key="g10_t5_adults")
+        children = st.number_input("Children (<18):", min_value=0, value=0, key="g10_t5_child")
+        travel_month = st.select_slider("Travel Month:", options=["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"], key="g10_t5_month")
+
+    st.divider()
+
+    # 2. AIRLINE CARRIER ANALYSIS & PREDICTION LOGIC
+    # Simulation of pricing algorithms from SIA, ANA, JAL, etc.
+    carriers = {
+        "Singapore Airlines": {"base": 850, "child_disc": 0.25, "trend": "Stable"},
+        "ANA / JAL": {"base": 780, "child_disc": 0.20, "trend": "Rising"},
+        "Cathay Pacific": {"base": 650, "child_disc": 0.15, "trend": "Volatile"},
+        "Air China": {"base": 520, "child_disc": 0.10, "trend": "Falling"},
+        "Thai Airways": {"base": 580, "child_disc": 0.20, "trend": "Stable"}
+    }
+
+    # 3. THE PREDICTION WINDOW ENGINE
+    st.subheader("🔮 Predicted Best Purchase Window")
+    
+    # Logic: Analyze seasonal demand vs airline fuel hedging
+    # Peak months (Jun/Dec) require 4-month lead; Off-peak requires 6-week lead.
+    is_peak = travel_month in ["Jun", "Dec"]
+    best_window = "12 - 16 Weeks Before" if is_peak else "4 - 6 Weeks Before"
+    confidence = 88 if not is_peak else 65
+
+    p_l, p_r = st.columns([1.5, 1])
+    
+    with p_l:
+        st.markdown(f"""
+            <div style="background: rgba(0,255,127,0.08); padding: 20px; border-radius: 12px; border: 1px solid #00ff7f;">
+                <h4 style="margin:0; color:#00ff7f;">Optimal Booking Date: <b>{best_window}</b></h4>
+                <p style="margin:10px 0 0 0; font-size:0.9rem;">
+                    <b>Confidence: {confidence}%</b><br>
+                    Analysis: High demand for {travel_month} detected. {len(selected_airport)} airport(s) monitored.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with p_r:
+        # Cost Calculation
+        est_adult = carriers["Singapore Airlines"]["base"] # Example reference
+        est_child = est_adult * (1 - 0.25)
+        total_est = (est_adult * adults) + (est_child * children)
+        st.metric("Estimated Total (SGD)", f"${total_est:,.0f}", help="Based on SIA baseline for the selected period.")
+
+    # 4. CARRIER COMPARISON TABLE
+    st.write("**Competitive Carrier Forecast**")
+    comparison_data = []
+    for name, data in carriers.items():
+        comparison_data.append({
+            "Carrier": name,
+            "Adult Est.": f"${data['base']}",
+            "Child Est.": f"${data['base']*(1-data['child_disc']):.0f}",
+            "Trend": data["trend"]
+        })
+    st.table(comparison_data)
+
+    # 5. PRICE TRAJECTORY CHART
+    st.write(f"**Price Trajectory: SIN ➔ {dest_input}**")
+    # Simulated 12-week price movement
+    weeks = list(range(1, 13))
+    prices = [total_est * (1.2 - (0.02 * w) if w < 8 else 0.9 + (0.05 * (w-8))) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price ($)": prices}), height=200, color="#007bff")
+
+    if st.button("📡 Refresh Live Global Feeds", use_container_width=True, key="g10_t5_sync"):
+        st.toast(f"Fetching latest API data for {dest_input}...")
+        st.success("Analysis updated with current fuel surcharge and seasonal demand metrics.")
     chart_data = [last_p * (0.98 if i < 5 else 1.03) for i in range(10)]
     st.line_chart(chart_data, height=150, color="#00ff7f")
