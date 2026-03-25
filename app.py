@@ -262,10 +262,7 @@ with tab1:
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
         # --- 2. UI IMPLEMENTATION ---
-fx_data = fetch_live_forex()
-
-with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
-    f1, f2, f3, f4, f5 = st.columns(5)
+    fx_data = fetch_live_forex()
     
     # f1: SGD/MYR
     f1.metric("SGD/MYR", 
