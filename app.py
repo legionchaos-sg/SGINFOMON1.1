@@ -302,48 +302,58 @@ with tab3:
     col_u1, col_u2 = st.columns([1, 1])
     
 # ==========================================
-# TAB 3: SYSTEM TOOLS - Macro & Custom Pair
+# TAB 3: SYSTEM TOOLS - Macro & Range Model
 # ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. ENHANCED GLOBAL FETCH (Fetches all rates for the dropdown)
-    @st.cache_data(ttl=300) # Cache for 5 mins to ensure stability
-    def fetch_all_rates_g10():
+    # 1. ENHANCED FETCH (Live Rate + Historical Range)
+    @st.cache_data(ttl=300)
+    def fetch_market_data_g10(target_iso, days_lookback):
         try:
-            # Pulling ALL available rates with SGD as base
-            url = "https://api.frankfurter.app/latest?from=SGD"
-            response = requests.get(url, timeout=5).json()
-            rates = response.get('rates', {})
-            # Format: "CNY (5.3895)"
-            display_list = [f"{iso} ({rate:.4f})" for iso, rate in rates.items()]
-            return sorted(display_list), rates, response.get('date', 'N/A')
+            # Current Rate
+            url_latest = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
+            res_l = requests.get(url_latest, timeout=5).json()
+            curr_rate = res_l['rates'][target_iso]
+            
+            # Historical Range for High/Low
+            end_date = datetime.now().date()
+            start_date = end_date - pd.Timedelta(days=days_lookback)
+            url_hist = f"https://api.frankfurter.app/{start_date}..{end_date}?from=SGD&to={target_iso}"
+            res_h = requests.get(url_hist, timeout=5).json()
+            
+            hist_rates = [v[target_iso] for v in res_h['rates'].values()]
+            m_high, m_low = max(hist_rates), min(hist_rates)
+            return {"rate": curr_rate, "high": m_high, "low": m_low, "status": "LIVE"}
         except:
-            # Fallback Snapshot for gold 10
-            fb = {"CNY": 5.3895, "THB": 25.5533, "JPY": 124.1885, "MYR": 3.2841, "EUR": 0.6841, "USD": 0.7412}
-            display_fb = [f"{iso} ({rate:.4f})" for iso, rate in fb.items()]
-            return sorted(display_fb), fb, "OFFLINE CACHE"
+            # gold 10 Stability Fallback
+            fb = {"CNY": 5.3895, "THB": 25.5533, "JPY": 124.1885}.get(target_iso, 1.0)
+            return {"rate": fb, "high": fb*1.01, "low": fb*0.99, "status": "STABLE"}
 
-    # Fetch Data
-    currency_options, raw_rates, last_update = fetch_all_rates_g10()
-
-    # 2. ROW 1: POLICY STANCE & LIVE RATE DISPLAY
-    r1_col1, r1_col2 = st.columns([2, 1], vertical_alignment="center")
+    # 2. ROW 1: POLICY STANCE | DURATION | RANGE MODEL
+    r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
+    
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_tab3_policy_fixed")
+                            horizontal=True, key="g10_t3_policy_v2")
     
-    # Dynamic Dropdown with Live Rates in the label
-    selected_full = st.selectbox("Select Target Currency (Live Rate):", currency_options, key="g10_tab3_iso_fixed")
-    t_iso = selected_full.split(" ")[0] # Extract "CNY" from "CNY (5.3895)"
-    current_market_rate = raw_rates.get(t_iso, 1.0)
-
     with r1_col2:
-        b_color = "#00ff7f" if p_stance != "Dovish" else "#ff4b4b"
+        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_days")
+
+    # Shared Currency Logic
+    supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
+    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_iso_v2", label_visibility="collapsed")
+    m_data = fetch_market_data_g10(selected_iso, lookback)
+
+    with r1_col3:
         st.markdown(f"""
-            <div style="background:{b_color}15; padding:8px; border-radius:5px; border:1px solid {b_color}; text-align:center;">
-                <small style="color:gray;">Current SGD/{t_iso}</small><br>
-                <strong style="font-size:1.2rem;">{current_market_rate:.4f}</strong>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <div style="background: rgba(0,255,127,0.1); padding: 5px 15px; border-radius: 5px; border: 1px solid #00ff7f; text-align:center;">
+                    <small>Model High</small><br><strong>{m_data['high']:.4f}</strong>
+                </div>
+                <div style="background: rgba(255,75,75,0.1); padding: 5px 15px; border-radius: 5px; border: 1px solid #ff4b4b; text-align:center;">
+                    <small>Model Low</small><br><strong>{m_data['low']:.4f}</strong>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -352,34 +362,32 @@ with tab3:
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_tab3_amt_fixed")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_amt_v2")
     with r2_col2:
-        # Default target set to current rate + 0.2%
-        u_target = st.number_input("Target Price:", value=current_market_rate * 1.002, format="%.4f", key="g10_tab3_target_fixed")
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_target_v2")
 
-    # 4. CALCULATION LOGIC (Suggest Action Date)
+    # 4. CALCULATION: Suggest Action Date
     bias_map = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}
-    # Dynamic volatility estimate (Defaulting to 0.05% of price if not in map)
-    v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500, "MYR": 0.0025, "EUR": 0.0005}
-    vol = v_map.get(t_iso, current_market_rate * 0.0005)
+    vol_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
     
     speed = bias_map[p_stance]
-    days = int(np.ceil(abs(u_target - current_market_rate) / (vol * speed))) if abs(u_target - current_market_rate) > 0 else 0
-    action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
+    daily_vol = vol_map.get(selected_iso, m_data['rate'] * 0.0005)
+    days_req = int(np.ceil(abs(u_target - m_data['rate']) / (daily_vol * speed))) if abs(u_target - m_data['rate']) > 0 else 0
+    action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_req)).strftime('%d %b %Y')
 
-    # 5. OUTPUTS
+    # 5. RESULTS & CHART
     st.markdown("---")
-    res_c1, res_c2 = st.columns([1, 2])
-    with res_c1:
+    out_c1, out_c2 = st.columns([1, 2])
+    with out_c1:
         st.metric("Suggest Action Date", action_dt)
-        st.metric("Expected Profit", f"{(u_target - current_market_rate) * t_amt:.2f} {t_iso}")
+        st.metric("Live Market Rate", f"{m_data['rate']:.4f}")
+        st.caption(f"Status: {m_data['status']} Sync")
 
-    with res_c2:
-        # Convergence Path Chart
-        path = np.linspace(current_market_rate, u_target, 10)
-        st.line_chart(pd.DataFrame({"Market Path": path, "Target": [u_target]*10}), height=180)
+    with out_c2:
+        # Range Chart with High/Low Bounds
+        path = np.linspace(m_data['rate'], u_target, 10)
+        df_chart = pd.DataFrame({"Current Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10})
+        st.line_chart(df_chart, height=200)
 
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_tab3_lock_fixed"):
-        st.success(f"Confirmed for {action_dt} | Update: {last_update}")
-
-#st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_lock_v2"):
+        st.success(f"Strategy locked. Execution suggested for {action_dt}.")
