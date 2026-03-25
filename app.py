@@ -302,42 +302,48 @@ with tab3:
     col_u1, col_u2 = st.columns([1, 1])
     
 # ==========================================
-# TAB 3: SYSTEM TOOLS - Live Learning & Alerts
-# ==========================================
-
-# ==========================================
 # TAB 3: SYSTEM TOOLS - Macro & Custom Pair
 # ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. ISOLATED DATA FETCH (Tab-Safe for gold 10)
-    @st.cache_data(ttl=60)
-    def fetch_isolated_market(target_iso):
+    # 1. ENHANCED GLOBAL FETCH (Fetches all rates for the dropdown)
+    @st.cache_data(ttl=300) # Cache for 5 mins to ensure stability
+    def fetch_all_rates_g10():
         try:
-            url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
+            # Pulling ALL available rates with SGD as base
+            url = "https://api.frankfurter.app/latest?from=SGD"
             response = requests.get(url, timeout=5).json()
-            return {"rate": response['rates'][target_iso], "status": "LIVE SYNC"}
+            rates = response.get('rates', {})
+            # Format: "CNY (5.3895)"
+            display_list = [f"{iso} ({rate:.4f})" for iso, rate in rates.items()]
+            return sorted(display_list), rates, response.get('date', 'N/A')
         except:
-            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "status": "STABLE FALLBACK"}
+            # Fallback Snapshot for gold 10
+            fb = {"CNY": 5.3895, "THB": 25.5533, "JPY": 124.1885, "MYR": 3.2841, "EUR": 0.6841, "USD": 0.7412}
+            display_fb = [f"{iso} ({rate:.4f})" for iso, rate in fb.items()]
+            return sorted(display_fb), fb, "OFFLINE CACHE"
 
-    # 2. ROW 1: POLICY STANCE & LIVE RATE
+    # Fetch Data
+    currency_options, raw_rates, last_update = fetch_all_rates_g10()
+
+    # 2. ROW 1: POLICY STANCE & LIVE RATE DISPLAY
     r1_col1, r1_col2 = st.columns([2, 1], vertical_alignment="center")
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_tab3_policy")
+                            horizontal=True, key="g10_tab3_policy_fixed")
     
-    # Selection for logic calculation
-    supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-    t_iso = st.selectbox("Currency Selection:", supported_iso, key="g10_tab3_iso", label_visibility="collapsed")
-    m_data = fetch_isolated_market(t_iso)
+    # Dynamic Dropdown with Live Rates in the label
+    selected_full = st.selectbox("Select Target Currency (Live Rate):", currency_options, key="g10_tab3_iso_fixed")
+    t_iso = selected_full.split(" ")[0] # Extract "CNY" from "CNY (5.3895)"
+    current_market_rate = raw_rates.get(t_iso, 1.0)
 
     with r1_col2:
         b_color = "#00ff7f" if p_stance != "Dovish" else "#ff4b4b"
         st.markdown(f"""
             <div style="background:{b_color}15; padding:8px; border-radius:5px; border:1px solid {b_color}; text-align:center;">
-                <small>Live SGD/{t_iso}</small><br>
-                <strong style="font-size:1.2rem;">{m_data['rate']:.4f}</strong>
+                <small style="color:gray;">Current SGD/{t_iso}</small><br>
+                <strong style="font-size:1.2rem;">{current_market_rate:.4f}</strong>
             </div>
         """, unsafe_allow_html=True)
 
@@ -346,32 +352,34 @@ with tab3:
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_tab3_amt")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_tab3_amt_fixed")
     with r2_col2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_tab3_target")
+        # Default target set to current rate + 0.2%
+        u_target = st.number_input("Target Price:", value=current_market_rate * 1.002, format="%.4f", key="g10_tab3_target_fixed")
 
     # 4. CALCULATION LOGIC (Suggest Action Date)
     bias_map = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}
-    v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
+    # Dynamic volatility estimate (Defaulting to 0.05% of price if not in map)
+    v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500, "MYR": 0.0025, "EUR": 0.0005}
+    vol = v_map.get(t_iso, current_market_rate * 0.0005)
     
     speed = bias_map[p_stance]
-    vol = v_map.get(t_iso, m_data['rate'] * 0.0005)
-    days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * speed))) if abs(u_target - m_data['rate']) > 0 else 0
+    days = int(np.ceil(abs(u_target - current_market_rate) / (vol * speed))) if abs(u_target - current_market_rate) > 0 else 0
     action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
 
     # 5. OUTPUTS
     st.markdown("---")
-    out_c1, out_c2 = st.columns([1, 2])
-    with out_c1:
-        st.metric("Suggest Action Date", action_dt, help="Optimized based on MAS Bias")
-        st.metric("Expected Profit", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
+    res_c1, res_c2 = st.columns([1, 2])
+    with res_c1:
+        st.metric("Suggest Action Date", action_dt)
+        st.metric("Expected Profit", f"{(u_target - current_market_rate) * t_amt:.2f} {t_iso}")
 
-    with out_c2:
-        # Mini Convergence Graph
-        path = np.linspace(m_data['rate'], u_target, 10)
+    with res_c2:
+        # Convergence Path Chart
+        path = np.linspace(current_market_rate, u_target, 10)
         st.line_chart(pd.DataFrame({"Market Path": path, "Target": [u_target]*10}), height=180)
 
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_tab3_lock"):
-        st.success(f"Action Date: {action_dt} | Target: {u_target}")
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_tab3_lock_fixed"):
+        st.success(f"Confirmed for {action_dt} | Update: {last_update}")
 
 #st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
