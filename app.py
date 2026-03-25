@@ -307,23 +307,20 @@ with tab3:
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. DATA ENGINE (Isolated for gold 10)
+    # 1. DATA ENGINE (Remains Isolated)
     @st.cache_data(ttl=300)
     def fetch_market_engine_g10(target_iso, days_lookback):
         try:
-            # Current Rate
             url_latest = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
             res_l = requests.get(url_latest, timeout=5).json()
             curr_rate = res_l['rates'][target_iso]
             
-            # Historical Range
             end_date = datetime.now().date()
             start_date = end_date - pd.Timedelta(days=days_lookback)
             url_hist = f"https://api.frankfurter.app/{start_date}..{end_date}?from=SGD&to={target_iso}"
             res_h = requests.get(url_hist, timeout=5).json()
             
             hist_rates = [v[target_iso] for v in res_h['rates'].values()]
-            # Volatility calculation for probability
             std_dev = np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005
             return {"rate": curr_rate, "high": max(hist_rates), "low": min(hist_rates), "std": std_dev}
         except:
@@ -335,13 +332,13 @@ with tab3:
     
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_t3_p_final")
+                            horizontal=True, key="g10_t3_p_v3")
     
     with r1_col2:
-        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_final")
+        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_v3")
 
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
+    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_v3", label_visibility="collapsed")
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
     with r1_col3:
@@ -361,27 +358,32 @@ with tab3:
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_v3")
     with r2_col2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_v3")
 
     # 4. PROBABILITY & ACTION DATE LOGIC
-    # Bias affects the "perceived" speed of price movement
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
     price_gap = abs(u_target - m_data['rate'])
     days_req = int(np.ceil(price_gap / (m_data['std'] * speed_mult))) if price_gap > 0 else 0
     action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_req)).strftime('%d %b %Y')
 
-    # Target Probability (Z-Score approximation)
-    # Higher volatility or bias increases the chance of hitting a distant target
     z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
-    prob_val = max(5, min(99, 100 * (1 - (z_score / 3)))) # Simple linear probability proxy for UI
+    prob_val = max(5, min(99, 100 * (1 - (z_score / 3))))
 
-    # 5. OUTPUT DISPLAY
+    # 5. OUTPUT DISPLAY (Updated Font for Suggest Action Date)
     st.markdown("---")
     out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
-        st.write(f"**Suggest Action Date:** {action_dt}")
+        # FONT SIZE INCREASED BY 2pts (approx 2.66px)
+        st.markdown(f"""
+            <div style="margin-bottom: 15px;">
+                <span style="font-size: 1.15rem; font-weight: bold; color: #ffffff;">
+                    Suggest Action Date: {action_dt}
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+        
         # Probability Bar
         p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
         st.markdown(f"""
@@ -395,8 +397,12 @@ with tab3:
         st.metric("Live Market Rate", f"{m_data['rate']:.4f}")
 
     with out_c2:
+        # Chart with Bounds
         path = np.linspace(m_data['rate'], u_target, 10)
         st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=180)
+
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_l_v3"):
+        st.success(f"Strategy locked for {action_dt}.")
 
     if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_l_final"):
         st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
