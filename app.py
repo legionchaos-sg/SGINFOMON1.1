@@ -3,7 +3,7 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import yfinance as yf
-from datetime import datetime
+from datetime import datetime,date
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
