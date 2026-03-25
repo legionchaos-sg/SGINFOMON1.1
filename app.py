@@ -155,24 +155,42 @@ def get_market_sentiment(m_data):
 
 # [Logic Functions for Holidays and Fuel remain as per original code]
 
-fuel_data = {
-    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
-    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
-    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05), "Cnergy": (2.80, 0.05), "Sinopec": (3.97, 0.05), "Smart Energy": (2.99, -0.12)},
-    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
-    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
-}
+@st.cache_data(ttl=3600) # Update once per hour
+def get_live_fuel_sync():
+    # 1. Your original structure as the base template
+    data = {
+        "92 Octane": {"Esso": [3.43, 0.39], "Caltex": [3.43, 0.32], "SPC": [3.43, 0.32], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
+        "95 Octane": {"Esso": [3.47, 0.04], "Caltex": [3.47, 0.04], "Shell": [3.47, 0.04], "SPC": [3.46, 0.02], "Cnergy": [2.46, 0.05], "Sinopec": [3.47, 0.04], "Smart Energy": [2.61, 0.05]},
+        "98 Octane": {"Esso": [3.97, 0.05], "Shell": [3.99, 0.05], "SPC": [3.97, 0.05], "Cnergy": [2.80, 0.05], "Sinopec": [3.97, 0.05], "Smart Energy": [2.99, -0.12]},
+        "Premium":   {"Caltex": [4.16, 0.20], "Shell": [4.21, 0.05], "Sinopec": [4.10, 0.20], "Cnergy": ["N/A", 0], "Smart Energy": ["N/A", 0]},
+        "Diesel":    {"Esso": [3.73, 0.10], "Caltex": [3.73, 0.10], "Shell": [3.73, 0.10], "SPC": [3.56, 0.07], "Cnergy": [2.80, 0], "Sinopec": [3.72, 0.10], "Smart Energy": [2.83, 0.02]}
+    }
 
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
+    try:
+        # 2. Fetch live data from Motorist.sg (Real-time Mirror)
+        url = "https://www.motorist.sg/petrol-prices"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        tables = pd.read_html(url, storage_options=headers)
+        df = tables[0] # The comparison table
+
+        # 3. Map live prices (df[0]=Brand, df[1]=92, df[2]=95, df[3]=98, df[4]=Pre, df[5]=Dsl)
+        for _, row in df.iterrows():
+            brand = row[0]
+            for grade, col_idx in [("92 Octane", 1), ("95 Octane", 2), ("98 Octane", 3), ("Premium", 4), ("Diesel", 5)]:
+                if brand in data[grade]:
+                    price_str = str(row[col_idx]).replace('$', '').strip()
+                    if price_str.replace('.', '').isdigit():
+                        new_price = float(price_str)
+                        old_price = data[grade][brand][0]
+                        # Calculate live delta from your static base
+                        delta = new_price - old_price if isinstance(old_price, (int, float)) else 0
+                        data[grade][brand] = (new_price, delta)
+    except:
+        pass # If source is down, returns your static "Template" data
+    return data
+
+# Initialize the feed
+fuel_data = get_live_fuel_sync()
 
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
@@ -316,14 +334,37 @@ with tab1:
 
     # 5. Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-        fc = st.columns(5)
-        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-        for i, ftype in enumerate(ftypes):
-            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-            avg = sum(prices) / len(prices) if prices else 0
-            fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
-            if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
+    fc = st.columns(5)
+    ftypes = list(fuel_data.keys())
 
+    for i, ftype in enumerate(ftypes):
+        # Calculate Average for this grade (ignores N/A)
+        prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+        avg = sum(prices) / len(prices) if prices else 0
+        
+        fc[i].metric(ftype, f"${avg:.2f}")
+        if fc[i].button("View Brands", key=f"btn_{ftype}"):
+            show_fuel_details(ftype)
+
+# --- THE POP-UP DIALOG (Kept exactly as you like it) ---
+@st.dialog("Fuel Brand Details")
+def show_fuel_details(ftype):
+    st.write(f"### 📍 {ftype} Price List")
+    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
+    for brand in brand_order:
+        data = fuel_data[ftype].get(brand, ("N/A", 0))
+        price, change = data
+        if brand == "Shell" and ftype == "92 Octane": continue
+        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
+                <b>{brand}</b>
+                <span>
+                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
+                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
