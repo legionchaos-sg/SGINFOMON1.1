@@ -8,105 +8,110 @@ from datetime import datetime, time, date  # FIXED: Added 'time' and 'date' impo
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR 10.9.7 - [gold 10] NAMEERROR FIX & SENTIMENT RESTORED
+# SG INFO MONITOR 10.9.8 - [gold 10] FOREX & MULTI-BRAND FUEL
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
 
-# --- 1. LIVE DATA ENGINE ---
+# --- 1. DATA ENGINES ---
 @st.cache_data(ttl=300)
-def get_live_markets():
-    # Tickers for STI, Gold, Brent, and FX
+def get_live_data():
     tickers = {
         "STI": "^STI", "Gold": "GC=F", "Brent": "BZ=F",
-        "USD": "USDSGD=X", "MYR": "MYRSGD=X"
+        "USD": "USDSGD=X", "MYR": "MYRSGD=X", "JPY": "JPYSGD=X", 
+        "THB": "THBSGD=X", "CNY": "CNYSGD=X", "EUR": "EURSGD=X"
     }
     data = {}
     for label, sym in tickers.items():
         try:
             t = yf.Ticker(sym)
-            h = t.history(period="5d")
+            h = t.history(period="2d")
             if not h.empty:
-                curr, prev = h['Close'].iloc[-1], h['Close'].iloc[-2]
-                data[label] = (curr, ((curr - prev) / prev) * 100)
+                curr = h['Close'].iloc[-1]
+                prev = h['Close'].iloc[-2]
+                change = ((curr - prev) / prev) * 100
+                data[label] = (curr, change)
             else: data[label] = (0.0, 0.0)
         except: data[label] = (0.0, 0.0)
     return data
 
-# --- 2. MARKET LOGIC (FIXED) ---
+# --- 2. LOGIC & STATUS ---
 sg_tz = pytz.timezone('Asia/Singapore')
 sg_now = datetime.now(sg_tz)
-# Logic for Market Status
 is_open = (sg_now.weekday() < 5) and (time(9, 0) <= sg_now.time() <= time(17, 0))
-m_status = "🟢 LIVE" if is_open else "🔴 CLOSED (Showing Last Close)"
+m_status = "🟢 LIVE" if is_open else "🔴 CLOSED"
 
-# Market Sentiment Logic
-m_data = get_live_markets()
-sti_change = m_data.get('STI', (0, 0))[1]
+m_data = get_live_data()
+sti_change = m_data.get('STI', (0,0))[1]
 if sti_change > 0.5: sentiment = ":green[📈 BULLISH]"
 elif sti_change < -0.5: sentiment = ":red[📉 BEARISH]"
 else: sentiment = ":orange[⚖️ CAUTIOUS]"
 
-# --- 3. CSS (gold 10: -10pts) ---
+# --- 3. CUSTOM STYLING (gold 10: -10pts) ---
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; font-size: 0.8rem; }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; line-height: 1.1; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 8px; border-radius: 8px; text-align: center; }
-    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.75rem; } 
-    .stat-label { font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; }
+    .main .block-container { max-width: 98%; font-size: 0.8rem; padding-top: 1rem; }
+    .metric-card { background: #1e2129; padding: 10px; border-radius: 5px; border-top: 3px solid #007bff; }
+    .fuel-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .fuel-table th { background: #262730; text-align: left; padding: 4px; border-bottom: 1px solid #444; }
+    .fuel-table td { padding: 4px; border-bottom: 1px solid #333; }
+    .brand-shell { color: #ffcc00; font-weight: bold; }
+    .brand-sino { color: #ff4b4b; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. TAB 1 UI ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ TOOLS", "🔮 COE", "✈️ AIR"])
+# --- 4. UI LAYOUT ---
+tab1, tab2, tab3 = st.tabs(["🏛️ MARKET & FOREX", "⛽ FUEL & COE", "🛠️ SERVICES"])
 
 with tab1:
-    # MARKET INDICES + SENTIMENT
-    st.markdown(f"### 📈 Market Indices | Sentiment: {sentiment} | `{m_status}`")
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("STI Index", f"{m_data['STI'][0]:,.2f}", f"{m_data['STI'][1]:+.2f}%")
-    m2.metric("Gold Spot", f"${m_data['Gold'][0]:,.1f}", f"{m_data['Gold'][1]:+.2f}%")
-    m3.metric("Brent Crude", f"${m_data['Brent'][0]:,.2f}", f"{m_data['Brent'][1]:+.2f}%")
-    m4.metric("USD/SGD", f"{m_data['USD'][0]:.4f}", f"{m_data['USD'][1]:+.2f}%")
-    m5.metric("MYR/SGD", f"{1/m_data['MYR'][0] if m_data['MYR'][0]!=0 else 3.4412:.4f}", "Live")
+    # Top Row: Indices & Sentiment
+    st.markdown(f"### 📊 Market Indices | Sentiment: {sentiment} | `{m_status}`")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("STI Index", f"{m_data['STI'][0]:,.2f}", f"{m_data['STI'][1]:+.2f}%")
+    c2.metric("Gold Spot", f"${m_data['Gold'][0]:,.1f}", f"{m_data['Gold'][1]:+.2f}%")
+    c3.metric("Brent Crude", f"${m_data['Brent'][0]:,.2f}", f"{m_data['Brent'][1]:+.2f}%")
+    c4.metric("Market Status", "SGX Mainboard", m_status)
 
     st.divider()
 
-    # COE BIDDING (ORIGINAL SYNTAX RESTORED)
-    st.markdown("### 🚗 COE Bidding Results (Mar 2026)")
-    coe_results = [
-        ("Cat A", 111890, 3670, 1264, 1895), 
-        ("Cat B", 115568, 1566, 812, 1185), 
-        ("Cat C", 78000, 2000, 290, 438), 
-        ("Cat D", 9589, 987, 546, 726), 
-        ("Cat E", 118119, 3229, 246, 422)
-    ]
-    cc = st.columns(5)
-    for i, (cat, p, d, q, b) in enumerate(coe_results):
-        cc[i].markdown(f"""
-            <div class="c-card">
-                <b>{cat}</b><br>
-                <span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br>
-                <small class="up">▲ ${d:,}</small>
-                <hr style="margin:5px 0; opacity:0.1;">
-                <span class="stat-label">Quota:</span> <b>{q:,}</b><br>
-                <span class="stat-label">Bids:</span> <b>{b:,}</b>
-            </div>
-            """, unsafe_allow_html=True)
+    # Forex Section
+    st.markdown("### 💱 Live Forex (Base: 1 SGD)")
+    f1, f2, f3, f4, f5 = st.columns(5)
+    # Note: Exchange rates displayed as 1 SGD to Foreign Currency
+    f1.metric("MYR", f"{m_data['MYR'][0]:.4f}", "Ringgit")
+    f2.metric("USD", f"{1/m_data['USD'][0] if m_data['USD'][0] else 0:.4f}", "US Dollar")
+    f3.metric("JPY", f"{m_data['JPY'][0]:.2f}", "Yen")
+    f4.metric("THB", f"{m_data['THB'][0]:.2f}", "Baht")
+    f5.metric("CNY", f"{m_data['CNY'][0]:.4f}", "Yuan")
 
-    st.divider()
+with tab2:
+    col_fuel, col_coe = st.columns([1.2, 1])
+    
+    with col_fuel:
+        st.markdown("### ⛽ Fuel Window (March 2026)")
+        # Comparative Fuel Table (Pre-Discount Prices)
+        st.markdown("""
+        <table class="fuel-table">
+            <tr><th>Brand</th><th>92</th><th>95</th><th>98</th><th>Premium</th><th>Diesel</th></tr>
+            <tr><td class="brand-shell">Shell</td><td>N.A.</td><td>$3.47</td><td>$3.97</td><td>$4.16</td><td>$3.73</td></tr>
+            <tr><td style="color:#00a19c;">Caltex</td><td>$3.43</td><td>$3.47</td><td>$3.97</td><td>$4.16</td><td>$3.73</td></tr>
+            <tr><td style="color:#ed1c24;">Esso</td><td>$3.43</td><td>$3.47</td><td>$3.97</td><td>N.A.</td><td>$3.73</td></tr>
+            <tr><td class="brand-sino">Sinopec</td><td>N.A.</td><td>$3.42</td><td>$3.94</td><td>$4.10</td><td>$3.66</td></tr>
+            <tr><td style="color:#ff8200;">SPC</td><td>$3.43</td><td>$3.46</td><td>$3.97</td><td>N.A.</td><td>$3.72</td></tr>
+        </table>
+        <p style="font-size:0.65rem; margin-top:5px;"><i>*Prices are pre-discount. Sinopec remains competitive with ~20% walk-in discount.</i></p>
+        """, unsafe_allow_html=True)
 
-    # FUEL (with Shell 5-cent discount applied)
-    st.markdown("### ⛽ Fuel Intelligence")
-    fc = st.columns(5)
-    # Market average base prices
-    grades = {"92": 3.43, "95": 3.47, "98": 3.97, "Prem": 4.16, "DSL": 3.73}
-    for i, (g, p) in enumerate(grades.items()):
-        # Apply logic: if Shell grade, subtract 0.05
-        final_p = p - 0.05 if g in ["95", "98", "Prem"] else p
-        fc[i].markdown(f'<div class="f-card"><b>{g}</b><br><span style="color:#007bff; font-weight:bold;">${final_p:.2f}</span></div>', unsafe_allow_html=True)
+    with col_coe:
+        st.markdown("### 🚗 COE Results")
+        # Direct CSS-styled list for COE to save space
+        coe_data = [
+            ("Cat A", 111890, 3670), ("Cat B", 115568, 1566),
+            ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)
+        ]
+        for cat, price, diff in coe_data:
+            st.markdown(f"**{cat}:** `${price:,}` <span style='color:#ff4b4b; font-size:0.7rem;'>▲ ${diff:,}</span>", unsafe_allow_html=True)
+        st.caption("Next Bid: 6–8 April 2026")
 
-st.caption(f"Monitoring: 10.9.7 | gold 10 | Refreshed: {sg_now.strftime('%H:%M:%S')}")
-
+st.caption(f"Ver 10.9.8 | gold 10 | Clock: {sg_now.strftime('%H:%M:%S')}")
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
