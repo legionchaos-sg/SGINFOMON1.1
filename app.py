@@ -334,17 +334,20 @@ with tab1:
 
     # 5. Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-         fc = st.columns(5)
-         ftypes = list(fuel_data.keys())
+        fc = st.columns(5)
+        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
 
-         for i, ftype in enumerate(ftypes):
-               # Calculate Average for this grade (ignores N/A)
-               prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-               avg = sum(prices) / len(prices) if prices else 0
-        
-        fc[i].metric(ftype, f"${avg:.2f}")
-        if fc[i].button("View Brands", key=f"btn_{ftype}"):
-            show_fuel_details(ftype)
+        for i, ftype in enumerate(ftypes):
+            # 1. Calculate Average (Filters out 'N/A')
+            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+            avg = sum(prices) / len(prices) if prices else 0
+            
+            # 2. Display the Metric (Fixed Indentation)
+            fc[i].metric(ftype, f"${avg:.2f}")
+            
+            # 3. Brands Button
+            if fc[i].button("View Brands", key=f"vbtn_{ftype}_{i}"):
+                show_fuel_details(ftype)
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 @st.dialog("Fuel Brand Details")
