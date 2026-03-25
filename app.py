@@ -170,9 +170,9 @@ with tab3:
     
     # 1. Current Market Info (2026 Live Snapshots)
     market_data = {
-        "SGD/CNY": {"rate": 5.3849, "vol": 0.003, "high_52w": 5.42, "low_52w": 5.15},
-        "SGD/THB": {"rate": 25.3721, "vol": 0.010, "high_52w": 26.90, "low_52w": 24.80},
-        "SGD/JPY": {"rate": 124.091, "vol": 0.018, "high_52w": 128.50, "low_52w": 115.20}
+        "SGD/CNY": {"rate": 5.3849, "vol_day": 0.0015, "high_52w": 5.42, "low_52w": 5.15},
+        "SGD/THB": {"rate": 25.3721, "vol_day": 0.0450, "high_52w": 26.90, "low_52w": 24.80},
+        "SGD/JPY": {"rate": 124.091, "vol_day": 0.4500, "high_52w": 128.50, "low_52w": 115.20}
     }
 
     # 2. Selection UI
@@ -180,52 +180,58 @@ with tab3:
     with c1:
         pair = st.selectbox("Currency Pair:", list(market_data.keys()), key="p_calc_pair")
         trade_amt = st.number_input("Trade Amount (SGD):", min_value=0, value=1000)
+    
+    curr = market_data[pair]
+    
     with c2:
-        horizon = st.radio("Forecast Window:", ["1 Day", "3 Days"], horizontal=True)
-        # 3. Model Logic for Execution Date
-        days_to_peak = 1 if horizon == "1 Day" else 3
-        exec_date = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_to_peak)).strftime('%d %b %Y')
+        # NEW: User Target Input
+        user_target = st.number_input("User Target Price:", value=curr['rate'] + curr['vol_day'], format="%.4f")
+        
+        # 3. Model Logic for Execution Date based on Target
+        # Logic: (Target - Current) / Average Daily Volatility = Days Required
+        price_diff = abs(user_target - curr['rate'])
+        est_days = int(np.ceil(price_diff / curr['vol_day'])) if price_diff > 0 else 0
+        
+        # Limit forecast to a reasonable 30-day window for stability
+        est_days = min(est_days, 30)
+        
+        model_exec_date = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=est_days)).strftime('%d %b %Y')
+
     with c3:
         st.write("**Current Market Info**")
-        curr = market_data[pair]
         st.markdown(f"""
-            <div style="font-size: 0.8rem; line-height: 1.4;">
+            <div style="font-size: 0.8rem; line-height: 1.4; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 5px;">
                 <b>Live Rate:</b> {curr['rate']}<br>
                 <b>52W High:</b> {curr['high_52w']}<br>
-                <b>52W Low:</b> {curr['low_52w']}
+                <b>Daily Vol:</b> ±{curr['vol_day']}
             </div>
         """, unsafe_allow_html=True)
 
     # 4. Calculation & Execution Forecast
-    base_rate = curr["rate"]
-    vol_mult = 1.0 if horizon == "1 Day" else 1.7
-    pred_high = base_rate * (1 + (curr["vol"] * vol_mult))
-    profit_raw = (trade_amt * pred_high) - (trade_amt * base_rate)
+    profit_raw = (trade_amt * user_target) - (trade_amt * curr['rate'])
     
     st.markdown("---")
     res_c1, res_c2 = st.columns([1, 2])
     
     with res_c1:
-        st.metric("🎯 Optimal Exec. Date", exec_date)
-        st.metric("Model Target High", f"{pred_high:.4f}")
-        st.metric("Est. Profit", f"+{profit_raw:.2f} {pair[-3:]}")
+        st.metric("📅 Model Exec. Date", model_exec_date, help="Calculated based on average daily volatility to reach target.")
+        st.metric("🎯 User Target", f"{user_target:.4f}")
+        st.metric("Est. Profit", f"+{profit_raw:.2f} {pair[-3:]}", delta=f"{(user_target/curr['rate']-1)*100:.2f}%")
 
     with res_c2:
-        st.write(f"**{pair} Volatility Corridor (12-Month Model)**")
-        # Generate chart data reflecting the current market vs the model target
-        chart_points = [base_rate * (1 + np.sin(i) * curr['vol']) for i in np.linspace(0, 3, 15)]
-        chart_points[-1] = pred_high # Ensure the last point is our target
-        
+        st.write(f"**{pair} Convergence Path**")
+        # Chart: Show Current -> Target progression
+        path = np.linspace(curr['rate'], user_target, 10)
         st.line_chart(pd.DataFrame({
-            "Market Trend": chart_points,
-            "Model Target": [pred_high] * 15
+            "Convergence Path": path,
+            "Target Baseline": [user_target] * 10
         }), height=220)
 
     # 5. Record Logging
-    if st.button(f"💾 Log Execution Plan for {exec_date}", use_container_width=True):
-        st.success(f"Execution plan for {trade_amt} SGD to {pair} saved for {exec_date}.")
+    if st.button(f"💾 Lock Plan: Execute {pair} on {model_exec_date}", use_container_width=True):
+        st.success(f"Plan Locked. Target {user_target} for {trade_amt} SGD. Probability High for {model_exec_date}.")
 
-    st.info(f"💡 **gold 10 Analysis:** Based on {pair} historical 12-month standard deviation, the highest probability for price peaking occurs on **{exec_date}**.")
+    st.info(f"💡 **gold 10 Analysis:** At current volatility, the market requires approximately **{est_days} market days** to bridge the gap to your target of {user_target}.")
 
 # ==========================================
 # TAB 4: PMT COE (API Prediction Model) - Gold 10a
