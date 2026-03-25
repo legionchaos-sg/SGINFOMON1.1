@@ -6,6 +6,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
+import yfinance as yf
 
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
