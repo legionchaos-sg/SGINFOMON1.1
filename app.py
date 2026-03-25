@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
+from datetime import date, timedelta
 
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
@@ -507,9 +508,7 @@ with tab4:
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
 # ==========================================
-import pandas as pd
-import numpy as np
-from datetime import datetime
+
 
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
@@ -523,29 +522,29 @@ with tab5:
     with col_a1:
         dest_input = st.text_input("Destination (Origin: SIN):", value="Japan", key="g10_t5_dest")
         
-        # Multi-Airport Mapping for Strategic Selection
+        # Multi-Airport Mapping
         airport_map = {
-            "Japan": ["Tokyo (NRT/HND)", "Osaka (KIX)", "Nagoya (NGO)", "Fukuoka (FUK)", "Sapporo (CTS)"],
-            "USA": ["New York (JFK/EWR)", "Los Angeles (LAX)", "San Francisco (SFO)", "Seattle (SEA)"],
-            "China": ["Shanghai (PVG)", "Beijing (PEK/PKX)", "Guangzhou (CAN)", "Chengdu (TFU)"],
-            "Thailand": ["Bangkok (BKK/DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
-            "UK": ["London (LHR/LGW)", "Manchester (MAN)", "Edinburgh (EDI)"]
+            "Japan": ["Tokyo (NRT/HND)", "Osaka (KIX)", "Nagoya (NGO)"],
+            "USA": ["New York (JFK/EWR)", "Los Angeles (LAX)", "San Francisco (SFO)"],
+            "China": ["Shanghai (PVG)", "Beijing (PEK/PKX)"]
         }
-        
         targets = airport_map.get(dest_input, ["Main International Hub"])
-        v_airports = st.multiselect("Analyze Available Hubs:", targets, default=targets[0], key="g10_t5_airports")
+        v_airports = st.multiselect("Analyze Hubs:", targets, default=targets[0], key="g10_t5_airports")
 
     with col_a2:
-        # DATE INPUT IN DD/MM/YY FORMAT
-        # Streamlit uses date objects; we format the display for the user.
-        d_input = st.date_input("Travel Date (Departure):", 
-                                value=datetime(2026, 6, 15),
-                                format="DD/MM/YY",
-                                key="g10_t5_date")
+        # ✅ STABILITY FIX: Changed to "DD/MM/YYYY" 
+        # Streamlit 1.40+ strictly requires 4-digit years in the format string.
+        d_input = st.date_input(
+            "Travel Date (Departure):", 
+            value=date(2026, 6, 15),
+            format="DD/MM/YYYY",  
+            key="g10_t5_date"
+        )
         
-        st.write(f"**Return Date:** {(d_input + pd.Timedelta(days=7)).strftime('%d/%m/%y')}")
+        # DISPLAY: Still showing your preferred dd/mm/yy format below the widget
+        st.write(f"📅 **Confirmed Date:** {d_input.strftime('%d/%m/%y')}")
 
-    # 2. PASSENGER DEMOGRAPHICS (Age Sensitivity)
+    # 2. PASSENGER DEMOGRAPHICS
     st.write("**Passenger Breakdown:**")
     p1, p2, p3 = st.columns(3)
     with p1: adults = st.number_input("Adults (18+):", 1, 10, 1, key="g10_t5_ad")
@@ -554,68 +553,47 @@ with tab5:
 
     st.divider()
 
-    # 3. CARRIER BENCHMARKING (Ground Data Analysis)
-    # Child discounts: 25% (SIA/ANA/JAL/Thai), 10% (Air China), 15% (Cathay)
+    # 3. CARRIER ANALYSIS LOGIC
+    is_peak = d_input.month in [6, 12]
+    # Prediction multipliers based on SIN school holiday cycles
+    multiplier = 1.38 if is_peak else 1.02
+    
     carriers = {
-        "Singapore Airlines": {"base": 920, "c_disc": 0.25, "hub": "SIN Direct", "status": "Premium"},
-        "ANA / JAL": {"base": 880, "c_disc": 0.25, "hub": "TYO/OSA", "status": "High Quality"},
-        "Cathay Pacific": {"base": 710, "c_disc": 0.15, "hub": "HKG Connect", "status": "Value"},
-        "Thai Airways": {"base": 640, "c_disc": 0.25, "hub": "BKK Connect", "status": "Standard"},
-        "Air China": {"base": 550, "c_disc": 0.10, "hub": "PEK Connect", "status": "Economy"}
+        "Singapore Airlines": {"base": 920, "c_disc": 0.25, "type": "Direct"},
+        "ANA / JAL": {"base": 890, "c_disc": 0.25, "type": "Direct"},
+        "Cathay Pacific": {"base": 720, "c_disc": 0.15, "type": "1-Stop"},
+        "Air China": {"base": 560, "c_disc": 0.10, "type": "1-Stop"}
     }
 
-    # 4. PREDICTION ENGINE (Seasonality & Lead Time)
-    # Logic: Analyze departure date vs today (March 25, 2026)
-    lead_time_weeks = (d_input - datetime.now().date()).days // 7
-    is_peak = d_input.month in [6, 12] or (d_input.month == 1 and d_input.day > 15)
-    
-    # Best Window Prediction
-    if is_peak:
-        optimal_lead = "16-20 Weeks"
-        risk_level = "Critical (High Demand)"
-        price_mult = 1.35
-    else:
-        optimal_lead = "6-8 Weeks"
-        risk_level = "Stable"
-        price_mult = 1.0
-
-    # 5. STRATEGIC OUTPUT
+    # 4. STRATEGIC OUTPUTS
     res_l, res_r = st.columns([1.8, 1])
     
     with res_l:
         st.markdown(f"#### 🔮 Market Analysis for {d_input.strftime('%d/%m/%y')}")
         st.markdown(f"""
             <div style="background: rgba(0,255,127,0.08); padding: 20px; border-radius: 12px; border: 1px solid #00ff7f;">
-                <p style="margin:0;">Recommended Purchase Window: <b>{optimal_lead} before departure</b></p>
-                <p style="margin:5px 0 0 0; font-size:0.85rem; color:#ccc;">
-                    <b>Risk Factor:</b> {risk_level}. Currently {lead_time_weeks} weeks out. 
-                    { '⚠️ Action Required: Book now for peak season.' if is_peak and lead_time_weeks < 16 else '✅ Monitoring: Prices expected to soften slightly in 2 weeks.'}
-                </p>
+                <strong>Recommended Buy Window:</strong> { '18 Weeks Before' if is_peak else '7 Weeks Before'}
+                <br><small>Status: {'High Volatility' if is_peak else 'Stable Market'}</small>
             </div>
         """, unsafe_allow_html=True)
 
     with res_r:
-        # Dynamic Cost Estimator
-        base = carriers["Singapore Airlines"]["base"] * price_mult
-        # Total = (Adults + Teens)*Base + (Children)*(Base*Discount)
-        total_price = ((adults + teens) * base) + (children * base * (1 - 0.25))
-        st.metric("Est. Total (SIA Baseline)", f"SGD {total_price:,.0f}")
-        st.caption("Includes taxes & fuel surcharges.")
+        # SIA Total Calc: (Adults+Teens)*Price + Children*(Price*0.75)
+        base_p = 920 * multiplier
+        total_val = ((adults + teens) * base_p) + (children * base_p * 0.75)
+        st.metric("Est. Total (SIA)", f"S${total_val:,.0f}")
 
-    # 6. COMPETITIVE COMPARISON
-    st.write(f"**Carrier Performance Matrix: SIN ➔ {v_airports[0] if v_airports else 'Dest'}**")
+    # 5. CARRIER PRICE GRID
     comp_list = []
     for name, info in carriers.items():
-        price = info['base'] * price_mult
+        p = info['base'] * multiplier
         comp_list.append({
             "Carrier": name,
-            "Adult/Teen": f"${price:,.0f}",
-            "Child (2-11)": f"${price*(1-info['c_disc']):,.0f}",
-            "Route": info['hub'],
-            "Bias": info['status']
+            "Adult/Teen": f"${p:,.0f}",
+            "Child (<12)": f"${p*(1-info['c_disc']):,.0f}",
+            "Flight Type": info['type']
         })
     st.table(comp_list)
 
-    if st.button("📡 Synchronize Global Airline APIs", use_container_width=True, key="g10_t5_sync"):
-        st.toast("Crawling SIA, ANA, and OneWorld/Star Alliance feeds...")
-        st.success(f"Global Pricing Grid updated for {d_input.strftime('%d/%m/%y')}.")
+    if st.button("📡 Finalize Flight Analysis", use_container_width=True):
+        st.toast("Logic synced across all tabs.")
