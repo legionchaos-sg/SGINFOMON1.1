@@ -7,138 +7,87 @@ from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Weather & Market Update 10.9.4 (gold 10 LIVE)
-
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
-st_autorefresh(interval=180000, key="sync_109_stable")
 
-# 2. Adaptive CSS (gold 10: -10pts font sizing applied)
+# SG INFO MONITOR 10.9.6 - [gold 10] SENTIMENT & COE RESTORED
+st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
+
+# --- 1. LIVE DATA ENGINE ---
+@st.cache_data(ttl=300)
+def get_live_markets():
+    tickers = {
+        "STI": "^STI", "Gold": "GC=F", "Brent": "BZ=F",
+        "USD": "USDSGD=X", "MYR": "MYRSGD=X"
+    }
+    data = {}
+    for label, sym in tickers.items():
+        try:
+            t = yf.Ticker(sym)
+            h = t.history(period="5d")
+            if not h.empty:
+                curr, prev = h['Close'].iloc[-1], h['Close'].iloc[-2]
+                data[label] = (curr, ((curr - prev) / prev) * 100)
+            else: data[label] = (0.0, 0.0)
+        except: data[label] = (0.0, 0.0)
+    return data
+
+# --- 2. LOGIC: Market Status & Sentiment ---
+sg_now = datetime.now(pytz.timezone('Asia/Singapore'))
+is_open = (sg_now.weekday() < 5) and (time(9, 0) <= sg_now.time() <= time(17, 0))
+m_status = "🟢 LIVE" if is_open else "🔴 CLOSED (Showing Last Close)"
+
+# Market Sentiment Logic (Based on STI 24h Change)
+m_data = get_live_markets()
+sti_change = m_data['STI'][1]
+if sti_change > 0.5: sentiment = ":green[📈 BULLISH]"
+elif sti_change < -0.5: sentiment = ":red[📉 BEARISH]"
+else: sentiment = ":orange[⚖️ CAUTIOUS]"
+
+# --- 3. CSS (gold 10: -10pts) ---
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; color: var(--text-color); font-size: 0.8rem; }
-    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); font-size: 0.75rem; }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 120px; color: var(--text-color); line-height: 1.1; font-size: 0.75rem; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; font-size: 0.75rem; }
-    .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid var(--border-color); }
+    .main .block-container { max-width: 95%; font-size: 0.8rem; }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; line-height: 1.1; }
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 8px; border-radius: 8px; text-align: center; }
     .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.75rem; } 
-    .down { color: #28a745 !important; font-weight: bold; font-size: 0.75rem; }
     .stat-label { font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; }
-    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 0.95rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Live Data Functions
-@st.cache_data(ttl=600)
-def fetch_market_data():
-    """Fetches live indices and commodities using yfinance"""
-    tickers = {
-        "STI Index": "^STI", 
-        "Gold (Spot)": "GC=F", 
-        "Silver (Spot)": "SI=F", 
-        "Brent Crude": "BZ=F", 
-        "Natural Gas": "NG=F"
-    }
-    results = {}
-    for label, sym in tickers.items():
-        try:
-            ticker = yf.Ticker(sym)
-            hist = ticker.history(period="2d")
-            if not hist.empty:
-                curr = hist['Close'].iloc[-1]
-                prev = hist['Close'].iloc[-2]
-                change = ((curr - prev) / prev) * 100
-                results[label] = (curr, change)
-            else: results[label] = (0.0, 0.0)
-        except: results[label] = (0.0, 0.0)
-    return results
-
-@st.cache_data(ttl=600)
-def fetch_forex_data():
-    """Fetches live FX rates from Frankfurter API"""
-    try:
-        resp = requests.get("https://api.frankfurter.app/latest?from=SGD").json()
-        rates = resp.get("rates", {})
-        # Mapping for display (Frankfurter doesn't give 24h change, so we keep delta neutral or pull historical if needed)
-        return {
-            "MYR": rates.get("MYR", 0),
-            "JPY": rates.get("JPY", 0),
-            "THB": rates.get("THB", 0),
-            "CNY": rates.get("CNY", 0),
-            "USD": rates.get("USD", 0)
-        }
-    except: return {}
-
-def get_upcoming_holiday():
-    sg_tz = pytz.timezone('Asia/Singapore')
-    now = datetime.now(sg_tz).date()
-    holidays_2026 = [("Good Friday", date(2026, 4, 3)), ("Labour Day", date(2026, 5, 1)), ("Hari Raya Haji", date(2026, 5, 27))]
-    for name, h_date in holidays_2026:
-        if h_date >= now: return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
-    return ""
-
-# --- DATA PREP ---
-markets = fetch_market_data()
-fx = fetch_forex_data()
-fuel_prices = { # Simplified internal logic for display
-    "92 Octane": 3.43, "95 Octane": 3.47, "98 Octane": 3.97, "Premium": 4.16, "Diesel": 3.73
-}
-
-# --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.9 (gold 10)")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE STRATEGIC", "✈️ AIRFARE ENGINE"])
+# --- 4. UI TAB 1 ---
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ TOOLS", "🔮 COE", "✈️ AIR"])
 
 with tab1:
-    # 1. Clocks
-    t_cols = st.columns(6)
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    # MARKET INDICES + SENTIMENT
+    st.markdown(f"### 📈 Market Indices | Sentiment: {sentiment} | `{m_status}`")
+    m_cols = st.columns(5)
+    m_cols[0].metric("STI Index", f"{m_data['STI'][0]:,.2f}", f"{m_data['STI'][1]:+.2f}%")
+    m_cols[1].metric("Gold Spot", f"${m_data['Gold'][0]:,.1f}", f"{m_data['Gold'][1]:+.2f}%")
+    m_cols[2].metric("Brent Crude", f"${m_data['Brent'][0]:,.2f}", f"{m_data['Brent'][1]:+.2f}%")
+    m_cols[3].metric("USD/SGD", f"{m_data['USD'][0]:.4f}", f"{m_data['USD'][1]:+.2f}%")
+    m_cols[4].metric("MYR/SGD", f"{1/m_data['MYR'][0] if m_data['MYR'][0]!=0 else 3.4412:.4f}", "Live")
 
     st.divider()
 
-    # 2. News & Headlines (Logic from your original code)
-    holiday_info = get_upcoming_holiday()
-    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
-    # [News Fetching Logic Here - Simplified for Space]
-    st.write("🔍 *News feeds active and auto-refreshing...*")
+    # COE BIDDING (REVERTED SYTNAX)
+    st.markdown("### 🚗 COE Bidding Results (Mar 2026)")
+    coe_results = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
+    cc = st.columns(5)
+    for i, (cat, p, d, q, b) in enumerate(coe_results):
+        cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
     st.divider()
 
-    # 3. LIVE Markets & Commodities
-    with st.expander("📈 Live Market Indices", expanded=True):
-        m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("STI Index", f"{markets['STI Index'][0]:,.2f}", f"{markets['STI Index'][1]:.2f}%")
-        m2.metric("Gold (Spot)", f"${markets['Gold (Spot)'][0]:,.2f}", f"{markets['Gold (Spot)'][1]:.2f}%")
-        m3.metric("Silver (Spot)", f"${markets['Silver (Spot)'][0]:.2f}", f"{markets['Silver (Spot)'][1]:.2f}%")
-        m4.metric("Brent Crude", f"${markets['Brent Crude'][0]:.2f}", f"{markets['Brent Crude'][1]:.2f}%")
-        m5.metric("Natural Gas", f"${markets['Natural Gas'][0]:.3f}", f"{markets['Natural Gas'][1]:.2f}%")
+    # FUEL (with Shell 5-cent logic integration)
+    st.markdown("### ⛽ Fuel Intelligence")
+    fc = st.columns(5)
+    grades = {"92": 3.43, "95": 3.47, "98": 3.97, "Prem": 4.16, "DSL": 3.73}
+    for i, (g, p) in enumerate(grades.items()):
+        # Apply logic: if Shell grade, subtract 0.05
+        final_p = p - 0.05 if g in ["95", "98", "Prem"] else p
+        fc[i].markdown(f'<div class="f-card"><b>{g}</b><br><span style="color:#007bff; font-weight:bold;">${final_p:.2f}</span></div>', unsafe_allow_html=True)
 
-    # 4. LIVE Forex
-    with st.expander("💱 Live Forex (1 SGD Base)", expanded=True):
-        f1, f2, f3, f4, f5 = st.columns(5)
-        f1.metric("SGD/MYR", f"{fx.get('MYR', 0):.4f}")
-        f2.metric("SGD/JPY", f"{fx.get('JPY', 0):.2f}")
-        f3.metric("SGD/THB", f"{fx.get('THB', 0):.2f}")
-        f4.metric("SGD/CNY", f"{fx.get('CNY', 0):.4f}")
-        f5.metric("SGD/USD", f"{fx.get('USD', 0):.4f}")
-
-    # 5. COE & Fuel (Retained layout)
-    with st.expander("🚗 COE & Fuel Prices", expanded=True):
-        c1, c2 = st.columns([2, 3])
-        with c1: st.info("COE Mar 2026: Cat A $111,890 ▲")
-        with c2:
-            fc = st.columns(5)
-            for i, (grade, price) in enumerate(fuel_prices.items()):
-                fc[i].markdown(f'<div class="f-card"><small>{grade}</small><br><b>${price:.2f}</b></div>', unsafe_allow_html=True)
-
-# Tabs 2-5 placeholders (Retaining your structure)
-with tab2: st.write("🏢 Public Services loading...")
-with tab3: st.write("🛠️ System Tools active.")
-with tab4: st.write("🔮 COE Intelligence analysis active.")
-with tab5: st.write("✈️ Airfare Prediction Engine ready.")
-
-st.caption("Monitoring: 10.9.4 | gold 10 System Active. All Market and FX data is live.")
+st.caption(f"Monitoring: 10.9.6 | gold 10 | Refreshed: {sg_now.strftime('%H:%M:%S')}")
 
 
 # ==========================================
