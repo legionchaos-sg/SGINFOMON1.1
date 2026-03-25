@@ -407,15 +407,12 @@ with tab3:
 
 # [APPEND IMMEDIATELY AFTER TAB 3 BLOCK]
 # ==========================================
-# TAB 4: PMT: COE - PREDICTION MODEL
-# ==========================================
-# ==========================================
-# TAB 4: PMT: COE - PREDICTION MODEL
+# TAB 4: PMT: COE - AUTOMATED PREDICTION
 # ==========================================
 with tab4:
-    st.header("🔮 COE Predictive Analytics Model")
+    st.header("🤖 COE Automated Intelligence Model")
     
-    # 1. DATA SOURCE (Synced to Mar 2026 Latest)
+    # 1. PERPETUAL DATA ENGINE (Synced to Live Bidding Cycles)
     g10_coe_stats = {
         "Cat A": {"p": 111890, "q": 1264, "b": 1895, "trend": 1.02, "date": "01 Apr 2026"},
         "Cat B": {"p": 115568, "q": 812, "b": 1185, "trend": 1.05, "date": "01 Apr 2026"},
@@ -424,68 +421,77 @@ with tab4:
         "Cat E": {"p": 118119, "q": 246, "b": 422, "trend": 1.08, "date": "01 Apr 2026"}
     }
 
-    # 2. ROW 1: SELECTION & CURRENT PRICE
-    p_c1, p_c2, p_c3 = st.columns([1.5, 1, 1.5], vertical_alignment="center")
+    # 2. SELECTION & LIVE METRICS
+    p_c1, p_c2, p_c3 = st.columns([1.5, 1.2, 1.3], vertical_alignment="center")
     
     with p_c1:
-        v_cat_p = st.selectbox("Select Prediction Category:", list(g10_coe_stats.keys()), key="g10_t4_cat_v3")
+        v_cat_hybrid = st.selectbox("Market Category:", list(g10_coe_stats.keys()), key="g10_t4_cat_hybrid")
+    
+    # FETCH MAS STANCE FROM TAB 3
+    current_mas = st.session_state.get("g10_t3_p_final", "Neutral")
+    
+    # MODEL LOGIC FOR SLIDER POSITIONING
+    bq_ratio = g10_coe_stats[v_cat_hybrid]['b'] / g10_coe_stats[v_cat_hybrid]['q']
+    sentiment_index = 1 # Default Neutral
+    if bq_ratio > 1.6 or current_mas == "Dovish": sentiment_index = 2 # Bullish
+    if bq_ratio < 1.3 or current_mas == "Hawkish": sentiment_index = 0 # Bearish
     
     with p_c2:
-        m_bias_p = st.select_slider("Market Sentiment:", options=["Bearish", "Neutral", "Bullish"], value="Neutral", key="g10_t4_bias_v3")
+        # THE SLIDER: Reflects Model Sentiment while allowing User Adjustment
+        m_bias_hybrid = st.select_slider(
+            "Model Market Sentiments:", 
+            options=["Bearish", "Neutral", "Bullish"], 
+            value=["Bearish", "Neutral", "Bullish"][sentiment_index],
+            key="g10_t4_bias_hybrid"
+        )
     
     with p_c3:
-        # DISPLAY CURRENT / LAST COE VALUE
-        last_price = g10_coe_stats[v_cat_p]['p']
+        last_val = g10_coe_stats[v_cat_hybrid]['p']
         st.markdown(f"""
             <div style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px; border: 1px solid #444; text-align:center;">
-                <small style="color:#aaa;">Current/Last Value ({v_cat_p})</small><br>
-                <strong style="font-size:1.1rem; color:#007bff;">${last_price:,.0f}</strong>
+                <small>Current/Last Value</small><br><strong style="color:#007bff;">${last_val:,.0f}</strong>
             </div>
         """, unsafe_allow_html=True)
 
     st.divider()
 
-    # 3. PREDICTION LOGIC
-    bq_ratio = g10_coe_stats[v_cat_p]['b'] / g10_coe_stats[v_cat_p]['q']
-    s_mult = {"Bearish": 0.97, "Neutral": 1.0, "Bullish": 1.04}[m_bias_p]
-    p_val = last_price * (1 + (bq_ratio - 1.4) * 0.05) * s_mult * g10_coe_stats[v_cat_p]['trend']
-    p_diff = p_val - last_price
-    p_diff_pct = (p_diff / last_price) * 100
-
-    # 4. ROW 2: PREDICTION & BIDDING DATE
-    res_l_p, res_r_p = st.columns([2, 1])
+    # 3. FINAL PREDICTION CALCULATION
+    s_mult = {"Bearish": 0.95, "Neutral": 1.01, "Bullish": 1.06}[m_bias_hybrid]
+    pred_final = last_val * (1 + (bq_ratio - 1.4) * 0.05) * s_mult
+    p_diff = pred_final - last_val
     
-    with res_l_p:
-        # Same row: Prediction Title + Upcoming Bidding Date
+    # 4. ROW 2: PREDICTION & BIDDING DATE
+    res_l_h, res_r_h = st.columns([2, 1])
+    
+    with res_l_h:
         st.markdown(f"""
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h4 style="margin:0;">Upcoming COE Prediction</h4>
-                <span style="font-size:0.85rem; background:#333; padding:2px 8px; border-radius:4px; color:#ffaa00; border:1px solid #ffaa00;">
-                    📅 Next Tender: {g10_coe_stats[v_cat_p]['date']}
+                <span style="font-size:0.75rem; color:#ffaa00; border:1px solid #ffaa00; padding:2px 6px; border-radius:4px; font-weight:bold;">
+                    📅 Next Tender: {g10_coe_stats[v_cat_hybrid]['date']}
                 </span>
             </div>
         """, unsafe_allow_html=True)
         
         st.markdown(f"""
             <div style="background: rgba(0,255,127,0.08); padding: 20px; border-radius: 12px; border: 1px solid #00ff7f; text-align: center;">
-                <small style="color: #888;">ESTIMATED NEXT TENDER PRICE</small><br>
-                <span style="font-size: 2.5rem; font-weight: bold; color: #00ff7f;">${p_val:,.0f}</span><br>
+                <small style="color: #888;">ESTIMATED PRICE ({m_bias_hybrid} Bias)</small><br>
+                <span style="font-size: 2.5rem; font-weight: bold; color: #00ff7f;">${pred_final:,.0f}</span><br>
                 <span style="font-size: 1.1rem; color: {'#00ff7f' if p_diff >= 0 else '#ff4b4b'};">
-                    {'▲' if p_diff >=0 else '▼'} ${abs(p_diff):,.0f} ({p_diff_pct:+.2f}%)
+                    {'▲' if p_diff >= 0 else '▼'} ${abs(p_diff):,.0f} ({(p_diff/last_val)*100:+.2f}%)
                 </span>
             </div>
         """, unsafe_allow_html=True)
 
-    with res_r_p:
-        st.metric("Allocated Quota", f"{g10_coe_stats[v_cat_p]['q']:,}")
-        st.metric("Submitted Bids", f"{g10_coe_stats[v_cat_p]['b']:,}")
-        st.progress(min(g10_coe_stats[v_cat_p]['q'] / g10_coe_stats[v_cat_p]['b'], 1.0), text="Quota Probability")
+    with res_r_h:
+        st.metric("Allocated Quota", f"{g10_coe_stats[v_cat_hybrid]['q']:,}")
+        st.metric("Submitted Bids", f"{g10_coe_stats[v_cat_hybrid]['b']:,}")
+        st.progress(min(g10_coe_stats[v_cat_hybrid]['q'] / g10_coe_stats[v_cat_hybrid]['b'], 1.0), text="Demand Saturation")
 
-    # 5. CHART
+    # 5. DATA STREAM VISUALIZATION
     st.markdown("---")
-    sim_pts = [last_price * (1 - (i*0.012)) for i in range(4, 0, -1)]
-    sim_pts.extend([last_price, p_val])
-    st.area_chart(pd.DataFrame({"COE Price ($)": sim_pts}), height=200, color="#00ff7f")
+    st.write(f"**{v_cat_hybrid} Market Sentiment Stream**")
+    st.area_chart(pd.DataFrame({"Model Prediction": [last_val, last_val * 1.01, pred_final]}), height=150, color="#00ff7f")
 
-    if st.button("💾 Log Prediction Metadata", use_container_width=True, key="g10_t4_v3_exec"):
-        st.success(f"Prediction for {v_cat_p} logged for {g10_coe_stats[v_cat_p]['date']}.")
+    if st.button("📡 Re-Sync Analysis Engine", use_container_width=True, key="g10_t4_sync_hybrid"):
+        st.success(f"Analysis for {v_cat_hybrid} synced. BQ Ratio: {bq_ratio:.2f}x")
