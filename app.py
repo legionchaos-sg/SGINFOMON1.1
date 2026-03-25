@@ -3,18 +3,18 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import yfinance as yf  # Added for live markets
-from datetime import datetime, date, timedelta
+#from datetime import datetime, date, timedelta
+from datetime import datetime, time, date  # FIXED: Added 'time' and 'date' imports
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# 1. Page Configuration
-
-# SG INFO MONITOR 10.9.6 - [gold 10] SENTIMENT & COE RESTORED
+# SG INFO MONITOR 10.9.7 - [gold 10] NAMEERROR FIX & SENTIMENT RESTORED
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
 
 # --- 1. LIVE DATA ENGINE ---
 @st.cache_data(ttl=300)
 def get_live_markets():
+    # Tickers for STI, Gold, Brent, and FX
     tickers = {
         "STI": "^STI", "Gold": "GC=F", "Brent": "BZ=F",
         "USD": "USDSGD=X", "MYR": "MYRSGD=X"
@@ -31,14 +31,16 @@ def get_live_markets():
         except: data[label] = (0.0, 0.0)
     return data
 
-# --- 2. LOGIC: Market Status & Sentiment ---
-sg_now = datetime.now(pytz.timezone('Asia/Singapore'))
+# --- 2. MARKET LOGIC (FIXED) ---
+sg_tz = pytz.timezone('Asia/Singapore')
+sg_now = datetime.now(sg_tz)
+# Logic for Market Status
 is_open = (sg_now.weekday() < 5) and (time(9, 0) <= sg_now.time() <= time(17, 0))
 m_status = "🟢 LIVE" if is_open else "🔴 CLOSED (Showing Last Close)"
 
-# Market Sentiment Logic (Based on STI 24h Change)
+# Market Sentiment Logic
 m_data = get_live_markets()
-sti_change = m_data['STI'][1]
+sti_change = m_data.get('STI', (0, 0))[1]
 if sti_change > 0.5: sentiment = ":green[📈 BULLISH]"
 elif sti_change < -0.5: sentiment = ":red[📉 BEARISH]"
 else: sentiment = ":orange[⚖️ CAUTIOUS]"
@@ -54,41 +56,56 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. UI TAB 1 ---
+# --- 4. TAB 1 UI ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ TOOLS", "🔮 COE", "✈️ AIR"])
 
 with tab1:
     # MARKET INDICES + SENTIMENT
     st.markdown(f"### 📈 Market Indices | Sentiment: {sentiment} | `{m_status}`")
-    m_cols = st.columns(5)
-    m_cols[0].metric("STI Index", f"{m_data['STI'][0]:,.2f}", f"{m_data['STI'][1]:+.2f}%")
-    m_cols[1].metric("Gold Spot", f"${m_data['Gold'][0]:,.1f}", f"{m_data['Gold'][1]:+.2f}%")
-    m_cols[2].metric("Brent Crude", f"${m_data['Brent'][0]:,.2f}", f"{m_data['Brent'][1]:+.2f}%")
-    m_cols[3].metric("USD/SGD", f"{m_data['USD'][0]:.4f}", f"{m_data['USD'][1]:+.2f}%")
-    m_cols[4].metric("MYR/SGD", f"{1/m_data['MYR'][0] if m_data['MYR'][0]!=0 else 3.4412:.4f}", "Live")
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("STI Index", f"{m_data['STI'][0]:,.2f}", f"{m_data['STI'][1]:+.2f}%")
+    m2.metric("Gold Spot", f"${m_data['Gold'][0]:,.1f}", f"{m_data['Gold'][1]:+.2f}%")
+    m3.metric("Brent Crude", f"${m_data['Brent'][0]:,.2f}", f"{m_data['Brent'][1]:+.2f}%")
+    m4.metric("USD/SGD", f"{m_data['USD'][0]:.4f}", f"{m_data['USD'][1]:+.2f}%")
+    m5.metric("MYR/SGD", f"{1/m_data['MYR'][0] if m_data['MYR'][0]!=0 else 3.4412:.4f}", "Live")
 
     st.divider()
 
-    # COE BIDDING (REVERTED SYTNAX)
+    # COE BIDDING (ORIGINAL SYNTAX RESTORED)
     st.markdown("### 🚗 COE Bidding Results (Mar 2026)")
-    coe_results = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
+    coe_results = [
+        ("Cat A", 111890, 3670, 1264, 1895), 
+        ("Cat B", 115568, 1566, 812, 1185), 
+        ("Cat C", 78000, 2000, 290, 438), 
+        ("Cat D", 9589, 987, 546, 726), 
+        ("Cat E", 118119, 3229, 246, 422)
+    ]
     cc = st.columns(5)
     for i, (cat, p, d, q, b) in enumerate(coe_results):
-        cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
+        cc[i].markdown(f"""
+            <div class="c-card">
+                <b>{cat}</b><br>
+                <span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br>
+                <small class="up">▲ ${d:,}</small>
+                <hr style="margin:5px 0; opacity:0.1;">
+                <span class="stat-label">Quota:</span> <b>{q:,}</b><br>
+                <span class="stat-label">Bids:</span> <b>{b:,}</b>
+            </div>
+            """, unsafe_allow_html=True)
 
     st.divider()
 
-    # FUEL (with Shell 5-cent logic integration)
+    # FUEL (with Shell 5-cent discount applied)
     st.markdown("### ⛽ Fuel Intelligence")
     fc = st.columns(5)
+    # Market average base prices
     grades = {"92": 3.43, "95": 3.47, "98": 3.97, "Prem": 4.16, "DSL": 3.73}
     for i, (g, p) in enumerate(grades.items()):
         # Apply logic: if Shell grade, subtract 0.05
         final_p = p - 0.05 if g in ["95", "98", "Prem"] else p
         fc[i].markdown(f'<div class="f-card"><b>{g}</b><br><span style="color:#007bff; font-weight:bold;">${final_p:.2f}</span></div>', unsafe_allow_html=True)
 
-st.caption(f"Monitoring: 10.9.6 | gold 10 | Refreshed: {sg_now.strftime('%H:%M:%S')}")
-
+st.caption(f"Monitoring: 10.9.7 | gold 10 | Refreshed: {sg_now.strftime('%H:%M:%S')}")
 
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
