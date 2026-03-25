@@ -100,6 +100,36 @@ def fetch_sg_economy():
     except:
         return {"cpi_val": 100.7, "cpi_delta": 0.0, "inf_val": 1.4, "inf_delta": 0.0}
 
+# --- 1. FX DATA ENGINE ---
+@st.cache_data(ttl=300)
+def fetch_live_forex():
+    """Fetches SGD-based exchange rates from Yahoo Finance"""
+    # Yahoo Finance uses 'CURRENCY=X' for exchange rates
+    # These tickers represent 1 SGD to the Target Currency
+    fx_tickers = {
+        "MYR": "MYR=X", 
+        "JPY": "JPY=X", 
+        "THB": "THB=X", 
+        "CNY": "CNY=X", 
+        "USD": "SGDUSD=X" # Note: USD is usually quoted as USDSGD, adjusted here for 1 SGD base
+    }
+    
+    fx_results = {}
+    for label, sym in fx_tickers.items():
+        try:
+            ticker = yf.Ticker(sym)
+            hist = ticker.history(period="2d")
+            if not hist.empty and len(hist) >= 2:
+                curr = hist['Close'].iloc[-1]
+                prev = hist['Close'].iloc[-2]
+                delta = ((curr - prev) / prev) * 100
+                fx_results[label] = (curr, delta)
+            else:
+                fx_results[label] = (0.0, 0.0)
+        except:
+            fx_results[label] = (0.0, 0.0)
+    return fx_results
+
 # --- NEW: SENTIMENT LOGIC ---
 def get_market_sentiment(m_data):
     # Aggregating signals from STI and Brent (Proxy for global/local health)
@@ -190,9 +220,7 @@ with tab1:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     st.divider()
-
-    # 3. Markets & Commodities
-# 3. Markets & Commodities (DYNAMIC UPDATE)
+    # 3. Markets & Commodities (DYNAMIC UPDATE)
     m_live = fetch_live_market_data()
     sentiment_icon, sentiment_text = get_market_sentiment(m_live)
     sg_econ = fetch_sg_economy() # Pull the new live data
@@ -220,17 +248,6 @@ with tab1:
         m5.metric("Natural Gas", 
                   f"${m_live['NatGas'][0]:.3f}", 
                   f"{m_live['NatGas'][1]:+.2f}%")
-        
-        # Static Macro remain for reference
-        #m6.metric("SG CPI (All)", "100.7", "-0.20%")
-        #m7.metric("SG Inflation", "1.40%", "+0.40%")
-
-
-
-    
-    # [m1 to m5 code for STI, Gold, etc. remains the same]
-    #m1.metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
-    # ... (m2 to m5)
     
     # UPDATED LIVE DATA FOR M6 & M7
     m6.metric("SG CPI (All)", 
@@ -244,11 +261,36 @@ with tab1:
     #FX Expander
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
-        f1.metric("SGD/MYR", "3.4412", "+0.12%")
-        f2.metric("SGD/JPY", "118.55", "-0.43%")
-        f3.metric("SGD/THB", "26.85", "+0.15%")
-        f4.metric("SGD/CNY", "5.3975", "-0.07%")
-        f5.metric("SGD/USD", "0.7480", "-0.22%")
+        # --- 2. UI IMPLEMENTATION ---
+fx_data = fetch_live_forex()
+
+with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
+    f1, f2, f3, f4, f5 = st.columns(5)
+    
+    # f1: SGD/MYR
+    f1.metric("SGD/MYR", 
+              f"{fx_data['MYR'][0]:.2f}", 
+              f"{fx_data['MYR'][1]:+.2f}%")
+    
+    # f2: SGD/JPY
+    f2.metric("SGD/JPY", 
+              f"{fx_data['JPY'][0]:.2f}", 
+              f"{fx_data['JPY'][1]:+.2f}%")
+    
+    # f3: SGD/THB
+    f3.metric("SGD/THB", 
+              f"{fx_data['THB'][0]:.2f}", 
+              f"{fx_data['THB'][1]:+.2f}%")
+    
+    # f4: SGD/CNY
+    f4.metric("SGD/CNY", 
+              f"{fx_data['CNY'][0]:.2f}", 
+              f"{fx_data['CNY'][1]:+.2f}%")
+    
+    # f5: SGD/USD
+    f5.metric("SGD/USD", 
+              f"{fx_data['USD'][0]:.2f}", 
+              f"{fx_data['USD'][1]:+.2f}%")
 
     # 4. COE Bidding
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
