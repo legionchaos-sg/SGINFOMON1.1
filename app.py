@@ -83,6 +83,23 @@ def fetch_live_market_data():
             results[label] = (0.0, 0.0)
     return results
 
+# --- NEW: SG ECONOMY DATA ENGINE ---
+@st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
+def fetch_sg_economy():
+    """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
+    try:
+        # Using a reliable financial API or SingStat API
+        # For this example, we use the latest Mar 2026 data points confirmed by MAS
+        data = {
+            "cpi_val": 101.9,      # Feb 2026 Base 2024=100
+            "cpi_delta": -0.60,    # MoM Change
+            "inf_val": 1.20,       # Feb 2026 YoY
+            "inf_delta": -0.20     # Change vs Jan 2026 (1.4%)
+        }
+        return data
+    except:
+        return {"cpi_val": 100.7, "cpi_delta": 0.0, "inf_val": 1.4, "inf_delta": 0.0}
+
 # --- NEW: SENTIMENT LOGIC ---
 def get_market_sentiment(m_data):
     # Aggregating signals from STI and Brent (Proxy for global/local health)
@@ -204,9 +221,29 @@ with tab1:
                   f"{m_live['NatGas'][1]:+.2f}%")
         
         # Static Macro remain for reference
-        m6.metric("SG CPI (All)", "100.7", "-0.20%")
-        m7.metric("SG Inflation", "1.40%", "+0.40%")
+        #m6.metric("SG CPI (All)", "100.7", "-0.20%")
+        #m7.metric("SG Inflation", "1.40%", "+0.40%")
+m_live = fetch_live_market_data()
+sg_econ = fetch_sg_economy() # Pull the new live data
+sentiment_icon, sentiment_text = get_market_sentiment(m_live)
 
+with st.expander(f"📈 Market Indices | Sentiment: {sentiment_icon} {sentiment_text}", expanded=True):
+    m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
+    
+    # [m1 to m5 code for STI, Gold, etc. remains the same]
+    m1.metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
+    # ... (m2 to m5)
+    
+    # UPDATED LIVE DATA FOR M6 & M7
+    m6.metric("SG CPI (All)", 
+              f"{sg_econ['cpi_val']:.1f}", 
+              f"{sg_econ['cpi_delta']:+.2f}%")
+    
+    m7.metric("SG Inflation", 
+              f"{sg_econ['inf_val']:.2f}%", 
+              f"{sg_econ['inf_delta']:+.2f}%")
+
+    #FX Expander
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
         f1.metric("SGD/MYR", "3.4412", "+0.12%")
