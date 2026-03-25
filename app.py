@@ -165,45 +165,64 @@ with tab2:
 # ==========================================
 # TAB 3: SYSTEM TOOLS - Execution Strategy
 # ==========================================
+# ==========================================
+# TAB 3: SYSTEM TOOLS - Execution Strategy
+# ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. Current Market Info (2026 Live Snapshots)
-    market_data = {
-        "SGD/CNY": {"rate": 5.3849, "vol_day": 0.0015, "high_52w": 5.42, "low_52w": 5.15},
-        "SGD/THB": {"rate": 25.3721, "vol_day": 0.0450, "high_52w": 26.90, "low_52w": 24.80},
-        "SGD/JPY": {"rate": 124.091, "vol_day": 0.4500, "high_52w": 128.50, "low_52w": 115.20}
-    }
+    # 1. LIVE FEED: Frankfurter API Integration
+    # This function pulls ad-hoc when the page is in focus or a selection changes
+    def fetch_live_market(target_iso):
+        try:
+            # Direct pull from Frankfurter (No API Key required)
+            url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
+            response = requests.get(url, timeout=5).json()
+            return {
+                "rate": response['rates'][target_iso],
+                "date": response['date'],
+                "status": "LIVE SYNC"
+            }
+        except Exception:
+            # gold 10 Stability Fallback (March 2026 Snapshots)
+            fallbacks = {"CNY": 5.3903, "THB": 25.5533, "JPY": 124.1885}
+            return {
+                "rate": fallbacks.get(target_iso, 1.0),
+                "date": "OFFLINE CACHE",
+                "status": "STABLE FALLBACK"
+            }
 
     # 2. Selection UI
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
-        pair = st.selectbox("Currency Pair:", list(market_data.keys()), key="p_calc_pair")
+        pair = st.selectbox("Currency Pair:", ["SGD/CNY", "SGD/THB", "SGD/JPY"], key="p_calc_pair")
         trade_amt = st.number_input("Trade Amount (SGD):", min_value=0, value=1000)
     
-    curr = market_data[pair]
+    # Trigger the Ad-Hoc/Continuous Fetch
+    target_iso = pair.split("/")[1]
+    curr = fetch_live_market(target_iso)
     
     with c2:
-        # NEW: User Target Input
-        user_target = st.number_input("User Target Price:", value=curr['rate'] + curr['vol_day'], format="%.4f")
+        # User Target Input
+        # Default target set slightly above live rate for calculation
+        user_target = st.number_input("User Target Price:", value=curr['rate'] * 1.002, format="%.4f")
         
         # 3. Model Logic for Execution Date based on Target
-        # Logic: (Target - Current) / Average Daily Volatility = Days Required
+        # Volatility constants per day
+        v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
+        daily_vol = v_map.get(target_iso, 0.01)
+        
         price_diff = abs(user_target - curr['rate'])
-        est_days = int(np.ceil(price_diff / curr['vol_day'])) if price_diff > 0 else 0
-        
-        # Limit forecast to a reasonable 30-day window for stability
-        est_days = min(est_days, 30)
-        
+        est_days = int(np.ceil(price_diff / daily_vol)) if price_diff > 0 else 0
         model_exec_date = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=est_days)).strftime('%d %b %Y')
 
     with c3:
-        st.write("**Current Market Info**")
+        st.write(f"**Market Info: {curr['status']}**")
         st.markdown(f"""
-            <div style="font-size: 0.8rem; line-height: 1.4; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 5px;">
-                <b>Live Rate:</b> {curr['rate']}<br>
-                <b>52W High:</b> {curr['high_52w']}<br>
-                <b>Daily Vol:</b> ±{curr['vol_day']}
+            <div style="font-size: 0.8rem; line-height: 1.4; background: rgba(0,255,127,0.1); padding: 8px; border-radius: 5px; border-left: 3px solid #00ff7f;">
+                <b>Live Rate:</b> {curr['rate']:.4f}<br>
+                <b>Data Date:</b> {curr['date']}<br>
+                <b>Daily Vol:</b> ±{daily_vol}
             </div>
         """, unsafe_allow_html=True)
 
@@ -214,9 +233,9 @@ with tab3:
     res_c1, res_c2 = st.columns([1, 2])
     
     with res_c1:
-        st.metric("📅 Model Suggest. Date", model_exec_date, help="Calculated based on average daily volatility to reach target.")
-        st.metric("🎯 User Target Value", f"{user_target:.4f}")
-        st.metric("Est. Profit", f"+{profit_raw:.2f} {pair[-3:]}", delta=f"{(user_target/curr['rate']-1)*100:.2f}%")
+        st.metric("📅 Model Suggested Date", model_exec_date)
+        st.metric("🎯 User Target", f"{user_target:.4f}")
+        st.metric("Est. Profit", f"+{profit_raw:.2f} {target_iso}", delta=f"{(user_target/curr['rate']-1)*100:.2f}%")
 
     with res_c2:
         st.write(f"**{pair} Convergence Path**")
@@ -229,10 +248,9 @@ with tab3:
 
     # 5. Record Logging
     if st.button(f"💾 Lock Plan: Execute {pair} on {model_exec_date}", use_container_width=True):
-        st.success(f"Plan Locked. Target {user_target} for {trade_amt} SGD. Probability High for {model_exec_date}.")
+        st.success(f"Plan Locked. Target {user_target} for {trade_amt} SGD. Valid for {model_exec_date}.")
 
-    st.info(f"💡 **gold 10 Analysis:** At current volatility, the market requires approximately **{est_days} market days** to bridge the gap to your target of {user_target}.")
-
+    st.info(f"💡 **gold 10 Analysis:** Continuous feed active. Market requires **{est_days} days** to reach target at current volatility.")
 # ==========================================
 # TAB 4: PMT COE (API Prediction Model) - Gold 10a
 # ==========================================
