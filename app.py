@@ -169,88 +169,107 @@ with tab3:
     st.line_chart({"Market": [curr * (1 + (i*0.0006)) for i in range(-5, 5)]}, height=120)
 
 # TAB 4: PMT COE (LIVE RECENT-WEIGHTED ENGINE)
-with tab4:
-    import streamlit as st
+import streamlit as st
 import requests
 import pandas as pd
-import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
-# PMT COE Logic - gold 10
-st.markdown('<div style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;"><h3>🚗 PMT: 3-Month Weighted Forecast</h3></div>', unsafe_allow_html=True)
+# Configuration & ID: gold 10
+SGT = pytz.timezone('Asia/Singapore')
+
+def get_next_bidding_date():
+    now = datetime.now(SGT)
+    # COE bidding starts on 1st/3rd Monday, results out on Wednesday 4pm
+    # For April 2026, the 1st bidding is April 6-8.
+    possible_dates = []
+    for month in [now.month, now.month + 1]:
+        first_day = datetime(2026, month, 1)
+        # Find first Monday
+        first_mon = first_day + timedelta(days=(7 - first_day.weekday()) % 7)
+        possible_dates.append(first_mon + timedelta(days=2)) # Wednesday
+        # Find third Monday
+        third_mon = first_mon + timedelta(days=14)
+        possible_dates.append(third_mon + timedelta(days=2)) # Wednesday
+    
+    future_dates = [d for d in possible_dates if d.date() > now.date()]
+    return future_dates[0].strftime("%d %B %Y")
 
 @st.cache_data(ttl=3600)
-def fetch_live_coe():
-    # Official LTA Dataset ID (Active as of March 2026)
+def fetch_coe_history():
     rid = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
     url = f"https://data.gov.sg/api/action/datastore_search?resource_id={rid}&limit=100"
-    
     try:
-        # Added User-Agent to prevent 403 Forbidden errors
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-        df = pd.DataFrame(data['result']['records'])
-        
-        # Data Cleaning
-        df['premium'] = pd.to_numeric(df['premium'], errors='coerce')
-        df['quota'] = pd.to_numeric(df['quota'], errors='coerce')
-        df['bids_received'] = pd.to_numeric(df['bids_received'], errors='coerce')
-        
-        # Sort so index 0 is always the latest bidding round
-        df = df.sort_values(by=['month', 'bidding_no'], ascending=False).reset_index(drop=True)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10).json()
+        df = pd.DataFrame(r['result']['records'])
+        df['premium'] = pd.to_numeric(df['premium'])
+        df = df.sort_values(['month', 'bidding_no'], ascending=False).reset_index(drop=True)
         return df
-    except Exception as e:
-        st.error(f"⚠️ Connection to LTA Feed Failed: {e}")
-        return pd.DataFrame()
+    except: return pd.DataFrame()
 
-# Execute Data Pull
-live_df = fetch_live_coe()
+# --- UI Tab 4 ---
+st.markdown("### 🚗 PMT: Smart Forecasting & Trade Ledger")
 
-if not live_df.empty:
-    # Filter for Category A and B
-    cat_a = live_df[live_df['vehicle_class'] == 'Category A'].head(12)
-    cat_b = live_df[live_df['vehicle_class'] == 'Category B'].head(12)
+hist_df = fetch_coe_history()
+
+if not hist_df.empty:
+    # 1. Logic for Predictions (0.5/0.3/0.2)
+    cat_a = hist_df[hist_df['vehicle_class'] == 'Category A']
+    cat_b = hist_df[hist_df['vehicle_class'] == 'Category B']
     
-    # Calculation Engine: 0.5 (M), 0.3 (M-1), 0.2 (M-2)
-    def calculate_weighted_forecast(series):
-        vals = series.tolist()
-        if len(vals) < 3: return vals[0] if vals else 0
-        return (vals[0] * 0.5) + (vals[1] * 0.3) + (vals[2] * 0.2)
+    def get_weighted(series):
+        v = series.head(3).tolist()
+        return (v[0]*0.5 + v[1]*0.3 + v[2]*0.2) if len(v) >= 3 else v[0]
 
-    pred_a = calculate_weighted_forecast(cat_a['premium'])
-    pred_b = calculate_weighted_forecast(cat_b['premium'])
-    
-    # UI Layout
-    c1, c2 = st.columns(2)
-    with c1: 
-        st.subheader("Cat A Trend (LTA Live)")
-        st.line_chart(cat_a.set_index('month')['premium'])
-    with c2: 
-        st.subheader("Cat B Trend (LTA Live)")
-        st.line_chart(cat_b.set_index('month')['premium'])
+    pred_a = get_weighted(cat_a['premium'])
+    pred_b = get_weighted(cat_b['premium'])
+
+    # 2. Display Auto-Sensed Window
+    next_date = get_next_bidding_date()
+    st.metric("Next Bidding Results Release", next_date)
+
+    # 3. Forecast Metrics
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Predicted Cat A", f"${int(pred_a):,}")
+    c2.metric("Predicted Cat B", f"${int(pred_b):,}")
+    c3.metric("Quota (Cat A)", f"{cat_a['quota'].iloc[0]}")
 
     st.divider()
-    
-    # Prediction Outputs
-    latest_month = cat_a['month'].iloc[0]
-    st.markdown(f"#### 🤖 Recency-Weighted Prediction: April 2026 (Ref: {latest_month})")
-    
-    res1, res2, res3 = st.columns(3)
-    res1.metric("Cat A Prediction", f"${int(pred_a):,}", f"vs Last: ${int(cat_a['premium'].iloc[0]):,}")
-    res2.metric("Cat B Prediction", f"${int(pred_b):,}", f"vs Last: ${int(cat_b['premium'].iloc[0]):,}")
-    
-    # Bid Pressure Calculation
-    pressure = cat_a['bids_received'].iloc[0] / cat_a['quota'].iloc[0]
-    res3.metric("Latest Bid Pressure", f"{pressure:.2f}x", "High" if pressure > 1.8 else "Stable")
 
-    # Data Table for Verification
-    with st.expander("📝 View Raw API Data (Last 12 Months)"):
-        st.dataframe(live_df[['month', 'bidding_no', 'vehicle_class', 'premium', 'quota', 'bids_received']])
+    # 4. Generate Trade Record Ledger
+    # Comparing predictions made in previous months vs actual results
+    ledger_data = []
+    unique_months = hist_df['month'].unique()[:6]
+    
+    for m in unique_months:
+        m_data = hist_df[hist_df['month'] == m]
+        # For simplicity, we use the previous 3-month window as the "Model Predict" for that month
+        # In a real app, you'd save the specific prediction state; here we recalculate the forecast basis.
+        prev_data = hist_df[hist_df['month'] < m].head(6)
+        p_a = get_weighted(prev_data[prev_data['vehicle_class'] == 'Category A']['premium'])
+        p_b = get_weighted(prev_data[prev_data['vehicle_class'] == 'Category B']['premium'])
+        
+        mkt_a = m_data[m_data['vehicle_class'] == 'Category A']['premium'].iloc[0]
+        mkt_b = m_data[m_data['vehicle_class'] == 'Category B']['premium'].iloc[0]
+        
+        ledger_data.append({
+            "COE Bid Date": m,
+            "Model Predict Cat A": int(p_a),
+            "Mkt Cat A": mkt_a,
+            "Model Predict Cat B": int(p_b),
+            "Mkt Cat B": mkt_b
+        })
 
-else:
-    st.warning("No data retrieved. Ensure you are connected to the internet.")
+    ledger_df = pd.DataFrame(ledger_data)
+    
+    st.markdown("#### 📑 Trade Record Ledger")
+    st.dataframe(ledger_df, use_container_width=True)
 
-st.caption(f"gold 10 | SGT: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')}")
+    # 5. On-Demand Download
+    csv = ledger_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download Trade Record (.csv)",
+        data=csv,
+        file_name=f"COE_Trade_Record_{datetime.now().strftime('%Y%m%d')}.csv",
+        mime='text/csv',
+    )
