@@ -334,13 +334,13 @@ with tab1:
 
     # 5. Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-    fc = st.columns(5)
-    ftypes = list(fuel_data.keys())
+         fc = st.columns(5)
+         ftypes = list(fuel_data.keys())
 
-    for i, ftype in enumerate(ftypes):
-        # Calculate Average for this grade (ignores N/A)
-        prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-        avg = sum(prices) / len(prices) if prices else 0
+         for i, ftype in enumerate(ftypes):
+               # Calculate Average for this grade (ignores N/A)
+               prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+               avg = sum(prices) / len(prices) if prices else 0
         
         fc[i].metric(ftype, f"${avg:.2f}")
         if fc[i].button("View Brands", key=f"btn_{ftype}"):
