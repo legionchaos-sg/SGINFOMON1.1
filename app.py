@@ -2,76 +2,172 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
-import yfinance as yf
-from datetime import datetime, date  # FIXED: Added 'date' import
+from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
+from datetime import date, timedelta
 
-# SG INFO MONITOR 10.9.8 - [gold 10] ERROR FIX & FUEL LIVE
+# SG INFO MONITOR - Weather & Traffic Update 10.9.3
+
+# 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
 
-# --- 1. RELIABLE DATA ENGINE (TAB 1) ---
-@st.cache_data(ttl=600)
-def get_verified_fuel_base():
-    # Market Base Prices as of March 25, 2026
-    base_prices = {
-        "92 Octane": {"Esso": 3.43, "Caltex": 3.43, "SPC": 3.43},
-        "95 Octane": {"Esso": 3.48, "Caltex": 3.48, "Shell": 3.48, "SPC": 3.47},
-        "98 Octane": {"Esso": 3.97, "Shell": 3.99, "SPC": 3.97},
-        "Premium": {"Caltex": 4.16, "Shell": 4.21, "Sinopec": 4.10},
-        "Diesel": {"Esso": 3.73, "Caltex": 3.73, "Shell": 3.73, "SPC": 3.56}
-    }
-    # SHELL 5-CENT DISCOUNT SYNTAX (gold 10 Correction)
-    for grade in ["95 Octane", "98 Octane", "Premium"]:
-        if "Shell" in base_prices[grade]:
-            base_prices[grade]["Shell"] = round(base_prices[grade]["Shell"] - 0.05, 2)
-    return base_prices
-
-# --- 2. ADAPTIVE CSS (RETAINED) ---
+# 2. Adaptive CSS
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; color: var(--text-color); font-size: 0.8rem; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.75rem; }
-    .promo-tag { font-size: 0.6rem; color: #28a745; font-weight: bold; border: 1px solid #28a745; padding: 1px 4px; border-radius: 4px; margin-top: 5px; display: inline-block; }
+    .main .block-container { max-width: 95%; color: var(--text-color); }
+    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150_px; color: var(--text-color); line-height: 1.1; }
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
+    .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
+    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
+    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
+    .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
+    .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
+    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
+    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
+    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
+    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
+    .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; margin-bottom: 5px; width: 100%; text-align: center;}
+    .weather-box { background: var(--secondary-background-color); border-radius: 10px; padding: 15px; text-align: center; border: 1px solid var(--border-color); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. UI TABS ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE STRATEGIC", "✈️ AIRFARE ENGINE"])
+# 3. Logic Functions
+def get_upcoming_holiday():
+    sg_tz = pytz.timezone('Asia/Singapore')
+    now = datetime.now(sg_tz).date()
+    holidays_2026 = [("New Year's Day", datetime(2026, 1, 1).date()), ("Chinese New Year", datetime(2026, 2, 17).date()), ("Hari Raya Puasa", datetime(2026, 3, 21).date()), ("Good Friday", datetime(2026, 4, 3).date()), ("Labour Day", datetime(2026, 5, 1).date()), ("Hari Raya Haji", datetime(2026, 5, 27).date()), ("Vesak Day", datetime(2026, 5, 31).date()), ("National Day", datetime(2026, 8, 9).date()), ("Deepavali", datetime(2026, 11, 8).date()), ("Christmas Day", datetime(2026, 12, 25).date())]
+    for name, h_date in holidays_2026:
+        if h_date >= now:
+            return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
+    return ""
+
+# NEW: Reliable NEA Data Fetcher
+def fetch_nea_live(endpoint):
+    try:
+        url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoint}"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get('data', {}).get('items', [{}])[0]
+    except: return None
+    return None
+
+fuel_data = {
+    "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
+    "98 Octane": {"Esso": (3.97, 0.05), "Shell": (3.99, 0.05), "SPC": (3.97, 0.05), "Cnergy": (2.80, 0.05), "Sinopec": (3.97, 0.05), "Smart Energy": (2.99, -0.12)},
+    "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
+    "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
+}
+
+@st.dialog("Fuel Brand Details")
+def show_fuel_details(ftype):
+    st.write(f"### 📍 {ftype} Price List")
+    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
+    for brand in brand_order:
+        data = fuel_data[ftype].get(brand, ("N/A", 0))
+        price, change = data
+        if brand == "Shell" and ftype == "92 Octane": continue
+        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
+
+# --- UI START ---
+st.title("🇸🇬 SG Info Monitor 10.9")
+
+# UPDATED: We now have 3 tabs defined here
+tab1, tab2, tab3,tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE Strategic Feasibility & Prediction", "✈️ Global Airfare Prediction Engine"])
 
 # ==========================================
-# TAB 1: LIVE MONITOR (UPDATED FUEL LOGIC)
+# TAB 1: LIVE MONITOR (Your EXACT Original)
 # ==========================================
 with tab1:
-    # [Clocks, News, Markets logic from previous turn goes here]
-    live_fuel = get_verified_fuel_base()
-    st.markdown("### ⛽ Fuel Intelligence")
-    fc = st.columns(5)
-    ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-    for i, ftype in enumerate(ftypes):
-        prices = list(live_fuel[ftype].values())
-        avg_price = sum(prices) / len(prices)
-        shell_p = live_fuel[ftype].get("Shell", 9.99)
-        promo = '<div class="promo-tag">📉 SHELL -5¢ APPLIED</div>' if shell_p <= min(prices) and ftype != "92 Octane" else ""
-        fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff; font-size:1.15rem; font-weight:bold;">${avg_price:.2f}</span><br>{promo}</div>', unsafe_allow_html=True)
+    # 1. Clocks
+    t_cols = st.columns(6)
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
-# [TABS 2, 3, 4 RETAINED]
-
-# ==========================================
-# TAB 5: AIRFARE ENGINE (FIXED NameError)
-# ==========================================
-with tab5:
-    st.header("✈️ Global Airfare Prediction Engine")
-    v_trip = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
-    u_loc = st.text_input("Destination:", value="China", key="g10_t5_loc")
+    st.divider()
     
-    # FIXED: The line that caused your error
-    d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+    # 2. News & Holidays
+    holiday_info = get_upcoming_holiday()
+    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
+    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     
-    st.info(f"Scanning 2026 capacity for {u_loc} flights departing on {d_dep.strftime('%d/%m/%Y')}...")
+    nc1, nc2 = st.columns([2, 1])
+    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
+    with nc2: 
+        v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+        do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
+    
+    news_list = []
+    for src, url in news_sources.items():
+        if "Unified" in v_mode or src in v_mode:
+            try:
+                resp = requests.get(url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    feed = feedparser.parse(resp.content)
+                    for entry in feed.entries[:(1 if "Unified" in v_mode else 10)]:
+                        if not search_q or search_q.lower() in entry.title.lower():
+                            news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
+            except: pass
 
-st.caption("Monitoring: 10.9.8 | gold 10 System Restored. Fuel logic & Tab 5 Date fixed.")
+    tr_dict = {}
+    if do_tr and news_list:
+        en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
+        if en_titles:
+            try:
+                translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
+                tr_dict = dict(zip(en_titles, translated))
+            except: pass
+
+    for item in news_list:
+        st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
+        if do_tr and item['title'] in tr_dict:
+            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
+
+    st.divider()
+
+    # 3. Markets & Commodities
+    with st.expander("📈 Market Indices | Sentiment: :orange[⚖️ CAUTIOUS]", expanded=True):
+        m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
+        m1.metric("STI Index", "4,841.30", "-2.20%")
+        m2.metric("Gold (Spot)", "$4,391.00", "+1.66%")
+        m3.metric("Silver (Spot)", "$64.63", "-6.11%")
+        m4.metric("Brent Crude", "$112.61", "+0.40%")
+        m5.metric("Natural Gas", "$3.09", "-2.21%")
+        m6.metric("SG CPI (All)", "100.7", "-0.20%", help="Base Year 2024=100")
+        m7.metric("SG Inflation", "1.40%", "+0.40%", help="MAS Core Inflation YoY")
+
+    with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
+        f1, f2, f3, f4, f5 = st.columns(5)
+        f1.metric("SGD/MYR", "3.4412", "+0.12%")
+        f2.metric("SGD/JPY", "118.55", "-0.43%")
+        f3.metric("SGD/THB", "26.85", "+0.15%")
+        f4.metric("SGD/CNY", "5.3975", "-0.07%")
+        f5.metric("SGD/USD", "0.7480", "-0.22%")
+
+    # 4. COE Bidding
+    with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
+        coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
+        cc = st.columns(5)
+        for i, (cat, p, d, q, b) in enumerate(coe_data):
+            cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
+
+    # 5. Fuel Prices
+    with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
+        fc = st.columns(5)
+        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
+        for i, ftype in enumerate(ftypes):
+            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+            avg = sum(prices) / len(prices) if prices else 0
+            fc[i].markdown(f'<div class="f-card"><b>{ftype}</b><br><span style="color:#007bff;font-size:1.1rem;font-weight:bold;">${avg:.2f}</span></div>', unsafe_allow_html=True)
+            if fc[i].button("Details", key=f"fbtn_109_{ftype}"): show_fuel_details(ftype)
+
 
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
@@ -504,5 +600,3 @@ with tab5:
     weeks = list(range(22, 0, -1))
     prices = [total_price * (1.25 if w > 18 else 0.88 if w > 8 else 1.15) for w in weeks]
     st.area_chart(pd.DataFrame({"Price (SGD)": prices}, index=weeks), color="#ffd700")
-    
-   
