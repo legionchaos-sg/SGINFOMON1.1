@@ -8,4 +8,5 @@ yfinance
 deep-translator
 numpy
 scikit-learn
+import airportsdata
 
