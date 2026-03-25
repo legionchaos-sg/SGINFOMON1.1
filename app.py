@@ -405,6 +405,83 @@ with tab3:
         st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
         st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
 
+# [APPEND IMMEDIATELY AFTER TAB 3 BLOCK]
+# ==========================================
+# TAB 4: PMT: COE - PREDICTION MODEL (ISOLATED)
+# ==========================================
+with tab4:
+    st.header("🔮 COE Predictive Analytics Model")
+    
+    # 1. CORE DATA & TREND LOGIC (Independent Dictionary)
+    g10_coe_stats = {
+        "Cat A": {"p": 111890, "q": 1264, "b": 1895, "trend": 1.02},
+        "Cat B": {"p": 115568, "q": 812, "b": 1185, "trend": 1.05},
+        "Cat C": {"p": 78000, "q": 290, "b": 438, "trend": 0.98},
+        "Cat D": {"p": 9589, "q": 546, "b": 726, "trend": 1.01},
+        "Cat E": {"p": 118119, "q": 246, "b": 422, "trend": 1.08}
+    }
+
+    # 2. SELECTION ROW
+    p_c1, p_c2, p_c3 = st.columns([1.5, 1, 1.5], vertical_alignment="center")
+    
+    with p_c1:
+        v_cat_p = st.selectbox("Select Prediction Category:", list(g10_coe_stats.keys()), key="g10_t4_cat_p_v2")
+    
+    with p_c2:
+        m_bias_p = st.select_slider("Market Sentiment:", options=["Bearish", "Neutral", "Bullish"], value="Neutral", key="g10_t4_bias_p_v2")
+    
+    with p_c3:
+        # Calculate Bid-to-Quota Ratio
+        bq_ratio = g10_coe_stats[v_cat_p]['b'] / g10_coe_stats[v_cat_p]['q']
+        st.markdown(f"""
+            <div style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px; border: 1px solid #333; text-align:center;">
+                <small>Demand Pressure</small><br><strong>{bq_ratio:.2f}x Bids</strong>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # 3. PREDICTION LOGIC
+    s_mult = {"Bearish": 0.97, "Neutral": 1.0, "Bullish": 1.04}[m_bias_p]
+    # Price Prediction Formula
+    p_val = g10_coe_stats[v_cat_p]['p'] * (1 + (bq_ratio - 1.4) * 0.05) * s_mult * g10_coe_stats[v_cat_p]['trend']
+    
+    p_diff = p_val - g10_coe_stats[v_cat_p]['p']
+    p_diff_pct = (p_diff / g10_coe_stats[v_cat_p]['p']) * 100
+
+    # 4. PRIMARY OUTPUTS
+    res_l_p, res_r_p = st.columns([2, 1])
+    
+    with res_l_p:
+        st.markdown(f"#### Upcoming COE Prediction: {v_cat_p}")
+        st.markdown(f"""
+            <div style="background: rgba(0,255,127,0.08); padding: 20px; border-radius: 12px; border: 1px solid #00ff7f; text-align: center;">
+                <span style="font-size: 0.85rem; color: #888;">ESTIMATED NEXT TENDER PRICE</span><br>
+                <span style="font-size: 2.5rem; font-weight: bold; color: #00ff7f;">${p_val:,.0f}</span><br>
+                <span style="font-size: 1.1rem; color: {'#00ff7f' if p_diff >= 0 else '#ff4b4b'};">
+                    {'▲' if p_diff >=0 else '▼'} ${abs(p_diff):,.0f} ({p_diff_pct:+.2f}%)
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with res_r_p:
+        st.metric("Allocated Quota", f"{g10_coe_stats[v_cat_p]['q']:,}")
+        st.metric("Submitted Bids", f"{g10_coe_stats[v_cat_p]['b']:,}")
+        st.caption(f"Category {v_cat_p} Data Sync")
+
+    # 5. TRAJECTORY SIMULATION
+    st.markdown("---")
+    st.write(f"**{v_cat_p} Market Price Simulation**")
+    
+    sim_pts = [g10_coe_stats[v_cat_p]['p'] * (1 - (i*0.012)) for i in range(4, 0, -1)]
+    sim_pts.append(g10_coe_stats[v_cat_p]['p'])
+    sim_pts.append(p_val)
+    
+    st.area_chart(pd.DataFrame({"COE Price ($)": sim_pts}), height=200, color="#00ff7f")
+
+    if st.button("💾 Log Prediction Data", use_container_width=True, key="g10_t4_finalize_p"):
+        st.success(f"Prediction for {v_cat_p} finalized with {m_bias_p} bias.")
+
 
 
 
