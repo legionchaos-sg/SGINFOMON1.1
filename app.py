@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
-#from datetime import date, timedelta
+from datetime import date, timedelta
 
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
