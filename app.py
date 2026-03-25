@@ -405,8 +405,4 @@ with tab3:
         st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
         st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
 
-# ==========================================
-# TAB 3: OMT COE
-# ==========================================
-with tab4:
-    st.header("PMT Trial")
+
