@@ -174,38 +174,50 @@ def get_market_sentiment(m_data):
 
 # [Logic Functions for Holidays and Fuel remain as per original code]
 
-@st.cache_data(ttl=3600) # Update once per hour
+@st.cache_data(ttl=3600)
 def get_live_fuel_sync():
-    # 1. Your original structure as the base template
+    # 1. TEMPLATE BASELINE (gold 10)
     data = {
-        "92 Octane": {"Esso": [3.43, 0.39], "Caltex": [3.43, 0.32], "SPC": [3.43, 0.32], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "95 Octane": {"Esso": [3.47, 0.04], "Caltex": [3.47, 0.04], "Shell": [3.47, 0.04], "SPC": [3.46, 0.02], "Cnergy": [2.46, 0.05], "Sinopec": [3.47, 0.04], "Smart Energy": [2.61, 0.05]},
-        "98 Octane": {"Esso": [3.97, 0.05], "Shell": [3.99, 0.05], "SPC": [3.97, 0.05], "Cnergy": [2.80, 0.05], "Sinopec": [3.97, 0.05], "Smart Energy": [2.99, -0.12]},
-        "Premium":   {"Caltex": [4.16, 0.20], "Shell": [4.21, 0.05], "Sinopec": [4.10, 0.20], "Cnergy": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "Diesel":    {"Esso": [3.73, 0.10], "Caltex": [3.73, 0.10], "Shell": [3.73, 0.10], "SPC": [3.56, 0.07], "Cnergy": [2.80, 0], "Sinopec": [3.72, 0.10], "Smart Energy": [2.83, 0.02]}
+        "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
+        "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
+        "98 Octane": {"Esso": [3.97, 0.0], "Shell": [3.99, 0.0], "SPC": [3.97, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.97, 0.0], "Smart Energy": [2.99, 0.0]},
+        "Premium":   {"Caltex": [4.16, 0.0], "Shell": [4.21, 0.0], "Sinopec": [4.10, 0.0], "Cnergy": ["N/A", 0], "Smart Energy": ["N/A", 0]},
+        "Diesel":    {"Esso": [3.73, 0.0], "Caltex": [3.73, 0.0], "Shell": [3.73, 0.0], "SPC": [3.56, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.72, 0.0], "Smart Energy": [2.83, 0.0]}
     }
 
     try:
-        # 2. Fetch live data from Motorist.sg (Real-time Mirror)
         url = "https://www.motorist.sg/petrol-prices"
         headers = {"User-Agent": "Mozilla/5.0"}
-        tables = pd.read_html(url, storage_options=headers)
-        df = tables[0] # The comparison table
+        # Pull the table and set the first row as headers for accuracy
+        tables = pd.read_html(url, storage_options=headers, header=0)
+        df = tables[0]
 
-        # 3. Map live prices (df[0]=Brand, df[1]=92, df[2]=95, df[3]=98, df[4]=Pre, df[5]=Dsl)
+        # 2. MATCHING LOGIC BY COLUMN NAME (Instead of Index Number)
+        # Shell usually populates: 95, 98, and V-Power (Premium)
         for _, row in df.iterrows():
-            brand = row[0]
-            for grade, col_idx in [("92 Octane", 1), ("95 Octane", 2), ("98 Octane", 3), ("Premium", 4), ("Diesel", 5)]:
-                if brand in data[grade]:
-                    price_str = str(row[col_idx]).replace('$', '').strip()
-                    if price_str.replace('.', '').isdigit():
-                        new_price = float(price_str)
-                        old_price = data[grade][brand][0]
-                        # Calculate live delta from your static base
-                        delta = new_price - old_price if isinstance(old_price, (int, float)) else 0
-                        data[grade][brand] = (new_price, delta)
+            brand = str(row[0]).lower()
+            
+            if 'shell' in brand:
+                # Direct target mapping for Shell's unique columns
+                # We use .get() to avoid errors if the column name changes slightly
+                try:
+                    data["95 Octane"]["Shell"] = (float(str(row.get('95', 3.47)).replace('$', '')), 0.0)
+                    data["98 Octane"]["Shell"] = (float(str(row.get('98', 3.99)).replace('$', '')), 0.0)
+                    data["Premium"]["Shell"]   = (float(str(row.get('V-Power', 4.21)).replace('$', '')), 0.0)
+                    data["Diesel"]["Shell"]    = (float(str(row.get('Diesel', 3.73)).replace('$', '')), 0.0)
+                except: continue
+            
+            # 3. Standard Mapping for Other Brands (Esso, SPC, etc.)
+            else:
+                for target_brand in ["Esso", "Caltex", "SPC", "Sinopec", "Cnergy"]:
+                    if target_brand.lower() in brand:
+                        # Map based on column header names
+                        for grade, col_name in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
+                            val = str(row.get(col_name, '-')).replace('$', '').strip()
+                            if val != '-' and val != 'nan':
+                                data[grade][target_brand] = (float(val), 0.0)
     except:
-        pass # If source is down, returns your static "Template" data
+        pass
     return data
 
 # Initialize the feed
