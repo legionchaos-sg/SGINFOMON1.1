@@ -195,6 +195,7 @@ with tab1:
 # 3. Markets & Commodities (DYNAMIC UPDATE)
     m_live = fetch_live_market_data()
     sentiment_icon, sentiment_text = get_market_sentiment(m_live)
+    sg_econ = fetch_sg_economy() # Pull the new live data
     
     with st.expander(f"📈 Market Indices | Sentiment: {sentiment_icon} {sentiment_text}", expanded=True):
         m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
@@ -223,15 +224,12 @@ with tab1:
         # Static Macro remain for reference
         #m6.metric("SG CPI (All)", "100.7", "-0.20%")
         #m7.metric("SG Inflation", "1.40%", "+0.40%")
-m_live = fetch_live_market_data()
-sg_econ = fetch_sg_economy() # Pull the new live data
-sentiment_icon, sentiment_text = get_market_sentiment(m_live)
 
-with st.expander(f"📈 Market Indices | Sentiment: {sentiment_icon} {sentiment_text}", expanded=True):
-    m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
+
+
     
     # [m1 to m5 code for STI, Gold, etc. remains the same]
-    m1.metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
+    #m1.metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
     # ... (m2 to m5)
     
     # UPDATED LIVE DATA FOR M6 & M7
