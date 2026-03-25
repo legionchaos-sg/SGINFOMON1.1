@@ -300,58 +300,57 @@ with tab3:
     st.header("PMT Trial")
     
     col_u1, col_u2 = st.columns([1, 1])
-    
+
 # ==========================================
-# TAB 3: SYSTEM TOOLS - Macro & Range Model
+# TAB 3: SYSTEM TOOLS - Macro & Probability
 # ==========================================
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. ENHANCED FETCH (Live Rate + Historical Range)
+    # 1. DATA ENGINE (Isolated for gold 10)
     @st.cache_data(ttl=300)
-    def fetch_market_data_g10(target_iso, days_lookback):
+    def fetch_market_engine_g10(target_iso, days_lookback):
         try:
             # Current Rate
             url_latest = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
             res_l = requests.get(url_latest, timeout=5).json()
             curr_rate = res_l['rates'][target_iso]
             
-            # Historical Range for High/Low
+            # Historical Range
             end_date = datetime.now().date()
             start_date = end_date - pd.Timedelta(days=days_lookback)
             url_hist = f"https://api.frankfurter.app/{start_date}..{end_date}?from=SGD&to={target_iso}"
             res_h = requests.get(url_hist, timeout=5).json()
             
             hist_rates = [v[target_iso] for v in res_h['rates'].values()]
-            m_high, m_low = max(hist_rates), min(hist_rates)
-            return {"rate": curr_rate, "high": m_high, "low": m_low, "status": "LIVE"}
+            # Volatility calculation for probability
+            std_dev = np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005
+            return {"rate": curr_rate, "high": max(hist_rates), "low": min(hist_rates), "std": std_dev}
         except:
-            # gold 10 Stability Fallback
-            fb = {"CNY": 5.3895, "THB": 25.5533, "JPY": 124.1885}.get(target_iso, 1.0)
-            return {"rate": fb, "high": fb*1.01, "low": fb*0.99, "status": "STABLE"}
+            fb = {"CNY": 5.3895, "THB": 25.5533}.get(target_iso, 1.0)
+            return {"rate": fb, "high": fb*1.01, "low": fb*0.99, "std": fb*0.005}
 
-    # 2. ROW 1: POLICY STANCE | DURATION | RANGE MODEL
+    # 2. ROW 1: POLICY | DURATION | MODEL RANGE
     r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
     
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_t3_policy_v2")
+                            horizontal=True, key="g10_t3_p_final")
     
     with r1_col2:
-        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_days")
+        lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_final")
 
-    # Shared Currency Logic
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_iso_v2", label_visibility="collapsed")
-    m_data = fetch_market_data_g10(selected_iso, lookback)
+    selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
+    m_data = fetch_market_engine_g10(selected_iso, lookback)
 
     with r1_col3:
         st.markdown(f"""
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <div style="background: rgba(0,255,127,0.1); padding: 5px 15px; border-radius: 5px; border: 1px solid #00ff7f; text-align:center;">
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <div style="background: rgba(0,255,127,0.1); padding: 5px; border-radius: 5px; border: 1px solid #00ff7f; width: 100px; text-align:center;">
                     <small>Model High</small><br><strong>{m_data['high']:.4f}</strong>
                 </div>
-                <div style="background: rgba(255,75,75,0.1); padding: 5px 15px; border-radius: 5px; border: 1px solid #ff4b4b; text-align:center;">
+                <div style="background: rgba(255,75,75,0.1); padding: 5px; border-radius: 5px; border: 1px solid #ff4b4b; width: 100px; text-align:center;">
                     <small>Model Low</small><br><strong>{m_data['low']:.4f}</strong>
                 </div>
             </div>
@@ -362,32 +361,42 @@ with tab3:
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_amt_v2")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
     with r2_col2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_target_v2")
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
-    # 4. CALCULATION: Suggest Action Date
-    bias_map = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}
-    vol_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
-    
-    speed = bias_map[p_stance]
-    daily_vol = vol_map.get(selected_iso, m_data['rate'] * 0.0005)
-    days_req = int(np.ceil(abs(u_target - m_data['rate']) / (daily_vol * speed))) if abs(u_target - m_data['rate']) > 0 else 0
+    # 4. PROBABILITY & ACTION DATE LOGIC
+    # Bias affects the "perceived" speed of price movement
+    speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
+    price_gap = abs(u_target - m_data['rate'])
+    days_req = int(np.ceil(price_gap / (m_data['std'] * speed_mult))) if price_gap > 0 else 0
     action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_req)).strftime('%d %b %Y')
 
-    # 5. RESULTS & CHART
+    # Target Probability (Z-Score approximation)
+    # Higher volatility or bias increases the chance of hitting a distant target
+    z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
+    prob_val = max(5, min(99, 100 * (1 - (z_score / 3)))) # Simple linear probability proxy for UI
+
+    # 5. OUTPUT DISPLAY
     st.markdown("---")
-    out_c1, out_c2 = st.columns([1, 2])
+    out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
-        st.metric("Suggest Action Date", action_dt)
+        st.write(f"**Suggest Action Date:** {action_dt}")
+        # Probability Bar
+        p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
+        st.markdown(f"""
+            <div style="margin-bottom: 20px;">
+                <small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
+                <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;">
+                    <div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         st.metric("Live Market Rate", f"{m_data['rate']:.4f}")
-        st.caption(f"Status: {m_data['status']} Sync")
 
     with out_c2:
-        # Range Chart with High/Low Bounds
         path = np.linspace(m_data['rate'], u_target, 10)
-        df_chart = pd.DataFrame({"Current Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10})
-        st.line_chart(df_chart, height=200)
+        st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=180)
 
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_lock_v2"):
-        st.success(f"Strategy locked. Execution suggested for {action_dt}.")
+    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_l_final"):
+        st.success(f"Execution Locked. Target Prob: {prob_val:.1f}%")
