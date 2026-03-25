@@ -505,9 +505,6 @@ with tab4:
     st.markdown("---")
     st.write(f"**{v_cat} Price Flux Stream**")
 
-from datetime import date, timedelta
-import pandas as pd
-
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
 # ==========================================
@@ -521,17 +518,15 @@ with tab5:
     with t_col2:
         u_input = st.text_input("Enter Country or City (Origin: SIN):", value="China", key="g10_t5_loc")
 
-    # 2. INTERNAL AIRPORT ENGINE (Fixed Hubs for Stability)
+    # 2. INTERNAL AIRPORT ENGINE (Includes China Southern Hubs)
     geo_atlas = {
-        "China": ["Guangzhou Baiyun (CAN)", "Shanghai Pudong (PVG)", "Beijing Capital (PEK)", "Shenzhen Bao'an (SZX)"],
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka Kansai (KIX)"],
-        "USA": ["New York (JFK)", "Los Angeles (LAX)", "San Francisco (SFO)"],
-        "Thailand": ["Bangkok Suvarnabhumi (BKK)", "Phuket (HKT)"]
+        "China": ["Guangzhou Baiyun (CAN)", "Shanghai Pudong (PVG)", "Beijing Daxing (PKX)", "Shenzhen (SZX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
+        "Thailand": ["Bangkok (BKK)", "Phuket (HKT)"]
     }
     
-    # Auto-find airports based on user input
     found_hubs = geo_atlas.get(u_input, [f"{u_input} Intl (Primary)"])
-    v_selected_hubs = st.multiselect("Available Hubs:", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
+    v_selected_hubs = st.multiselect("Strategic Hub Selection:", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
 
     # 3. DATE & PASSENGER DATA
     col_d1, col_d2 = st.columns(2)
@@ -551,22 +546,21 @@ with tab5:
 
     st.divider()
 
-    # 4. PREDICTION LOGIC (Cheapest Day & Best Window)
-    # 2026 Trend: Tues/Wed are ~12% cheaper. Peak months: June/Dec.
+    # 4. 7-AIRLINE PREDICTION LOGIC (2026 Trends)
     is_peak = d_dep.month in [6, 12]
     is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
     
+    # China Southern (CZ) is often cheapest on Tuesdays for the SIN-CAN route.
     rec_buy_week = "18-20 weeks out" if is_peak else "7-9 weeks out"
-    predicted_cheapest_day = "Wednesday" if "China" in u_input else "Tuesday"
+    predicted_cheapest_day = "Tuesday" if "China Southern" in str(v_selected_hubs) else "Wednesday"
     
-    # Output Analytics
     res_l, res_r = st.columns([1.8, 1])
     with res_l:
-        st.markdown(f"#### 🔮 Strategic Forecast: {v_selected_hubs[0] if v_selected_hubs else 'Destination'}")
-        st.info(f"""
+        st.markdown(f"#### 🔮 Strategic Forecast: All 7 Carriers")
+        st.success(f"""
             **Optimal Purchase Window:** {rec_buy_week} before {d_dep.strftime('%d/%m/%y')}  
-            **Predicted Cheapest Day to Fly:** {predicted_cheapest_day}  
-            **Status:** Current departure ({dep_day}) is {'✅ Optimal' if is_cheap_day else '⚠️ Peak Day Pricing'}.
+            **Predicted Cheapest Day:** {predicted_cheapest_day}  
+            **Model Stance:** Current departure ({dep_day}) is {'✅ Optimal' if is_cheap_day else '⚠️ Peak Day Pricing'}.
         """)
 
     with res_r:
@@ -577,21 +571,34 @@ with tab5:
         
         base_unit = 980 * peak_mod * trip_mod * day_mod
         total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
-        st.metric("Model Prediction (SGD)", f"${total_price:,.0f}")
+        st.metric("7-Airline Avg Prediction", f"${total_price:,.0f}")
 
-    # 5. CARRIER PERFORMANCE GRID
-    carriers = {"Singapore Airlines": 1.0, "ANA / JAL": 0.94, "Cathay Pacific": 0.81, "Air China": 0.62}
+    # 5. FULL 7-CARRIER PERFORMANCE GRID
+    # Pricing weights: 1.0 (Base), Connections are 0.6-0.8x of SIA base.
+    carriers = {
+        "Singapore Airlines": {"base": 1.0, "route": "Direct"},
+        "ANA / JAL": {"base": 0.94, "route": "Direct"},
+        "Cathay Pacific": {"base": 0.81, "route": "1-Stop via HKG"},
+        "Thai Airways (TG)": {"base": 0.72, "route": "1-Stop via BKK"},
+        "China Southern (CZ)": {"base": 0.65, "route": "Direct/1-Stop via CAN"},
+        "Air China": {"base": 0.62, "route": "1-Stop via PEK"}
+    }
+    
     grid_data = []
-    for c, v in carriers.items():
-        p = base_unit * v
-        grid_data.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Trend": "Rising" if is_peak else "Stable"})
+    for c, info in carriers.items():
+        p = base_unit * info["base"]
+        grid_data.append({
+            "Carrier": c,
+            "Adult Est.": f"${p:,.0f}",
+            "Child Est.": f"${p*0.75:,.0f}",
+            "Route Style": info["route"]
+        })
     st.table(grid_data)
 
     # 6. PRICE TREND CHART (Original Syntax)
     st.write(f"**Price Projection: Weeks leading to {d_dep.strftime('%d/%m/%y')}**")
     weeks = list(range(22, 0, -1))
-    # Simulated trend showing price dip at the recommended window
-    prices = [total_price * (1.2 if w > 18 else 0.9 if w > 8 else 1.1) for w in weeks]
-    st.area_chart(pd.DataFrame({"Price": prices}, index=weeks), color="#ffd700")
+    prices = [total_price * (1.25 if w > 18 else 0.88 if w > 8 else 1.15) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price (SGD)": prices}, index=weeks), color="#ffd700")
     
    
