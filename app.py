@@ -169,107 +169,52 @@ with tab3:
     st.line_chart({"Market": [curr * (1 + (i*0.0006)) for i in range(-5, 5)]}, height=120)
 
 # TAB 4: PMT COE (LIVE RECENT-WEIGHTED ENGINE)
-import streamlit as st
-import requests
-import pandas as pd
-from datetime import datetime, timedelta
-import pytz
-
-# Configuration & ID: gold 10
-SGT = pytz.timezone('Asia/Singapore')
-
-def get_next_bidding_date():
-    now = datetime.now(SGT)
-    # COE bidding starts on 1st/3rd Monday, results out on Wednesday 4pm
-    # For April 2026, the 1st bidding is April 6-8.
-    possible_dates = []
-    for month in [now.month, now.month + 1]:
-        first_day = datetime(2026, month, 1)
-        # Find first Monday
-        first_mon = first_day + timedelta(days=(7 - first_day.weekday()) % 7)
-        possible_dates.append(first_mon + timedelta(days=2)) # Wednesday
-        # Find third Monday
-        third_mon = first_mon + timedelta(days=14)
-        possible_dates.append(third_mon + timedelta(days=2)) # Wednesday
+with tab4:
+    st.markdown('<div class="pmt-header"><h3>🚗 PMT: 3-Month Recency-Weighted Forecast</h3></div>', unsafe_allow_html=True)
     
-    future_dates = [d for d in possible_dates if d.date() > now.date()]
-    return future_dates[0].strftime("%d %B %Y")
+    @st.cache_data(ttl=3600)
+    def fetch_live_coe():
+        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a&limit=100"
+        try:
+            r = requests.get(url, timeout=10).json()
+            recs = r['result']['records']
+            df = pd.DataFrame(recs)
+            df['premium'] = pd.to_numeric(df['premium'])
+            df['quota'] = pd.to_numeric(df['quota'])
+            df['bids_received'] = pd.to_numeric(df['bids_received'])
+            return df
+        except: return pd.DataFrame()
 
-@st.cache_data(ttl=3600)
-def fetch_coe_history():
-    rid = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={rid}&limit=100"
-    try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10).json()
-        df = pd.DataFrame(r['result']['records'])
-        df['premium'] = pd.to_numeric(df['premium'])
-        df = df.sort_values(['month', 'bidding_no'], ascending=False).reset_index(drop=True)
-        return df
-    except: return pd.DataFrame()
-
-# --- UI Tab 4 ---
-st.markdown("### 🚗 PMT: Smart Forecasting & Trade Ledger")
-
-hist_df = fetch_coe_history()
-
-if not hist_df.empty:
-    # 1. Logic for Predictions (0.5/0.3/0.2)
-    cat_a = hist_df[hist_df['vehicle_class'] == 'Category A']
-    cat_b = hist_df[hist_df['vehicle_class'] == 'Category B']
-    
-    def get_weighted(series):
-        v = series.head(3).tolist()
-        return (v[0]*0.5 + v[1]*0.3 + v[2]*0.2) if len(v) >= 3 else v[0]
-
-    pred_a = get_weighted(cat_a['premium'])
-    pred_b = get_weighted(cat_b['premium'])
-
-    # 2. Display Auto-Sensed Window
-    next_date = get_next_bidding_date()
-    st.metric("Next Bidding Results Release", next_date)
-
-    # 3. Forecast Metrics
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Predicted Cat A", f"${int(pred_a):,}")
-    c2.metric("Predicted Cat B", f"${int(pred_b):,}")
-    c3.metric("Quota (Cat A)", f"{cat_a['quota'].iloc[0]}")
-
-    st.divider()
-
-    # 4. Generate Trade Record Ledger
-    # Comparing predictions made in previous months vs actual results
-    ledger_data = []
-    unique_months = hist_df['month'].unique()[:6]
-    
-    for m in unique_months:
-        m_data = hist_df[hist_df['month'] == m]
-        # For simplicity, we use the previous 3-month window as the "Model Predict" for that month
-        # In a real app, you'd save the specific prediction state; here we recalculate the forecast basis.
-        prev_data = hist_df[hist_df['month'] < m].head(6)
-        p_a = get_weighted(prev_data[prev_data['vehicle_class'] == 'Category A']['premium'])
-        p_b = get_weighted(prev_data[prev_data['vehicle_class'] == 'Category B']['premium'])
+    live_df = fetch_live_coe()
+    if not live_df.empty:
+        cat_a = live_df[live_df['vehicle_class'] == 'Category A'].sort_index(ascending=False).head(12)
+        cat_b = live_df[live_df['vehicle_class'] == 'Category B'].sort_index(ascending=False).head(12)
         
-        mkt_a = m_data[m_data['vehicle_class'] == 'Category A']['premium'].iloc[0]
-        mkt_b = m_data[m_data['vehicle_class'] == 'Category B']['premium'].iloc[0]
+        def calculate_weighted_forecast(series):
+            last_3 = series.tolist()[:3]
+            # Logic: 50% last month, 30% month before, 20% month before that
+            return (last_3[0]*0.5) + (last_3[1]*0.3) + (last_3[2]*0.2)
+
+        pred_a = calculate_weighted_forecast(cat_a['premium'])
+        pred_b = calculate_weighted_forecast(cat_b['premium'])
         
-        ledger_data.append({
-            "COE Bid Date": m,
-            "Model Predict Cat A": int(p_a),
-            "Mkt Cat A": mkt_a,
-            "Model Predict Cat B": int(p_b),
-            "Mkt Cat B": mkt_b
-        })
+        c1, c2 = st.columns(2)
+        with c1: 
+            st.subheader("Cat A Trend (Live LTA Data)")
+            st.line_chart(cat_a.set_index('month')['premium'])
+        with c2: 
+            st.subheader("Cat B Trend (Live LTA Data)")
+            st.line_chart(cat_b.set_index('month')['premium'])
 
-    ledger_df = pd.DataFrame(ledger_data)
-    
-    st.markdown("#### 📑 Trade Record Ledger")
-    st.dataframe(ledger_df, use_container_width=True)
+        st.divider()
+        st.markdown("#### 🤖 AI Recency-Weighted Prediction: April 2026")
+        res1, res2, res3 = st.columns(3)
+        res1.metric("Cat A Forecast", f"${int(pred_a):,}", "High Weightage")
+        res2.metric("Cat B Forecast", f"${int(pred_b):,}", "High Weightage")
+        
+        latest_ratio = cat_a['bids_received'].iloc[0] / cat_a['quota'].iloc[0]
+        res3.metric("Bid-to-Quota Pressure", f"{latest_ratio:.2f}x", "🔴 High" if latest_ratio > 2.0 else "🟢 Stable")
+    else:
+        st.error("⚠️ Unable to connect to data.gov.sg. Check internet connection.")
 
-    # 5. On-Demand Download
-    csv = ledger_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Download Trade Record (.csv)",
-        data=csv,
-        file_name=f"COE_Trade_Record_{datetime.now().strftime('%Y%m%d')}.csv",
-        mime='text/csv',
-    )
+st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 active.")
