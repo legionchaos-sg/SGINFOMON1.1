@@ -214,7 +214,7 @@ with tab3:
     res_c1, res_c2 = st.columns([1, 2])
     
     with res_c1:
-        st.metric("📅 Model Exec. Date", model_exec_date, help="Calculated based on average daily volatility to reach target.")
+        st.metric("📅 Model ESuggest. Date", model_exec_date, help="Calculated based on average daily volatility to reach target.")
         st.metric("🎯 User Target", f"{user_target:.4f}")
         st.metric("Est. Profit", f"+{profit_raw:.2f} {pair[-3:]}", delta=f"{(user_target/curr['rate']-1)*100:.2f}%")
 
