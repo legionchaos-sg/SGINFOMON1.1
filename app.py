@@ -170,51 +170,87 @@ with tab3:
 
 # TAB 4: PMT COE (LIVE RECENT-WEIGHTED ENGINE)
 with tab4:
-    st.markdown('<div class="pmt-header"><h3>🚗 PMT: 3-Month Recency-Weighted Forecast</h3></div>', unsafe_allow_html=True)
+    import streamlit as st
+import requests
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import pytz
+
+# PMT COE Logic - gold 10
+st.markdown('<div style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;"><h3>🚗 PMT: 3-Month Weighted Forecast</h3></div>', unsafe_allow_html=True)
+
+@st.cache_data(ttl=3600)
+def fetch_live_coe():
+    # Official LTA Dataset ID (Active as of March 2026)
+    rid = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={rid}&limit=100"
     
-    @st.cache_data(ttl=3600)
-    def fetch_live_coe():
-        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a&limit=100"
-        try:
-            r = requests.get(url, timeout=10).json()
-            recs = r['result']['records']
-            df = pd.DataFrame(recs)
-            df['premium'] = pd.to_numeric(df['premium'])
-            df['quota'] = pd.to_numeric(df['quota'])
-            df['bids_received'] = pd.to_numeric(df['bids_received'])
-            return df
-        except: return pd.DataFrame()
-
-    live_df = fetch_live_coe()
-    if not live_df.empty:
-        cat_a = live_df[live_df['vehicle_class'] == 'Category A'].sort_index(ascending=False).head(12)
-        cat_b = live_df[live_df['vehicle_class'] == 'Category B'].sort_index(ascending=False).head(12)
+    try:
+        # Added User-Agent to prevent 403 Forbidden errors
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        df = pd.DataFrame(data['result']['records'])
         
-        def calculate_weighted_forecast(series):
-            last_3 = series.tolist()[:3]
-            # Logic: 50% last month, 30% month before, 20% month before that
-            return (last_3[0]*0.5) + (last_3[1]*0.3) + (last_3[2]*0.2)
-
-        pred_a = calculate_weighted_forecast(cat_a['premium'])
-        pred_b = calculate_weighted_forecast(cat_b['premium'])
+        # Data Cleaning
+        df['premium'] = pd.to_numeric(df['premium'], errors='coerce')
+        df['quota'] = pd.to_numeric(df['quota'], errors='coerce')
+        df['bids_received'] = pd.to_numeric(df['bids_received'], errors='coerce')
         
-        c1, c2 = st.columns(2)
-        with c1: 
-            st.subheader("Cat A Trend (Live LTA Data)")
-            st.line_chart(cat_a.set_index('month')['premium'])
-        with c2: 
-            st.subheader("Cat B Trend (Live LTA Data)")
-            st.line_chart(cat_b.set_index('month')['premium'])
+        # Sort so index 0 is always the latest bidding round
+        df = df.sort_values(by=['month', 'bidding_no'], ascending=False).reset_index(drop=True)
+        return df
+    except Exception as e:
+        st.error(f"⚠️ Connection to LTA Feed Failed: {e}")
+        return pd.DataFrame()
 
-        st.divider()
-        st.markdown("#### 🤖 AI Recency-Weighted Prediction: April 2026")
-        res1, res2, res3 = st.columns(3)
-        res1.metric("Cat A Forecast", f"${int(pred_a):,}", "High Weightage")
-        res2.metric("Cat B Forecast", f"${int(pred_b):,}", "High Weightage")
-        
-        latest_ratio = cat_a['bids_received'].iloc[0] / cat_a['quota'].iloc[0]
-        res3.metric("Bid-to-Quota Pressure", f"{latest_ratio:.2f}x", "🔴 High" if latest_ratio > 2.0 else "🟢 Stable")
-    else:
-        st.error("⚠️ Unable to connect to data.gov.sg. Check internet connection.")
+# Execute Data Pull
+live_df = fetch_live_coe()
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 active.")
+if not live_df.empty:
+    # Filter for Category A and B
+    cat_a = live_df[live_df['vehicle_class'] == 'Category A'].head(12)
+    cat_b = live_df[live_df['vehicle_class'] == 'Category B'].head(12)
+    
+    # Calculation Engine: 0.5 (M), 0.3 (M-1), 0.2 (M-2)
+    def calculate_weighted_forecast(series):
+        vals = series.tolist()
+        if len(vals) < 3: return vals[0] if vals else 0
+        return (vals[0] * 0.5) + (vals[1] * 0.3) + (vals[2] * 0.2)
+
+    pred_a = calculate_weighted_forecast(cat_a['premium'])
+    pred_b = calculate_weighted_forecast(cat_b['premium'])
+    
+    # UI Layout
+    c1, c2 = st.columns(2)
+    with c1: 
+        st.subheader("Cat A Trend (LTA Live)")
+        st.line_chart(cat_a.set_index('month')['premium'])
+    with c2: 
+        st.subheader("Cat B Trend (LTA Live)")
+        st.line_chart(cat_b.set_index('month')['premium'])
+
+    st.divider()
+    
+    # Prediction Outputs
+    latest_month = cat_a['month'].iloc[0]
+    st.markdown(f"#### 🤖 Recency-Weighted Prediction: April 2026 (Ref: {latest_month})")
+    
+    res1, res2, res3 = st.columns(3)
+    res1.metric("Cat A Prediction", f"${int(pred_a):,}", f"vs Last: ${int(cat_a['premium'].iloc[0]):,}")
+    res2.metric("Cat B Prediction", f"${int(pred_b):,}", f"vs Last: ${int(cat_b['premium'].iloc[0]):,}")
+    
+    # Bid Pressure Calculation
+    pressure = cat_a['bids_received'].iloc[0] / cat_a['quota'].iloc[0]
+    res3.metric("Latest Bid Pressure", f"{pressure:.2f}x", "High" if pressure > 1.8 else "Stable")
+
+    # Data Table for Verification
+    with st.expander("📝 View Raw API Data (Last 12 Months)"):
+        st.dataframe(live_df[['month', 'bidding_no', 'vehicle_class', 'premium', 'quota', 'bids_received']])
+
+else:
+    st.warning("No data retrieved. Ensure you are connected to the internet.")
+
+st.caption(f"gold 10 | SGT: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')}")
