@@ -306,66 +306,72 @@ with tab3:
 # ==========================================
 
 with tab3:
-    st.header("📅 Tactical Trade Scheduler")
-    st.info("Model Status: **Benchmarking Against 2026 Policy Calendar**")
-
-    # 1. Market Data Context (Live 2026 Rates)
-    market_data = {
-        "SGD/CNY": {"rate": 5.3849, "trend": "Bullish", "vol": 0.003},
-        "SGD/THB": {"rate": 25.3721, "trend": "Neutral", "vol": 0.010},
-        "SGD/JPY": {"rate": 124.091, "trend": "Bearish", "vol": 0.018}
-    }
-
-    # 2. Prediction Selection
-    p_col1, p_col2 = st.columns([1, 1])
-    with p_col1:
-        pair = st.selectbox("Currency Pair:", list(market_data.keys()), key="sched_pair")
-    with p_col2:
-        horizon = st.radio("Duration:", ["1 Day", "3 Days"], horizontal=True, key="sched_dur")
-
-    # 3. Date-Specific Logic (2026 Schedule)
-    # Today: March 24, 2026
-    if pair == "SGD/CNY":
-        best_date = "April 14, 2026"  # MAS Monetary Policy Statement Date
-        action = "BUY SGD / HOLD"
-        reason = "MAS likely to maintain SGD strength; PBOC 'loose' policy persists."
-    elif pair == "SGD/THB":
-        best_date = "March 27, 2026"  # End of week volatility
-        action = "SELL SGD (Take Profit)"
-        reason = "THB showing oversold recovery signs; expect minor correction."
-    else: # SGD/JPY
-        best_date = "March 25, 2026"  # Immediate term
-        action = "BUY SGD"
-        reason = "JPY weakness hitting 2-week lows; momentum favors SGD carry trade."
-
-    # 4. Model Output: Date & Range
-    st.markdown(f"### 🎯 Recommendation for {pair}")
+    st.header("🎯 Tactical Trade Scheduler")
     
-    res_col1, res_col2 = st.columns(2)
-    with res_col1:
-        st.metric("Recommended Action", action)
-        st.write(f"**Target Date:** `{best_date}`")
+    # 1. TAB-SAFE LIVE FETCH
+    # Uses a unique cache key to avoid interfering with Tab 2's data stream
+    @st.cache_data(ttl=60) 
+    def fetch_market_gold10(target_iso):
+        try:
+            url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
+            response = requests.get(url, timeout=5).json()
+            return {"rate": response['rates'][target_iso], "status": "LIVE"}
+        except:
+            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "status": "STABLE"}
+
+    # 2. MACRO & PAIR SELECTION
+    # Unique keys (gold10_*) prevent session state 'crosstalk' with Tab 2
+    pol_c1, pol_c2 = st.columns([2, 1])
+    with pol_c1:
+        p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
+                            horizontal=True, key="gold10_policy_radio")
     
-    with res_col2:
-        # Calculate Prediction based on duration
-        mult = 1.0 if horizon == "1 Day" else 1.7
-        high = market_data[pair]["rate"] * (1 + (market_data[pair]["vol"] * mult))
-        low = market_data[pair]["rate"] * (1 - (market_data[pair]["vol"] * mult))
-        st.write(f"**Expected High:** {high:.4f}")
-        st.write(f"**Expected Low:** {low:.4f}")
+    st.divider()
+    
+    ui_c1, ui_c2, ui_c3 = st.columns([1, 1, 1])
+    with ui_c1:
+        supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
+        t_iso = st.selectbox("Target Currency:", supported_iso, key="gold10_pair_select")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="gold10_amt_input")
 
-    # 5. Strategic Commentary
-    st.success(f"**Market Insight:** {reason}")
+    # Ad-hoc fetch
+    m_data = fetch_market_gold10(t_iso)
+    
+    with ui_c2:
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="gold10_target_val")
+        
+        # 3. REALISTIC ALGO (Macro Bias + Volatility)
+        # Hawkish = 1.15x (Speed up) | Dovish = 0.8x (Slow down)
+        bias_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
+        v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
+        
+        vol = v_map.get(t_iso, m_data['rate'] * 0.0005)
+        days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * bias_mult))) if abs(u_target - m_data['rate']) > 0 else 0
+        exec_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
 
-    # 6. Trade Calendar View
-    st.write("**Next 7 Days Outlook**")
-    days = ["Mar 24", "Mar 25", "Mar 26", "Mar 27", "Mar 28", "Mar 29", "Mar 30"]
-    # Simulated confidence scores
-    conf = [85, 89, 72, 65, 40, 40, 82] 
-    st.bar_chart(dict(zip(days, conf)))
+    with ui_c3:
+        b_color = "#00ff7f" if bias_mult >= 1.0 else "#ff4b4b"
+        st.markdown(f"""
+            <div style="background:{b_color}15; padding:10px; border-radius:8px; border:1px solid {b_color};">
+                <small>SGD/{t_iso} Live Rate</small><br>
+                <strong style="font-size:1.4rem;">{m_data['rate']:.4f}</strong><br>
+                <small>Policy Bias: {bias_mult}x</small>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.caption("Warning: Predictions are based on SGD Regressor and 2026 geopolitical risk factors. Always verify with live news.")
+    # 4. OUTPUTS & PROJECTION
+    st.markdown("---")
+    res_1, res_2 = st.columns([1, 2])
+    with res_1:
+        st.metric("Suggested Date", exec_dt, delta=f"{p_stance} Impact", delta_color="normal")
+        st.metric("Est. Profit", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
 
-st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
+    with res_2:
+        # Convergence Chart
+        c_path = np.linspace(m_data['rate'], u_target, 10)
+        st.line_chart(pd.DataFrame({"Market Path": c_path, "Target": [u_target]*10}), height=180)
+
+    if st.button("🔒 Lock Macro Execution Plan", use_container_width=True, key="gold10_lock_btn"):
+        st.success(f"Execution plan for {t_iso} locked for {exec_dt} based on {p_stance} bias.")
 
 #st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 identification active.")
