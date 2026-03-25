@@ -1,10 +1,13 @@
 import streamlit as st
 import feedparser, requests, pytz
+import pandas as pd
+import numpy as np
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 
-# SG INFO MONITOR - Weather & Traffic Update 10.9.3
+# SG INFO MONITOR - Weather & Traffic Update 10.9.3 - FINAL INTEGRATED
+# Identification: gold 10
 
 # 1. Page Configuration
 st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
@@ -24,10 +27,7 @@ st.markdown("""
     .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
     .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
     .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
-    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
-    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
-    .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; margin-bottom: 5px; width: 100%; text-align: center;}
-    .weather-box { background: var(--secondary-background-color); border-radius: 10px; padding: 15px; text-align: center; border: 1px solid var(--border-color); }
+    .pmt-header { background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -62,7 +62,6 @@ def show_fuel_details(ftype):
     for brand in brand_order:
         data = fuel_data[ftype].get(brand, ("N/A", 0))
         price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
         display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'><b>{brand}</b><span><b style='color:#007bff; margin-right:8px;'>{display_price}</b><span class='{'up' if change > 0 else 'down'}'>({change:+.2f})</span></span></div>", unsafe_allow_html=True)
 
@@ -147,34 +146,20 @@ with tab2:
     with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li><a href="https://www.singpass.gov.sg">Singpass</a><li><a href="https://www.cpf.gov.sg">CPF Board</a><li><a href="https://www.iras.gov.sg">IRAS (Tax)</a><li><a href="https://www.myskillsfuture.gov.sg">SkillsFuture</a></ul></div>', unsafe_allow_html=True)
     with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li><a href="https://www.hdb.gov.sg">HDB InfoWEB</a><li><a href="https://www.healthhub.sg">HealthHub</a><li><a href="https://www.ica.gov.sg">ICA</a><li><a href="https://www.pa.gov.sg">People\'s Association</a></ul></div>', unsafe_allow_html=True)
     with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
-    st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
     
-    with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
-        line_cols = st.columns(6)
-        lines = [{"name": "EWL", "status": "Normal", "color": "#009530"}, {"name": "NSL", "status": "Normal", "color": "#d42e12"}, {"name": "NEL", "status": "Normal", "color": "#744199"}, {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, {"name": "DTL", "status": "Normal", "color": "#005ec4"}, {"name": "TEL", "status": "Normal", "color": "#9d5b25"}]
-        for i, line in enumerate(lines):
-            with line_cols[i]:
-                status_icon = "✅" if line['status'] == "Normal" else "⚠️"
-                st.markdown(f"""<div style="background-color: {line['color']}; padding: 8px; border-radius: 5px; text-align: center; color: white; border: 1px solid #ddd;"><div style="font-size: 0.7rem; font-weight: bold;">{line['name']}</div><div style="font-size: 1.2rem; margin: 2px 0;">{status_icon}</div><div style="font-size: 0.6rem; text-transform: uppercase;">{line['status']}</div></div>""", unsafe_allow_html=True)
-
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
-        f_data, t_data, p_data = get_nea_data("two-hr-forecast"), get_nea_data("air-temperature"), get_nea_data("psi")
+        f_data, t_data = get_nea_data("two-hr-forecast"), get_nea_data("air-temperature")
         items = f_data.get('items', [{}])[0]
         estates = ["Ang Mo Kio", "Bedok", "Bishan", "Bukit Batok", "Bukit Merah", "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang/Whampoa", "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang", "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"]
         sel_estate = st.selectbox("📍 Select Estate:", sorted(estates))
         area_f = next((f['forecast'] for f in items.get('forecasts', []) if f['area'] == sel_estate), "Cloudy")
         temp = t_data.get('items', [{}])[0].get('readings', [{}])[0].get('value', 31.0)
-        psi_val = p_data.get('items', [{}])[0].get('readings', {}).get('psi_twenty_four_hourly', {}).get('national', "N/A")
-        st.info(f"**{sel_estate}:** {area_f} | **Temp:** {temp}°C | **PSI:** {psi_val}")
+        st.info(f"**{sel_estate}:** {area_f} | **Temp:** {temp}°C")
 
 # TAB 3: SYSTEM TOOLS
 with tab3:
     st.header("🌐 Live FX Command Center")
-    rates = {"SGD/CNY": {"price": 5.3789, "vol": 0.002, "sentiment": "Bullish"}, "SGD/JPY": {"price": 124.137, "vol": 0.012, "sentiment": "Bullish"}, "SGD/THB": {"price": 25.534, "vol": 0.008, "sentiment": "Neutral"}}
-    s1, s2, s3 = st.columns(3)
-    with s1: st.info("MAS Tightening risk active.")
-    with s2: st.warning("PBOC monitoring Yuan.")
-    with s3: st.metric("Sentiment Score", "68%", "Active")
+    rates = {"SGD/CNY": {"price": 5.3789}, "SGD/JPY": {"price": 124.137}, "SGD/THB": {"price": 25.534}}
     pair = st.selectbox("Pair:", list(rates.keys()), key="fx_final")
     curr = rates[pair]["price"]
     c1, c2, c3 = st.columns(3)
@@ -183,8 +168,53 @@ with tab3:
     c3.metric("Target Low", f"{curr*0.99:.4f}")
     st.line_chart({"Market": [curr * (1 + (i*0.0006)) for i in range(-5, 5)]}, height=120)
 
-# TAB 4: PMT COE (BLANK)
+# TAB 4: PMT COE (LIVE RECENT-WEIGHTED ENGINE)
 with tab4:
-    pass
+    st.markdown('<div class="pmt-header"><h3>🚗 PMT: 3-Month Recency-Weighted Forecast</h3></div>', unsafe_allow_html=True)
+    
+    @st.cache_data(ttl=3600)
+    def fetch_live_coe():
+        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a&limit=100"
+        try:
+            r = requests.get(url, timeout=10).json()
+            recs = r['result']['records']
+            df = pd.DataFrame(recs)
+            df['premium'] = pd.to_numeric(df['premium'])
+            df['quota'] = pd.to_numeric(df['quota'])
+            df['bids_received'] = pd.to_numeric(df['bids_received'])
+            return df
+        except: return pd.DataFrame()
+
+    live_df = fetch_live_coe()
+    if not live_df.empty:
+        cat_a = live_df[live_df['vehicle_class'] == 'Category A'].sort_index(ascending=False).head(12)
+        cat_b = live_df[live_df['vehicle_class'] == 'Category B'].sort_index(ascending=False).head(12)
+        
+        def calculate_weighted_forecast(series):
+            last_3 = series.tolist()[:3]
+            # Logic: 50% last month, 30% month before, 20% month before that
+            return (last_3[0]*0.5) + (last_3[1]*0.3) + (last_3[2]*0.2)
+
+        pred_a = calculate_weighted_forecast(cat_a['premium'])
+        pred_b = calculate_weighted_forecast(cat_b['premium'])
+        
+        c1, c2 = st.columns(2)
+        with c1: 
+            st.subheader("Cat A Trend (Live LTA Data)")
+            st.line_chart(cat_a.set_index('month')['premium'])
+        with c2: 
+            st.subheader("Cat B Trend (Live LTA Data)")
+            st.line_chart(cat_b.set_index('month')['premium'])
+
+        st.divider()
+        st.markdown("#### 🤖 AI Recency-Weighted Prediction: April 2026")
+        res1, res2, res3 = st.columns(3)
+        res1.metric("Cat A Forecast", f"${int(pred_a):,}", "High Weightage")
+        res2.metric("Cat B Forecast", f"${int(pred_b):,}", "High Weightage")
+        
+        latest_ratio = cat_a['bids_received'].iloc[0] / cat_a['quota'].iloc[0]
+        res3.metric("Bid-to-Quota Pressure", f"{latest_ratio:.2f}x", "🔴 High" if latest_ratio > 2.0 else "🟢 Stable")
+    else:
+        st.error("⚠️ Unable to connect to data.gov.sg. Check internet connection.")
 
 st.caption(f"Last Sync: {datetime.now(pytz.timezone('Asia/Singapore')).strftime('%H:%M:%S')} SGT | gold 10 active.")
