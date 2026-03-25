@@ -8,6 +8,25 @@ from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
 
+@st.dialog("Fuel Brand Details")
+def show_fuel_details(ftype):
+    st.write(f"### 📍 {ftype} Price List")
+    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
+    for brand in brand_order:
+        data = fuel_data[ftype].get(brand, ("N/A", 0))
+        price, change = data
+        if brand == "Shell" and ftype == "92 Octane": continue
+        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
+                <b>{brand}</b>
+                <span>
+                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
+                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
 # 1. Page Configuration
@@ -350,24 +369,7 @@ with tab1:
                 show_fuel_details(ftype)
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
-                <b>{brand}</b>
-                <span>
-                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
-                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+
 
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
