@@ -3,7 +3,7 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import yfinance as yf  # Added for live markets
-#from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta
 from datetime import datetime, time, date  # FIXED: Added 'time' and 'date' imports
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
