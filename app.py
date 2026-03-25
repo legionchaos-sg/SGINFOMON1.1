@@ -59,7 +59,6 @@ def fetch_nea_live(endpoint):
 # --- NEW: LIVE MARKET ENGINE (gold 10) ---
 @st.cache_data(ttl=300)
 def fetch_live_market_data():
-    """Fetches STI, Gold, Silver, Brent, and Nat Gas from Yahoo Finance"""
     tickers = {
         "STI": "^STI", 
         "Gold": "GC=F", 
@@ -71,16 +70,16 @@ def fetch_live_market_data():
     for label, sym in tickers.items():
         try:
             ticker = yf.Ticker(sym)
-            # Fetch 2 days to calculate delta even if market is currently closed
-            hist = ticker.history(period="2d")
-            if not hist.empty:
+            # Fetch 5 days to ensure we have data even over long weekends
+            hist = ticker.history(period="5d")
+            if not hist.empty and len(hist) >= 2:
                 current_val = hist['Close'].iloc[-1]
                 prev_val = hist['Close'].iloc[-2]
                 delta_pct = ((current_val - prev_val) / prev_val) * 100
                 results[label] = (current_val, delta_pct)
             else:
                 results[label] = (0.0, 0.0)
-        except:
+        except Exception:
             results[label] = (0.0, 0.0)
     return results
 
