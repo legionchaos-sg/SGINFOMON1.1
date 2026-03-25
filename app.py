@@ -35,7 +35,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Logic Functions
+# 3. Logic Functions Sections
+#UP COMING HOLIDAY
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
@@ -56,7 +57,7 @@ def fetch_nea_live(endpoint):
     except: return None
     return None
 
-# --- NEW: LIVE MARKET ENGINE (gold 10) ---
+#NEW: LIVE MARKET ENGINE
 @st.cache_data(ttl=300)
 def fetch_live_market_data():
     tickers = {
@@ -83,7 +84,7 @@ def fetch_live_market_data():
             results[label] = (0.0, 0.0)
     return results
 
-# --- NEW: SG ECONOMY DATA ENGINE ---
+#NEW: SG ECONOMY DATA ENGINE
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
@@ -138,10 +139,10 @@ def fetch_live_forex():  # Name synchronized with UI call
         
     return fx_results
 
-# --- UI IMPLEMENTATION (Tab 1) ---
+# --- FX UI IMPLEMENTATION (Tab 1) ---
 fx_data = fetch_live_forex()  # This now matches the function name above
 
-#--- NEW: SENTIMENT LOGIC ---
+#--- NEW: SENTIMENT LOGIC ON MENU BAR ---
 def get_market_sentiment(m_data):
     # Aggregating signals from STI and Brent (Proxy for global/local health)
     sti_perf = m_data.get("STI", (0,0))[1]
@@ -153,8 +154,9 @@ def get_market_sentiment(m_data):
     elif score < -0.8: return ":red[📉 BEARISH]", "RISK OFF"
     else: return ":orange[⚖️ CAUTIOUS]", "NEUTRAL"
 
-# [Logic Functions for Holidays and Fuel remain as per original code]
+# [Fuel remain as per original code]
 
+#Static Fuel Data
 fuel_data = {
     "92 Octane": {"Esso": (3.43, 0.39), "Caltex": (3.43, 0.32), "SPC": (3.43, 0.32), "Cnergy": ("N/A", 0), "Sinopec": ("N/A", 0), "Smart Energy": ("N/A", 0)},
     "95 Octane": {"Esso": (3.47, 0.04), "Caltex": (3.47, 0.04), "Shell": (3.47, 0.04), "SPC": (3.46, 0.02), "Cnergy": (2.46, 0.05), "Sinopec": (3.47, 0.04), "Smart Energy": (2.61, 0.05)},
@@ -162,6 +164,46 @@ fuel_data = {
     "Premium": {"Caltex": (4.16, 0.20), "Shell": (4.21, 0.05), "Sinopec": (4.10, 0.20), "Cnergy": ("N/A", 0), "Smart Energy": ("N/A", 0)},
     "Diesel": {"Esso": (3.73, 0.10), "Caltex": (3.73, 0.10), "Shell": (3.73, 0.10), "SPC": (3.56, 0.07), "Cnergy": (2.80, 0), "Sinopec": (3.72, 0.10), "Smart Energy": (2.83, 0.02)}
 }
+#NEW 
+@st.cache_data(ttl=3600)
+def get_updated_fuel_data():
+    """Updates the static template with live data from the web"""
+    # Create a deep copy of your static data to modify
+    current_data = {k: {brand: list(val) for brand, val in v.items()} for k, v in STATIC_FUEL_TEMPLATE.items()}
+    
+    try:
+        # 1. Fetch live table from a reliable source (Motorist.sg mirror)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        tables = pd.read_html("https://www.motorist.sg/petrol-prices", storage_options=headers)
+        df = tables[0] # The live price table
+        
+        # 2. Update the 'Price' value in your dictionary
+        # Mapping: df index 0=Brand, 1=92, 2=95, 3=98, 4=Premium, 5=Diesel
+        for _, row in df.iterrows():
+            brand_name = row[0]
+            for grade, idx in [("92 Octane", 1), ("95 Octane", 2), ("98 Octane", 3), ("Premium", 4), ("Diesel", 5)]:
+                if brand_name in current_data[grade]:
+                    price_val = row[idx]
+                    # Only update if it's a valid number
+                    try:
+                        new_price = float(str(price_val).replace('$', ''))
+                        # Calculate a simulated delta based on your old static price
+                        old_price = current_data[grade][brand_name][0]
+                        if isinstance(old_price, (float, int)):
+                            delta = ((new_price - old_price) / old_price) * 100
+                            current_data[grade][brand_name] = (new_price, delta)
+                        else:
+                            current_data[grade][brand_name] = (new_price, 0.0)
+                    except:
+                        continue
+        return current_data
+    except:
+        # If the internet fails, the user still sees your static data
+        return STATIC_FUEL_TEMPLATE
+
+# --- APPLICATION START ---
+fuel_data = get_updated_fuel_data()
+#NEW 
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
@@ -231,6 +273,7 @@ with tab1:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     st.divider()
+    
     # 3. Markets & Commodities (DYNAMIC UPDATE)
     m_live = fetch_live_market_data()
     sentiment_icon, sentiment_text = get_market_sentiment(m_live)
@@ -260,7 +303,7 @@ with tab1:
                   f"${m_live['NatGas'][0]:.3f}", 
                   f"{m_live['NatGas'][1]:+.2f}%")
     
-    # UPDATED LIVE DATA FOR M6 & M7
+    # UPDATED LIVE DATA FOR M6 & M7 SGCPI and Inflate IDX
     m6.metric("SG CPI (All)", 
               f"{sg_econ['cpi_val']:.1f}", 
               f"{sg_econ['cpi_delta']:+.2f}%")
@@ -269,37 +312,12 @@ with tab1:
               f"{sg_econ['inf_val']:.2f}%", 
               f"{sg_econ['inf_delta']:+.2f}%")
 
-    #FX Expander
+    #FX ECHG
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f1, f2, f3, f4, f5 = st.columns(5)
         # --- 2. UI IMPLEMENTATION ---
     fx_data = fetch_live_forex()
     
-    # f1: SGD/MYR
-    #f1.metric("SGD/MYR", 
-              #f"{fx_data['MYR'][0]:.2f}", 
-              #f"{fx_data['MYR'][1]:+.2f}%")
-    
-    # f2: SGD/JPY
-    #f2.metric("SGD/JPY", 
-              #f"{fx_data['JPY'][0]:.2f}", 
-              #f"{fx_data['JPY'][1]:+.2f}%")
-    
-    # f3: SGD/THB
-    #f3.metric("SGD/THB", 
-              #f"{fx_data['THB'][0]:.2f}", 
-              #f"{fx_data['THB'][1]:+.2f}%")
-    
-    # f4: SGD/CNY
-    #f4.metric("SGD/CNY", 
-              #f"{fx_data['CNY'][0]:.2f}", 
-              #f"{fx_data['CNY'][1]:+.2f}%")
-    
-    # f5: SGD/USD
-    #f5.metric("SGD/USD", 
-              #f"{fx_data['USD'][0]:.2f}", 
-              #f"{fx_data['USD'][1]:+.2f}%")
-
     # Rounded to 2 decimal places as requested
     f1.metric("SGD/MYR", f"{fx_data['MYR'][0]:.2f}", f"{fx_data['MYR'][1]:+.2f}%")
     f2.metric("SGD/JPY", f"{fx_data['JPY'][0]:.2f}", f"{fx_data['JPY'][1]:+.2f}%")
@@ -307,14 +325,14 @@ with tab1:
     f4.metric("SGD/CNY", f"{fx_data['CNY'][0]:.2f}", f"{fx_data['CNY'][1]:+.2f}%")
     f5.metric("SGD/USD", f"{fx_data['USD'][0]:.2f}", f"{fx_data['USD'][1]:+.2f}%")
 
-    # 4. COE Bidding
+    #COE Bidding
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
         coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
         cc = st.columns(5)
         for i, (cat, p, d, q, b) in enumerate(coe_data):
             cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
 
-    # 5. Fuel Prices
+    #Fuel Prices
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
         fc = st.columns(5)
         ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
