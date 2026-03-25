@@ -505,100 +505,90 @@ with tab4:
     st.markdown("---")
     st.write(f"**{v_cat} Price Flux Stream**")
 
-from datetime import date, timedelta
-
-# ==========================================
-# TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
-# ==========================================
-
-
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
 # ==========================================
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     
-    # 1. LIVE AIRPORT FEED LOGIC
-    @st.cache_data
-    def get_live_airports(search_query):
-        # Load global airport database (IATA indexed)
-        airports = airportsdata.load('IATA') 
-        query = search_query.strip().lower()
-        results = []
-        
-        for code, info in airports.items():
-            # Filter for Commercial/Large airports to avoid private strips
-            if info['iata'] and (query in info['country'].lower() or query in info['city'].lower()):
-                results.append(f"{info['city']} - {info['name']} ({info['iata']})")
-        
-        return sorted(results)
-
+    # 1. TRIP & LOCATION CONFIG
     t_col1, t_col2 = st.columns([1, 2])
     with t_col1:
-        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True)
+        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
     with t_col2:
-        search_loc = st.text_input("Enter Country or City (e.g. China, London):", value="China")
+        u_input = st.text_input("Enter Country or City (Origin: SIN):", value="China", key="g10_t5_loc")
 
-    # 2. DYNAMIC AIRPORT SELECTION
-    live_list = get_live_airports(search_loc)
-    if not live_list:
-        st.warning("No major airports found. Try 'Japan' or 'USA'.")
-        selected_hubs = ["NRT"] # Fallback
-    else:
-        selected_hubs = st.multiselect("Select Target Airport(s):", live_list, default=live_list[:2] if len(live_list) > 1 else live_list[0])
+    # 2. INTERNAL AIRPORT ENGINE (Fixed Hubs for Stability)
+    geo_atlas = {
+        "China": ["Guangzhou Baiyun (CAN)", "Shanghai Pudong (PVG)", "Beijing Capital (PEK)", "Shenzhen Bao'an (SZX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka Kansai (KIX)"],
+        "USA": ["New York (JFK)", "Los Angeles (LAX)", "San Francisco (SFO)"],
+        "Thailand": ["Bangkok Suvarnabhumi (BKK)", "Phuket (HKT)"]
+    }
+    
+    # Auto-find airports based on user input
+    found_hubs = geo_atlas.get(u_input, [f"{u_input} Intl (Primary)"])
+    v_selected_hubs = st.multiselect("Available Hubs:", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
 
-    # 3. DATE & PRICE OPTIMIZATION
+    # 3. DATE & PASSENGER DATA
     col_d1, col_d2 = st.columns(2)
     with col_d1:
-        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 16), format="DD/MM/YYYY")
+        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
         dep_day = d_dep.strftime('%A')
     with col_d2:
         if v_trip_type == "Round Trip":
-            d_ret = st.date_input("Return (to SIN):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY")
+            d_ret = st.date_input("Return (to SIN):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
         else:
-            st.info("Single Leg: One-way pricing applied.")
+            st.info("Direct Leg Selected")
+
+    p1, p2, p3 = st.columns(3)
+    with p1: adults = st.number_input("Adults (18+):", 1, 10, 1)
+    with p2: children = st.number_input("Children (2-11):", 0, 10, 0)
+    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0)
 
     st.divider()
 
-    # 4. PREDICTIVE PRICING MODEL
-    # Logic: Cheaper on Tue/Wed. Peak in June/Dec.
+    # 4. PREDICTION LOGIC (Cheapest Day & Best Window)
+    # 2026 Trend: Tues/Wed are ~12% cheaper. Peak months: June/Dec.
     is_peak = d_dep.month in [6, 12]
-    # Prediction: Best week is ~18 weeks out for Peak, 8 weeks for Off-peak.
-    rec_buy_date = d_dep - timedelta(weeks=18 if is_peak else 8)
-    cheapest_day = "Wednesday" # Statistical low for SIN departures
+    is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
     
+    rec_buy_week = "18-20 weeks out" if is_peak else "7-9 weeks out"
+    predicted_cheapest_day = "Wednesday" if "China" in u_input else "Tuesday"
+    
+    # Output Analytics
     res_l, res_r = st.columns([1.8, 1])
     with res_l:
-        st.markdown(f"#### 🔮 Best Window Recommendation")
-        st.success(f"""
-            **Buy During Week of:** {rec_buy_date.strftime('%d/%m/%y')} (approx. {18 if is_peak else 8} weeks out)  
-            **Cheapest Day in that week:** {cheapest_day}  
-            *Current selection ({dep_day}) is {'Optimal' if dep_day in ['Tuesday', 'Wednesday'] else 'Peak Pricing'}.*
+        st.markdown(f"#### 🔮 Strategic Forecast: {v_selected_hubs[0] if v_selected_hubs else 'Destination'}")
+        st.info(f"""
+            **Optimal Purchase Window:** {rec_buy_week} before {d_dep.strftime('%d/%m/%y')}  
+            **Predicted Cheapest Day to Fly:** {predicted_cheapest_day}  
+            **Status:** Current departure ({dep_day}) is {'✅ Optimal' if is_cheap_day else '⚠️ Peak Day Pricing'}.
         """)
 
     with res_r:
-        # Multipliers
-        day_mult = 0.88 if dep_day in ['Tuesday', 'Wednesday'] else 1.05
-        peak_mult = 1.45 if is_peak else 1.0
-        trip_mult = 1.0 if v_trip_type == "Round Trip" else 0.65
+        # Multipliers: Base (980) * Peak (1.45) * TripType (0.65 for One-way) * Day (0.88 if CheapDay)
+        day_mod = 0.88 if is_cheap_day else 1.05
+        trip_mod = 1.0 if v_trip_type == "Round Trip" else 0.65
+        peak_mod = 1.45 if is_peak else 1.0
         
-        base_unit = 950 * peak_mult * trip_mult * day_mult
-        # (Adults+Teens) + Children (75% price)
-        total_est = (1 * base_unit) # Simplified for 1 pax; link to your num_input as needed
-        st.metric("Model Prediction (SGD)", f"${total_est:,.0f}")
+        base_unit = 980 * peak_mod * trip_mod * day_mod
+        total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
+        st.metric("Model Prediction (SGD)", f"${total_price:,.0f}")
 
     # 5. CARRIER PERFORMANCE GRID
-    carriers = {
-        "Singapore Airlines": 1.0, "ANA": 0.95, "Cathay Pacific": 0.82, "Air China": 0.65, "JAL": 0.94
-    }
-    st.write("**Carrier Comparison at Recommended Window**")
-    grid_data = [{"Carrier": k, "Price Est.": f"${base_unit*v:,.0f}", "Child Price": f"${base_unit*v*0.75:,.0f}"} for k, v in carriers.items()]
+    carriers = {"Singapore Airlines": 1.0, "ANA / JAL": 0.94, "Cathay Pacific": 0.81, "Air China": 0.62}
+    grid_data = []
+    for c, v in carriers.items():
+        p = base_unit * v
+        grid_data.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Trend": "Rising" if is_peak else "Stable"})
     st.table(grid_data)
 
     # 6. PRICE TREND CHART (Original Syntax)
-    st.write(f"**Price Flux Projection: SIN ➔ {search_loc}**")
-    chart_data = pd.DataFrame({
-        'Weeks to Flight': list(range(20, 0, -1)),
-        'Price Trend': [total_est * (1.2 if w > 18 else 0.9 if w > 8 else 1.1 + (0.05*(8-w))) for w in range(20, 0, -1)]
+    st.write(f"**Price Projection: Weeks leading to {d_dep.strftime('%d/%m/%y')}**")
+    weeks = list(range(22, 0, -1))
+    # Simulated trend showing price dip at the recommended window
+    prices = [total_price * (1.2 if w > 18 else 0.9 if w > 8 else 1.1) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price": prices}, index=weeks), color="#ffd700")
     }).set_index('Weeks to Flight')
     st.area_chart(chart_data, color="#ffd700")
