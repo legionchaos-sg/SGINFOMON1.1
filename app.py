@@ -168,74 +168,71 @@ with tab2:
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. ISOLATED LIVE FETCH (Frankfurter API)
-    def fetch_isolated_market(target_iso):
+    # 1. TAB-SAFE LIVE FETCH
+    # Uses a unique cache key to avoid interfering with Tab 2's data stream
+    @st.cache_data(ttl=60) 
+    def fetch_market_gold10(target_iso):
         try:
             url = f"https://api.frankfurter.app/latest?from=SGD&to={target_iso}"
             response = requests.get(url, timeout=5).json()
-            return {"rate": response['rates'][target_iso], "date": response['date'], "status": "LIVE"}
+            return {"rate": response['rates'][target_iso], "status": "LIVE"}
         except:
-            # gold 10 Stability Fallback
-            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "date": "CACHE", "status": "STABLE"}
+            return {"rate": 5.3895 if target_iso=="CNY" else 1.0, "status": "STABLE"}
 
-    # 2. POLICY & PAIR SELECTION (With unique gold_10 keys)
-    pol_col1, pol_col2 = st.columns([2, 1])
-    with pol_col1:
-        # Policy impact on SGD strength
-        p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], horizontal=True, key="gold10_policy")
+    # 2. MACRO & PAIR SELECTION
+    # Unique keys (gold10_*) prevent session state 'crosstalk' with Tab 2
+    pol_c1, pol_c2 = st.columns([2, 1])
+    with pol_c1:
+        p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
+                            horizontal=True, key="gold10_policy_radio")
     
     st.divider()
     
-    ui_col1, ui_col2, ui_col3 = st.columns([1, 1, 1])
-    with ui_col1:
-        # Custom Pair Creation
+    ui_c1, ui_c2, ui_c3 = st.columns([1, 1, 1])
+    with ui_c1:
         supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
-        t_iso = st.selectbox("Target Currency:", supported_iso, key="gold10_iso_sel")
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="gold10_amt")
+        t_iso = st.selectbox("Target Currency:", supported_iso, key="gold10_pair_select")
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="gold10_amt_input")
 
-    # Ad-hoc pull
-    m_data = fetch_isolated_market(t_iso)
+    # Ad-hoc fetch
+    m_data = fetch_market_gold10(t_iso)
     
-    with ui_col2:
-        # Target Input
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="gold10_target")
+    with ui_c2:
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="gold10_target_val")
         
-        # 3. REALISTIC ALGO (Macro + Volatility)
-        bias_map = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}
+        # 3. REALISTIC ALGO (Macro Bias + Volatility)
+        # Hawkish = 1.15x (Speed up) | Dovish = 0.8x (Slow down)
+        bias_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
         v_map = {"CNY": 0.0015, "THB": 0.0450, "JPY": 0.4500}
         
-        speed = bias_map[p_stance]
         vol = v_map.get(t_iso, m_data['rate'] * 0.0005)
-        
-        days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * speed))) if abs(u_target - m_data['rate']) > 0 else 0
+        days = int(np.ceil(abs(u_target - m_data['rate']) / (vol * bias_mult))) if abs(u_target - m_data['rate']) > 0 else 0
         exec_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days)).strftime('%d %b %Y')
 
-    with ui_col3:
-        # Status Box
-        b_color = "#00ff7f" if speed >= 1.0 else "#ff4b4b"
+    with ui_c3:
+        b_color = "#00ff7f" if bias_mult >= 1.0 else "#ff4b4b"
         st.markdown(f"""
             <div style="background:{b_color}15; padding:10px; border-radius:8px; border:1px solid {b_color};">
-                <small>SGD/{t_iso} Rate</small><br>
+                <small>SGD/{t_iso} Live Rate</small><br>
                 <strong style="font-size:1.4rem;">{m_data['rate']:.4f}</strong><br>
-                <small>Bias: {speed}x | {m_data['status']}</small>
+                <small>Policy Bias: {bias_mult}x</small>
             </div>
         """, unsafe_allow_html=True)
 
-    # 4. OUTPUTS
+    # 4. OUTPUTS & PROJECTION
     st.markdown("---")
     res_1, res_2 = st.columns([1, 2])
     with res_1:
-        st.metric("Suggested Date", exec_dt)
-        st.metric("Profit Est.", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
+        st.metric("Suggested Date", exec_dt, delta=f"{p_stance} Impact", delta_color="normal")
+        st.metric("Est. Profit", f"{(u_target - m_data['rate']) * t_amt:.2f} {t_iso}")
 
     with res_2:
-        # Path Chart
+        # Convergence Chart
         c_path = np.linspace(m_data['rate'], u_target, 10)
-        st.line_chart(pd.DataFrame({"Path": c_path, "Goal": [u_target]*10}), height=180)
+        st.line_chart(pd.DataFrame({"Market Path": c_path, "Target": [u_target]*10}), height=180)
 
-    if st.button("🔒 Lock Macro Execution Plan", use_container_width=True, key="gold10_lock"):
-        st.success(f"Plan for {t_iso} saved for {exec_dt}.")
-# ==========================================
+    if st.button("🔒 Lock Macro Execution Plan", use_container_width=True, key="gold10_lock_btn"):
+        st.success(f"Execution plan for {t_iso} locked for {exec_dt} based on {p_stance} bias.")# ==========================================
 # TAB 4: PMT COE (API Prediction Model) - Gold 10a
 # ==========================================
 with tab4:
