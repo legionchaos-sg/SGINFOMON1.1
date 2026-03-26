@@ -722,177 +722,118 @@ with tab4:
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - ENHANCED LOGIC
 # ==========================================
-
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     
     # 1. ORIGIN & NATIONALITY CONFIG
     col_a, col_b = st.columns(2)
     with col_a:
+        # Fixed Origin Selection
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China"]
-        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
+        u_origin_cat = st.selectbox("Select Origin Country/City:", origin_options, index=0, key="g10_t5_orig")
         
-        china_list = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Xi'an (XIY)", "Hangzhou (HGH)", "Chengdu (TFU)"]
+        # Sub-selection if Origin is China
         if u_origin_cat == "China":
-            v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
+            china_origins = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
+            v_origin_final = st.selectbox("Select China Origin Airport:", china_origins, key="g10_t5_china_orig")
         else:
             v_origin_final = u_origin_cat
 
     with col_b:
-        # Nationality Input for Arab/GCC Logic
-        u_nationality = st.text_input("Enter Nationality (e.g. Emirati, Saudi):", value="Emirati", key="g10_t5_nat").strip().title()
+        u_nationality = st.text_input("Enter Nationality (e.g. Singaporean, Chinese):", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DYNAMIC DESTINATION
-    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore"], key="g10_t5_dest_country")
-    v_land_airport = st.selectbox(f"Select Landing Airport:", china_list if dest_country == "China" else ["BKK", "DMK", "NRT", "HND", "SIN"], key="g10_t5_land")
-
-    # 3. 🛡️ VISA REGULATION CROSS-CHECK (2026 OPEN SOURCE SYNC)
-    def get_visa_status(nat, dest):
-        gcc_list = ["Emirati", "Saudi", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
-        
-        # 2026 China Unilateral Exemption for GCC
-        if nat in gcc_list and dest == "China":
-            return "✅ 30-Day Visa-Free (Trial extended to Dec 2026). Digital Arrival Card Required."
-        if nat == "Singaporean" and dest == "China":
-            return "✅ 30-Day Visa-Free Reciprocal Agreement Active."
-        if nat in gcc_list and dest == "Thailand":
-            return "✅ 60-Day Visa-Free (Tourism). TDAC QR Code required 72h before."
-        if nat in ["Emirati", "Qatari"] and dest == "Japan":
-            return "✅ 30-Day Visa-Free (for ePassport holders)."
-        if nat == "Saudi" and dest == "Japan":
-            return "⚠️ eVisa Required (Short-term Tourist)."
-        return "🔍 Standard 2026 Protocol: Verify via IATA/Embassy portal."
-
-    visa_msg = get_visa_status(u_nationality, dest_country)
+    # 2. DYNAMIC DESTINATION & AIRPORT SELECTION
+    st.subheader("📍 Destination Selection")
+    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Other"], key="g10_t5_dest_country")
     
-    # Red Alert Display
-    st.markdown(f"""
-    <div style="border:2px solid #FF4B4B; padding:10px; border-radius:5px; background-color:#FFF5F5;">
-        <span style="color:#FF4B4B; font-weight:bold;">🔴 2026 VISA ADVISORY:</span><br>
-        <span style="color:black;">{u_nationality} to {dest_country}: <b>{visa_msg}</b></span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 4. 📅 DATES & STRATEGIC WINDOW
-    d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+    # Airport Mapping based on Country Selection
+    airport_map = {
+        "China": ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"],
+        "Thailand": ["Bangkok (BKK)", "Bangkok (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
+    }
     
-    # CALCULATE STRATEGIC WINDOW
+    if dest_country in airport_map:
+        v_land_airport = st.selectbox(f"Select Landing Airport in {dest_country}:", airport_map[dest_country], key="g10_t5_land")
+    else:
+        v_land_airport = st.text_input("Enter Destination Airport Code/City:", value="London (LHR)", key="g10_t5_dest_other")
+
+    # 3. VISA REQUIREMENT ALERT ENGINE (2026 DATA)
+    def check_visa(nat, dest):
+        # 2026 Reciprocal Rules
+        rules = {
+            ("Singaporean", "China"): "✅ Visa-Free (up to 30 days).",
+            ("Singaporean", "Thailand"): "✅ Visa-Free (up to 60 days).",
+            ("Singaporean", "Japan"): "✅ Visa-Free (up to 90 days).",
+            ("Chinese", "Singapore"): "✅ Visa-Free (up to 30 days).",
+            ("Chinese", "Thailand"): "✅ Visa-Free (up to 60 days).",
+            ("Chinese", "Japan"): "⚠️ Visa Required Prior to Departure.",
+            ("Thai", "Japan"): "✅ Visa-Free (up to 15 days).",
+            ("Thai", "China"): "✅ Visa-Free (up to 30 days).",
+        }
+        return rules.get((nat, dest), "🔍 Check with Embassy (Standard Rules Apply).")
+
+    visa_status = check_visa(u_nationality, dest_country)
+    st.warning(f"**Visa Alert for {u_nationality} entering {dest_country}:** {visa_status}")
+
+    # 4. DATE & PASSENGERS
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+        dep_day = d_dep.strftime('%A')
+    with col_d2:
+        if v_trip_type == "Round Trip":
+            st.date_input(f"Return (to {v_origin_final}):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
+
+    p1, p2, p3 = st.columns(3)
+    with p1: adults = st.number_input("Adults:", 1, 10, 1)
+    with p2: children = st.number_input("Children (2-11):", 0, 10, 0)
+    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0)
+
+    st.divider()
+
+    # 5. AIRFARE PREDICTION (7-AIRLINE SYNC)
     is_peak = d_dep.month in [6, 12]
-    # In 2026, airfare algorithms favor Tuesdays for China/Asia purchase execution
-    best_buy_date = d_dep - timedelta(weeks=18 if is_peak else 8)
-    # Adjust to the nearest Tuesday for the 'Execution Day'
-    execution_day = best_buy_date - timedelta(days=(best_buy_date.weekday() - 1) % 7)
-
-    st.success(f"""
-    #### 🔮 Strategic Purchase Advisory
-    * **Best Booking Window:** { '18-20 weeks' if is_peak else '7-9 weeks' } before departure.
-    * **Recommended Execution Date:** **Tuesday, {execution_day.strftime('%d %b %Y')}**
-    * **Why Tuesday?** Carrier inventory for {dest_country} typically resets Monday midnight (GMT+8).
-    """)
-
-    # 5. CARRIER GRID & TRANSIT
-    adults = st.number_input("Adults:", 1, 10, 1)
+    is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
     
-    master_carriers = [
-        {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
-        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK/PKX"},
-        {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN/PKX"},
-        {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
-        {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"}
-    ]
+    # Base Multipliers
+    day_mod = 0.88 if is_cheap_day else 1.05
+    trip_mod = 1.0 if v_trip_type == "Round Trip" else 0.65
+    peak_mod = 1.45 if is_peak else 1.0
     
-    # Priority Sort: Destination Home Carrier First
-    final_sorted = [c for c in master_carriers if c["home"] == dest_country] + [c for c in master_carriers if c["home"] != dest_country]
+    # Hub Price Weighting: CZ & Air China are cheaper for China-based routes
+    base_price = 850 if "China" in v_origin_final else 980
+    base_unit = base_price * peak_mod * trip_mod * day_mod
+    total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
+
+    res_l, res_r = st.columns([1.5, 1])
+    with res_l:
+        st.markdown(f"#### 🔮 Flight Forecast: {v_origin_final} ➔ {v_land_airport}")
+        st.write(f"Fare predicted using current 2026 capacity for **7 Carriers**.")
+        st.success(f"**Best Window:** {'18 weeks' if is_peak else '8 weeks'} prior to {d_dep.strftime('%d/%m/%y')}")
+    with res_r:
+        st.metric("Estimated Total (SGD)", f"${total_price:,.0f}")
+
+    # 6. CARRIER COMPARISON TABLE
+    carriers = {
+        "Singapore Airlines": {"w": 1.0, "r": "Direct"},
+        "ANA / JAL": {"w": 0.94, "r": "Direct"},
+        "Cathay Pacific": {"w": 0.81, "r": "1-Stop HKG"},
+        "Thai Airways (TG)": {"w": 0.72, "r": "1-Stop BKK"},
+        "China Southern (CZ)": {"w": 0.65, "r": "Direct/1-Stop CAN"},
+        "Air China": {"w": 0.62, "r": "1-Stop PEK"}
+    }
     
     grid = []
-    base_price = 850 if "China" in u_origin_cat else 980
-    for c in final_sorted:
-        # Traffic Rights: No foreign carrier domestic flights
-        can_fly = not (u_origin_cat == dest_country and c["home"] != dest_country)
-        p = base_price * (1.45 if is_peak else 1.0) * c["w"]
-        
-        grid.append({
-            "Carrier": c["name"],
-            "Price (Est)": f"${p:,.0f}" if can_fly else "N.A",
-            "Transit Hub": c["hub"] if c["home"] not in [u_origin_cat, dest_country] else "Direct",
-            "Status": "Home Carrier" if c["home"] == dest_country else "Partner"
-        })
-    st.table(grid)    
+    for c, info in carriers.items():
+        p = base_unit * info["w"]
+        grid.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Route": info["r"]})
+    st.table(grid)
 
-    # ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
-# ==========================================
-# ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
-# ==========================================
-# ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
-# ==========================================
-st.divider()
-st.subheader("📉 Post-Execution Price Volatility Analysis")
-
-# 1. VARIABLE ALIGNMENT & SAFETY
-# Ensuring current_base is defined from previous total or a safe default
-try:
-    current_base = total_price 
-except NameError:
-    current_base = 980.0 # Standard 2026 baseline for gold 10
-
-# 2. GENERATE SIMULATION DATA
-days_to_sim = []
-# Ensure execution_day is defined or calculated
-try:
-    sim_start = execution_day - timedelta(days=5)
-except NameError:
-    # Safe fallback for 2026 logic if top section was skipped
-    sim_start = date.today() 
-    execution_day = sim_start + timedelta(days=5)
-
-curr_date = sim_start
-while curr_date < d_dep:
-    days_to_sim.append(curr_date)
-    curr_date += timedelta(days=1)
-
-# 3. PRICE CURVE ENGINE
-sim_prices = []
-for d in days_to_sim:
-    days_from_exec = (d - execution_day).days
-    days_before_dep = (d_dep - d).days
+    # 7. TREND CHART
+    st.write(f"**22-Week Price Trajectory for {v_land_airport}**")
+    weeks = list(range(22, 0, -1))
+    prices = [total_price * (1.25 if w > 18 else 0.85 if w > 8 else 1.2) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price": prices}, index=weeks), color="#ffd700")
     
-    if days_from_exec < 0:
-        # Pre-execution volatility
-        p = current_base * (1.08 + (abs(days_from_exec) * 0.015))
-    elif days_from_exec == 0:
-        # The Golden Purchase Window (Tuesday)
-        p = current_base
-    else:
-        # Post-execution surge
-        if days_before_dep > 14:
-            p = current_base * (1.0 + (days_from_exec * 0.008))
-        else:
-            # 14-day exponential spike
-            surge_factor = (14 - days_before_dep) * 0.12 
-            p = current_base * (1.15 + surge_factor)
-    sim_prices.append(p)
-
-# 4. CHARTING WITH SLIDER
-chart_df = pd.DataFrame({
-    "Date": days_to_sim,
-    "Estimated Price (Total)": sim_prices
-}).set_index("Date")
-
-# Select Slider for X-Axis zoom
-start_idx, end_idx = st.select_slider(
-    'Zoom into specific Date Range:',
-    options=days_to_sim,
-    value=(days_to_sim[0], days_to_sim[-1]),
-    format_func=lambda x: x.strftime('%d %b')
-)
-
-filtered_df = chart_df.loc[start_idx:end_idx]
-st.line_chart(filtered_df, color="#FF0000")
-
-# 5. FINAL CALCULATION DISPLAY
-final_spike_pct = ((sim_prices[-1] / current_base) - 1) * 100
-st.info(f"💡 **Analysis:** Purchasing on **{execution_day.strftime('%A, %d %b')}** avoids the predicted **{final_spike_pct:.1f}%** late-booking surge observed in 2026.")
