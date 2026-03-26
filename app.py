@@ -7,7 +7,6 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
-import google.generativeai as genai
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
