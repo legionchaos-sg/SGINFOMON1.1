@@ -494,50 +494,58 @@ with tab2:
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. DATA ENGINE (Now with Bid/Ask and Market Status)
+    # 1. DATA ENGINE (With Market Association for gold 10)
     @st.cache_data(ttl=60)
     def fetch_market_engine_g10(target_iso, days_lookback):
         import yfinance as yf
         import pytz
-        from datetime import datetime
+        from datetime import datetime, timedelta
         
-        ticker_symbol = f"SGD{target_iso}=X"
-        # Determine Market Status based on SGT (24/5)
         sgt = pytz.timezone('Asia/Singapore')
         now_sgt = datetime.now(sgt)
-        # Saturday after 6am SGT or Sunday before 6am SGT the market is closed
-        is_weekend = (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
-                     (now_sgt.weekday() == 6) or \
-                     (now_sgt.weekday() == 0 and now_sgt.hour < 6)
         
+        # Market Window: Saturday 06:00 SGT to Monday 05:00 SGT
+        is_weekend = False
+        countdown_msg = None
+        
+        if (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
+           (now_sgt.weekday() == 6) or \
+           (now_sgt.weekday() == 0 and now_sgt.hour < 5):
+            is_weekend = True
+            
+            # Calculate time until Monday 05:00 SGT (Sydney FX Open)
+            target_open = now_sgt + timedelta(days=(7 - now_sgt.weekday()) % 7)
+            target_open = target_open.replace(hour=5, minute=0, second=0, microsecond=0)
+            if now_sgt.weekday() == 0: 
+                 target_open = now_sgt.replace(hour=5, minute=0, second=0)
+                 
+            diff = target_open - now_sgt
+            hours, remainder = divmod(int(diff.total_seconds()), 3600)
+            minutes, _ = divmod(remainder, 60)
+            # Association Label Added Here
+            countdown_msg = f"⏳ Sydney FX Open in {hours}h {minutes}m"
+
         try:
-            ticker = yf.Ticker(ticker_symbol)
-            latest_df = ticker.history(period="1d", interval="1m")
-            if latest_df.empty:
-                latest_df = ticker.history(period="1d", interval="5m")
-            
+            ticker = yf.Ticker(f"SGD{target_iso}=X")
+            latest_df = ticker.history(period="1d", interval="5m")
             curr_rate = latest_df['Close'].iloc[-1]
-            
-            # Estimate Spread (Since yfinance free API doesn't provide live bid/ask for FX)
-            # We use a typical institutional spread + minor random jitter for realism
-            base_spread = {"CNY": 0.0008, "THB": 0.0015, "JPY": 0.0007}.get(target_iso, 0.0010)
             
             hist_df = ticker.history(period=f"{days_lookback}d")
             hist_rates = hist_df['Close'].tolist()
             
             return {
                 "rate": curr_rate, 
-                "spread": base_spread,
+                "spread": {"CNY": 0.0008, "THB": 0.0015}.get(target_iso, 0.0010),
                 "high": max(hist_rates), 
                 "low": min(hist_rates), 
                 "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005,
-                "closed": is_weekend
+                "closed": is_weekend,
+                "countdown": countdown_msg
             }
         except:
-            fb = {"CNY": 5.3771, "THB": 25.5533}.get(target_iso, 1.0)
-            return {"rate": fb, "spread": 0.0012, "high": fb*1.01, "low": fb*0.99, "std": fb*0.005, "closed": is_weekend}
+            return {"rate": 5.3771, "spread": 0.0012, "high": 5.41, "low": 5.35, "std": 0.01, "closed": is_weekend, "countdown": countdown_msg}
 
-    # 2. ROW 1 (Unchanged UI)
+    # 2. UI INPUTS
     r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], horizontal=True, key="g10_t3_p_final")
@@ -549,6 +557,7 @@ with tab3:
     
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
+    # 3. RANGE BOXES
     with r1_col3:
         st.markdown(f"""
             <div style="display: flex; gap: 8px; justify-content: center;">
@@ -563,14 +572,14 @@ with tab3:
 
     st.divider()
 
-    # 3. ROW 2 (Unchanged UI)
+    # 4. TARGET INPUTS
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
         t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
     with r2_col2:
         u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
-    # 4. LOGIC
+    # 5. OUTPUT DISPLAY
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
     price_gap = abs(u_target - m_data['rate'])
     days_req = int(np.ceil(price_gap / (m_data['std'] * speed_mult))) if price_gap > 0 else 0
@@ -578,7 +587,6 @@ with tab3:
     z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
     prob_val = max(5, min(99, 100 * (1 - (z_score / 3))))
 
-    # 5. OUTPUT DISPLAY (Updated for Spread and Market Status)
     st.markdown("---")
     out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
@@ -586,25 +594,17 @@ with tab3:
         
         # Probability Bar
         p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
-        st.markdown(f"""
-            <div style="margin-bottom: 20px;">
-                <small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
-                <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;">
-                    <div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="margin-bottom: 20px;"><small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
+            <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;"><div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div></div></div>""", unsafe_allow_html=True)
         
-        # MARKET STATUS LABEL LOGIC
-        label = "Closed Trading Value for Pair" if m_data['closed'] else "Live Market Rate"
+        # STATUS & ASSOCIATION
+        label = "Closed Trading Value (Weekend Gap)" if m_data['closed'] else "Live Market Rate"
         st.metric(label, f"{m_data['rate']:.4f}")
         
-        # SPREAD RATE UNDER LIVE RATE
-        st.markdown(f"""
-            <div style="color: #888; font-size: 0.85rem; margin-top: -15px;">
-                Est. Market Spread: <span style="color: #aaa;">{m_data['spread']:.4f}</span>
-            </div>
-        """, unsafe_allow_html=True)
+        if m_data['closed'] and m_data['countdown']:
+            st.info(f"{m_data['countdown']} | Associated: Global Interbank Market")
+        
+        st.markdown(f"""<div style="color: #888; font-size: 0.85rem; margin-top: -15px;">Est. Market Spread: <span style="color: #aaa;">{m_data['spread']:.4f}</span></div>""", unsafe_allow_html=True)
 
     with out_c2:
         path = np.linspace(m_data['rate'], u_target, 10)
