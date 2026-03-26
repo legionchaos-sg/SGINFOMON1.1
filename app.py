@@ -864,19 +864,28 @@ with tab5:
         def show_forecast():
             st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
             
-            # --- NEW: AIRLINE PREFERENCE TOGGLE ---
-            # Identifies the Home Airline based on the destination you picked
-            #home_airline = next((c for c in master_carriers if c["home"] == dest_country), master_carriers[0])
-            home_airline = next((c for c in master_carriers if c["home"] == origin_label), master_carriers[0])
-            top_3_names = [c["name"] for c in final_sorted[:3]]
-            
-            use_home = st.toggle(f"Predict based on Home Carrier ({home_airline['name']})", value=False, key="g10_t5_home_toggle")
-            
-            # Set the weight: Use Home Carrier if toggled, otherwise use the #1 ranked carrier
-            active_weight = home_airline['w'] if use_home else final_sorted[0]['w']
-            active_unit = final_unit * active_weight
-            
-            st.caption(f"Showing estimates for: **{home_airline['name'] if use_home else top_3_names[0]}**")
+         # ==========================================
+# TAB 5: UPDATED POP-UP LOGIC
+# ==========================================
+# Inside your show_forecast() dialog function:
+
+# 1. IDENTIFY HOME BASE (Based on Origin Selection)
+# We extract the country name from "Singapore (SIN)" or "China (CN)"
+origin_label = u_origin_cat.split(" (")[0] 
+
+# This line now selects the airline where "home" matches your Origin
+home_airline = next((c for c in master_carriers if c["home"] == origin_label), master_carriers[0])
+
+# 2. IDENTIFY TOP 3 (Based on Destination - for the "BUY" advice)
+top_3_names = [c["name"] for c in final_sorted[:3]]
+
+# 3. THE TOGGLE (Now references your Departure Home Base)
+use_home = st.toggle(f"Predict based on my Home Base Carrier ({home_airline['name']})", value=False, key="g10_t5_origin_home_toggle")
+
+# 4. PRICING SELECTION
+# If toggled, use your Origin's airline weight. If not, use the best-ranked Destination airline.
+active_weight = home_airline['w'] if use_home else final_sorted[0]['w']
+active_unit = final_unit * active_weight
 
             forecast_rows = []
             for w in range(16, -1, -1):
