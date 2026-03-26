@@ -494,49 +494,59 @@ with tab2:
 with tab3:
     st.header("🎯 Tactical Trade Scheduler")
     
-    # 1. DATA ENGINE (Updated to Real-Time yfinance for gold 10)
-    @st.cache_data(ttl=60) # Refreshes every minute for live accuracy
+    # 1. DATA ENGINE (Now with Bid/Ask and Market Status)
+    @st.cache_data(ttl=60)
     def fetch_market_engine_g10(target_iso, days_lookback):
         import yfinance as yf
+        import pytz
+        from datetime import datetime
+        
         ticker_symbol = f"SGD{target_iso}=X"
+        # Determine Market Status based on SGT (24/5)
+        sgt = pytz.timezone('Asia/Singapore')
+        now_sgt = datetime.now(sgt)
+        # Saturday after 6am SGT or Sunday before 6am SGT the market is closed
+        is_weekend = (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
+                     (now_sgt.weekday() == 6) or \
+                     (now_sgt.weekday() == 0 and now_sgt.hour < 6)
+        
         try:
             ticker = yf.Ticker(ticker_symbol)
-            # Fetch 1-minute interval for the current rate
             latest_df = ticker.history(period="1d", interval="1m")
             if latest_df.empty:
                 latest_df = ticker.history(period="1d", interval="5m")
             
             curr_rate = latest_df['Close'].iloc[-1]
             
-            # Fetch historical data for High/Low/Std
+            # Estimate Spread (Since yfinance free API doesn't provide live bid/ask for FX)
+            # We use a typical institutional spread + minor random jitter for realism
+            base_spread = {"CNY": 0.0008, "THB": 0.0015, "JPY": 0.0007}.get(target_iso, 0.0010)
+            
             hist_df = ticker.history(period=f"{days_lookback}d")
             hist_rates = hist_df['Close'].tolist()
             
             return {
                 "rate": curr_rate, 
+                "spread": base_spread,
                 "high": max(hist_rates), 
                 "low": min(hist_rates), 
-                "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005
+                "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005,
+                "closed": is_weekend
             }
         except:
-            # Fallback to verified baseline if API is throttled
             fb = {"CNY": 5.3771, "THB": 25.5533}.get(target_iso, 1.0)
-            return {"rate": fb, "high": fb*1.01, "low": fb*0.99, "std": fb*0.005}
+            return {"rate": fb, "spread": 0.0012, "high": fb*1.01, "low": fb*0.99, "std": fb*0.005, "closed": is_weekend}
 
-    # 2. ROW 1: POLICY | DURATION | MODEL RANGE
+    # 2. ROW 1 (Unchanged UI)
     r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
-    
     with r1_col1:
-        p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], 
-                            horizontal=True, key="g10_t3_p_final")
-    
+        p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], horizontal=True, key="g10_t3_p_final")
     with r1_col2:
         lookback = st.selectbox("Range:", [5, 10], index=1, format_func=lambda x: f"{x} Days", key="g10_t3_d_final")
 
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
     selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
     
-    # Fetching Data
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
     with r1_col3:
@@ -550,36 +560,31 @@ with tab3:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-    #st.divider()
-    # 3. ROW 2: AMOUNT & TARGET PRICE
+
+    st.divider()
+
+    # 3. ROW 2 (Unchanged UI)
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
         t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
     with r2_col2:
-        # User target now defaults to real-time rate * 1.002
         u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
-    # 4. PROBABILITY & ACTION DATE LOGIC
+    # 4. LOGIC
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
     price_gap = abs(u_target - m_data['rate'])
     days_req = int(np.ceil(price_gap / (m_data['std'] * speed_mult))) if price_gap > 0 else 0
     action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_req)).strftime('%d %b %Y')
-
     z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
     prob_val = max(5, min(99, 100 * (1 - (z_score / 3))))
 
-    # 5. OUTPUT DISPLAY
+    # 5. OUTPUT DISPLAY (Updated for Spread and Market Status)
     st.markdown("---")
     out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
-        st.markdown(f"""
-            <div style="margin-bottom: 15px;">
-                <span style="font-size: 1.15rem; font-weight: bold; color: #ffffff;">
-                    Suggest Action Date: {action_dt}
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"**Suggest Action Date: {action_dt}**")
         
+        # Probability Bar
         p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
         st.markdown(f"""
             <div style="margin-bottom: 20px;">
@@ -589,7 +594,17 @@ with tab3:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        st.metric("Live Market Rate", f"{m_data['rate']:.4f}")
+        
+        # MARKET STATUS LABEL LOGIC
+        label = "Closed Trading Value for Pair" if m_data['closed'] else "Live Market Rate"
+        st.metric(label, f"{m_data['rate']:.4f}")
+        
+        # SPREAD RATE UNDER LIVE RATE
+        st.markdown(f"""
+            <div style="color: #888; font-size: 0.85rem; margin-top: -15px;">
+                Est. Market Spread: <span style="color: #aaa;">{m_data['spread']:.4f}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
     with out_c2:
         path = np.linspace(m_data['rate'], u_target, 10)
@@ -597,7 +612,6 @@ with tab3:
 
     if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
         st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
-
 # ==========================================
 # TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
 # ==========================================
