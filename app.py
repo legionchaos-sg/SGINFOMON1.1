@@ -885,12 +885,9 @@ if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
     show_forecast()
 
 # ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
-# ==========================================
-# ==========================================
 # FINAL SECTION: WEEKLY EXECUTION FORECAST (POP-OUT)
 # ==========================================
-st.divider()
+#st.divider()
 
 # 1. PREPARE THE 16-WEEK DATASET
 weekly_data = []
@@ -918,8 +915,8 @@ for w in range(16, -1, -1):
 df_weekly = pd.DataFrame(weekly_data)
 
 # 2. THE POP-OUT OPTION
-st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-st.write("Click below to view the full price trajectory from 4 months out until departure.")
+#st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+#st.write("Click below to view the full price trajectory from 4 months out until departure.")
 
 #if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
 # If inside a loop, use: key=f"btn_{carrier_name}"
