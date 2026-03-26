@@ -771,18 +771,24 @@ with tab4:
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
-    # 1. ORIGIN & NATIONALITY CONFIG
+    # 1. ORIGIN & CURRENCY LOGIC
     col_a, col_b = st.columns(2)
     with col_a:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        china_list = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
-        thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)", "Krabi (KBV)", "Mae Fah Luang–Chiang Rai (CEI)", "U-Tapao (UTP)", "Samui (USM)", "Hat Yai (HDY)"]
-        if u_origin_cat == "China":
-            v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
-        elif u_origin_cat == "Thailand":
-            v_origin_final = st.selectbox("Select Thailand Origin Airport:", thailand_list, key="g10_t6_china_orig")
+        # Currency Mapping based on Origin
+        curr_map = {"Singapore": ("SGD", 1.34), "Bangkok": ("THB", 35.2), "Hong Kong": ("HKD", 7.8), "China": ("CNY", 7.2), "Japan": ("JPY", 150.5)}
+        origin_key = u_origin_cat.split(" (")[0]
+        c_code, c_rate = curr_map.get(origin_key, ("USD", 1.0))
+
+        china_list = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"]
+        thailand_list = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
+        
+        if "China" in u_origin_cat:
+            v_origin_final = st.selectbox("Select China Origin:", china_list, key="g10_t5_china_orig")
+        elif "Thailand" in u_origin_cat:
+            v_origin_final = st.selectbox("Select Thailand Origin:", thailand_list, key="g10_t5_thai_orig")
         else:
             v_origin_final = u_origin_cat
 
@@ -790,122 +796,61 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DYNAMIC DESTINATION
+    # 2. DESTINATION & WIP POP-UP
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Other"], key="g10_t5_dest_country")
     
+    if dest_country == "Other":
+        @st.dialog("System Notification")
+        def wip_popup():
+            st.warning("⚠️ Work In Progress")
+            st.write("International routes outside Asia core are currently being indexed.")
+            if st.button("Back to Dashboard"): st.rerun()
+        wip_popup()
+
     airport_map = {
         "China": china_list,
         "Thailand": thailand_list,
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
-        "Hong Kong": ["Hong Kong (HKG"],
-        "Singapore": ["Singapore (SIN)"]
+        "Japan": ["Tokyo (NRT)", "Osaka (KIX)"],
+        "Singapore": ["Singapore (SIN)"],
+        "Other": ["Other Intl"]
     }
     v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
 
-    # 3. PRICE & DATE LOGIC
+    # 3. PRICING CALCULATION
     d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
-    p1, p2, p3 = st.columns(3)
-    with p1: adults = st.number_input("Adults:", 1, 10, 1)
-    with p2: children = st.number_input("Children:", 0, 10, 0)
-    with p3: teens = st.number_input("Teens:", 0, 10, 0)
-
-    #st.divider()
+    
+    base_price_usd = 820 if "China" in u_origin_cat else 980
+    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
+    
+    # Final price converted to Origin Currency
+    final_unit_local = (base_price_usd * multiplier) * c_rate
 
     # 4. CARRIER PRIORITY GRID
     master_carriers = [
-        {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
-        {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
-        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK/PKX"},
-        {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN/PKX"},
-        {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"},
-        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "NRT/HND"}
+        {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN", "transit": 0},
+        {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG", "transit": 1},
+        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK", "transit": 1},
+        {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK", "transit": 1},
+        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "NRT", "transit": 1}
     ]
 
-    priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
-    other_carriers = [c for c in master_carriers if c["home"] != dest_country]
-    final_sorted = priority_carriers + other_carriers
-
-    is_peak = d_dep.month in [6, 12]
-    base_price = 820 if "China" in u_origin_cat else 980
-    multiplier = (1.45 if is_peak else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
-    final_unit = base_price * multiplier
-
     grid_data = []
-    for c in final_sorted:
-        is_domestic = (u_origin_cat == dest_country)
-        can_fly = not (is_domestic and c["home"] != dest_country)
-        if can_fly:
-            price = final_unit * c["w"]
-            grid_data.append({
-                "Carrier": c["name"],
-                "Adult Est.": f"${price:,.0f}",
-                "Child Est.": f"${price*0.75:,.0f}",
-                "Transit Hub": c["hub"] if c["home"] != u_origin_cat and c["home"] != dest_country else "Direct"
-            })
-        else:
-            grid_data.append({"Carrier": c["name"], "Adult Est.": "N.A", "Child Est.": "N.A", "Transit Hub": "No Rights"})
+    for c in master_carriers:
+        price = final_unit_local * c["w"]
+        # Logic for Transit Display
+        t_display = str(c["transit"]) if c["transit"] > 0 else "N.A"
+        
+        grid_data.append({
+            "Carrier": c["name"],
+            f"Adult ({c_code})": f"{price:,.2f}",
+            f"Child ({c_code})": f"{price*0.75:,.2f}",
+            "Transit Count": t_display,
+            "Hub": c["hub"]
+        })
 
-    st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
+    st.subheader(f"📊 Carrier Pricing Table (Reference: {origin_key} Currency)")
     st.table(grid_data)
-
-    # --- INJECTED DYNAMIC 2026 EMBASSY VISA ADVISOR ---
-    def check_visa_dynamic(nat, dest):
-        # Official 2026 Exemption List per Embassy Circular (50+ Countries)
-        exempt_30d = [
-            "Brunei", "Malaysia", "France", "Germany", "Italy", "Spain", "Netherlands", "Switzerland", 
-            "Ireland", "Hungary", "Austria", "Belgium", "Luxembourg", "New Zealand", 
-            "Australia", "Poland", "Portugal", "Greece", "Cyprus", "Slovenia", "Slovakia", 
-            "Norway", "Finland", "Denmark", "Iceland", "Andorra", "Monaco", "Liechtenstein", 
-            "South Korea", "Bulgaria", "Romania", "Croatia", "Montenegro", "North Macedonia", 
-            "Malta", "Estonia", "Latvia", "Japan", "Brazil", "Argentina", "Chile", "Peru", 
-            "Uruguay", "Saudi Arabia", "Oman", "Kuwait", "Bahrain", "Russia", "Sweden", 
-            "Canada", "United Kingdom", "Uae", "Qatar", "Singaporean", "Thai"
-        ]
-        
-        nat_clean = nat.replace("British", "United Kingdom").replace("Uk", "United Kingdom")
-        
-        if nat.lower() == dest.lower(): return "✅ Visa Not Required (Home Country)."
-        
-        if dest == "China":
-            if any(c.lower() in nat_clean.lower() for c in exempt_30d):
-                return "✅ Visa Not Required (30 Days Visa-Free: Tourism/Business/Transit)."
-            return "⚠️ Visa Required (Official L-Visa Required for Entry)."
-        
-        elif dest == "Thailand":
-            if "Singaporean" in nat or any(g in nat for g in ["Saudi", "Uae", "Qatar", "Oman"]):
-                return "✅ Visa Not Required (60 Days Visa-Free)."
-            return "⚠️ Visa Required (e-Visa or VOA)."
-            
-        return "🔍 Status: Check 2026 Portal for bilateral updates."
-
-    visa_alert = check_visa_dynamic(u_nationality, dest_country)
-    st.markdown(f"**🛂 2026 Entry Protocol:** {visa_alert}")
-    # --------------------------------------------------
-
-    st.divider()
-
-    # 5. STRATEGIC 16-WEEK FORECAST (POP-OUT MODAL)
-    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_t5_forecast_btn"):
-        @st.dialog("16-Week Execution Roadmap")
-        def show_forecast():
-            st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
-            total_est = (adults + teens + (children * 0.75)) * final_unit
-            forecast_rows = []
-            for w in range(16, -1, -1):
-                target_date = d_dep - timedelta(weeks=w)
-                if w > 10: p = total_est * (1.15 + (w * 0.005))
-                elif 7 <= w <= 9: p = total_est
-                elif 2 <= w < 7: p = total_est * (1.10 + (7-w) * 0.04)
-                else: p = total_est * (1.50 + (2-w) * 0.15)
-                
-                forecast_rows.append({
-                    "Weeks to Go": f"W-{w}",
-                    "Date": target_date.strftime('%d %b %Y'),
-                    "Est. Total": f"${p:,.0f}",
-                    "Advice": "HOLD" if w > 9 else "BUY" if 7 <= w <= 9 else "PANIC"
-                })
-            st.table(pd.DataFrame(forecast_rows))
-            if st.button("Close"): st.rerun()
-        show_forecast()
+    
+    visa_alert = "✅ Visa Not Required (30 Days)" if dest_country in ["China", "Thailand"] else "🔍 Check 2026 Portal"
+    st.info(f"**🛂 2026 Entry Protocol:** {visa_alert}")
     
