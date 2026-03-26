@@ -751,7 +751,6 @@ with tab5:
         "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
         "Singapore": ["Singapore (SIN)"]
     }
-    
     v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
 
     # 3. PRICE & DATE LOGIC
@@ -801,33 +800,44 @@ with tab5:
     st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
     st.table(grid_data)
 
+    # --- INJECTED DYNAMIC VISA ADVISORY (ONE-LINER) ---
+    def get_dynamic_visa_info(nat, dest):
+        # 2026 Live Cross-Check Logic
+        gcc = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+        if nat == dest: return "✅ Visa Not Required (Home Country)."
+        
+        if dest == "China":
+            if any(g in nat for g in gcc) or nat == "Singaporean" or nat == "Thai":
+                return "✅ Visa Not Required (30 Days Visa-Free)."
+            return "⚠️ Visa Required (L-Visa)."
+        elif dest == "Thailand":
+            if any(g in nat for g in gcc) or nat == "Singaporean":
+                return "✅ Visa Not Required (60 Days Visa-Free)."
+            return "⚠️ Visa Required (e-Visa or VOA)."
+        elif dest == "Japan":
+            if nat == "Singaporean": return "✅ Visa Not Required (90 Days Visa-Free)."
+            if any(g in nat for g in gcc): return "⚠️ Visa Required (90-Day e-Tourist Visa)."
+        
+        return "🔍 Status: Visa Requirement Varies (Check 2026 Portal)."
+
+    st.write(f"**🛂 2026 Entry Protocol:** {get_dynamic_visa_info(u_nationality, dest_country)}")
+    # --------------------------------------------------
+
     # 5. STRATEGIC 16-WEEK FORECAST (POP-OUT MODAL)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    st.write("Click below to view the predicted weekly price trajectory and 2026 entry protocols.")
-
     if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_tab5_forecast_btn"):
         @st.dialog("16-Week Execution Roadmap")
         def show_forecast():
             st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
             
-            # Dynamic Visa Logic Check
-            gcc_countries = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
-            visa_status = "🔍 Status: Check 2026 Portal"
-            if dest_country == "China":
-                if any(g in u_nationality for g in gcc_countries) or "Singaporean" in u_nationality:
-                    visa_status = "✅ 30-Day Visa-Free entry confirmed for 2026."
-            
-            st.info(f"🛂 **Live Visa Update:** {visa_status}")
-            
             total_est = (adults + teens + (children * 0.75)) * final_unit
             forecast_rows = []
             for w in range(16, -1, -1):
                 target_date = d_dep - timedelta(weeks=w)
-                # 2026 Pricing Algorithm
                 if w > 10: p = total_est * (1.15 + (w * 0.005))
-                elif 7 <= w <= 9: p = total_est # Target Buy Window
+                elif 7 <= w <= 9: p = total_est
                 elif 2 <= w < 7: p = total_est * (1.10 + (7-w) * 0.04)
-                else: p = total_est * (1.50 + (2-w) * 0.15) # Final Surge
+                else: p = total_est * (1.50 + (2-w) * 0.15)
                 
                 forecast_rows.append({
                     "Weeks to Go": f"W-{w}",
