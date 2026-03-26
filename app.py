@@ -802,25 +802,39 @@ with tab5:
 
     # --- INJECTED DYNAMIC VISA ADVISORY (ONE-LINER) ---
     def get_dynamic_visa_info(nat, dest):
-        # 2026 Live Cross-Check Logic
-        gcc = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+        # Official 2026 30-Day Visa-Free List (Expanded to 50+ Countries)
+        v_free_list = [
+            "Brunei", "France", "Germany", "Italy", "Spain", "Netherlands", "Switzerland", 
+            "Ireland", "Hungary", "Austria", "Belgium", "Luxembourg", "New Zealand", 
+            "Australia", "Poland", "Portugal", "Greece", "Cyprus", "Slovenia", "Slovakia", 
+            "Norway", "Finland", "Denmark", "Iceland", "Andorra", "Monaco", "Liechtenstein", 
+            "South Korea", "Bulgaria", "Romania", "Croatia", "Montenegro", "North Macedonia", 
+            "Malta", "Estonia", "Latvia", "Japan", "Brazil", "Argentina", "Chile", "Peru", 
+            "Uruguay", "Saudi Arabia", "Oman", "Kuwait", "Bahrain", "Russia", "Sweden", 
+            "Canada", "United Kingdom", "Uae", "Qatar", "Singaporean", "Thai"
+        ]
+        
+        # Clean input for matching
+        nat_clean = nat.replace("British", "United Kingdom").replace("Uk", "United Kingdom")
+        
         if nat == dest: return "✅ Visa Not Required (Home Country)."
         
         if dest == "China":
-            if any(g in nat for g in gcc) or nat == "Singaporean" or nat == "Thai":
-                return "✅ Visa Not Required (30 Days Visa-Free)."
-            return "⚠️ Visa Required (L-Visa)."
+            # Match against the expanded 50-country list
+            if any(country.lower() in nat_clean.lower() for country in v_free_list):
+                return "✅ Visa Not Required (30 Days Visa-Free for Tourism/Business/Transit)."
+            return "⚠️ Visa Required (Apply for Tourist L-Visa)."
+            
         elif dest == "Thailand":
-            if any(g in nat for g in gcc) or nat == "Singaporean":
+            if "Singaporean" in nat or any(g in nat for g in ["Saudi", "Oman", "Kuwait", "Bahrain", "Uae", "Qatar"]):
                 return "✅ Visa Not Required (60 Days Visa-Free)."
             return "⚠️ Visa Required (e-Visa or VOA)."
-        elif dest == "Japan":
-            if nat == "Singaporean": return "✅ Visa Not Required (90 Days Visa-Free)."
-            if any(g in nat for g in gcc): return "⚠️ Visa Required (90-Day e-Tourist Visa)."
-        
-        return "🔍 Status: Visa Requirement Varies (Check 2026 Portal)."
 
-    st.write(f"**🛂 2026 Entry Protocol:** {get_dynamic_visa_info(u_nationality, dest_country)}")
+        return "🔍 Status: Check 2026 Portal for specific bilateral rules."
+
+    # Render the result below the pricing table
+    visa_display = get_dynamic_visa_info(u_nationality, dest_country)
+    st.write(f"**🛂 2026 Entry Protocol:** {visa_display}")
     # --------------------------------------------------
 
     # 5. STRATEGIC 16-WEEK FORECAST (POP-OUT MODAL)
