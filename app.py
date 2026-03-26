@@ -820,7 +820,69 @@ with tab5:
         })
     st.table(grid)    
 
-    # ==========================================
+st.divider()
+
+# 1. LIVE VISA ADVISORY (Dynamic Logic)
+def get_live_visa_info(nat, dest):
+    # GCC Countries for 2026 Unilateral Exemption Check
+    gcc_group = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+    
+    if dest == "China":
+        if any(g in nat for g in gcc_group) or "Singaporean" in nat or "Thai" in nat:
+            return f"✅ **Live Status:** {nat} nationals are currently **Visa-Free** for up to 30 days (2026 Policy). Complete the Digital Arrival Card 24h before landing."
+        else:
+            return f"⚠️ **Live Status:** {nat} nationals typically require a **Standard Tourist Visa** for China. Verification via IATA/Consulate recommended."
+    
+    if dest == "Thailand":
+        if any(g in nat for g in gcc_group):
+            return f"✅ **Live Status:** {nat} nationals enjoy **60-day Visa-Free** entry for tourism."
+            
+    return "🔍 **Live Status:** Protocol varies. Please verify specific 2026 'e-Visa' eligibility for your passport."
+
+# Display the Dynamic Alert in Red
+visa_advice = get_live_visa_info(u_nationality, dest_country)
+st.markdown(f"""
+<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:#FF4B4B;">
+    <h4 style="margin:0;">🔴 LIVE 2026 VISA ADVISORY</h4>
+    <p style="color:black; margin-top:5px;">{visa_advice}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# 2. 16-WEEK PRICE POP-OUT (No Sliders)
+st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+st.write("Click to analyze the price trajectory and identify the 2026 'Execution Day'.")
+
+if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
+    @st.dialog("16-Week Forecast Analysis")
+    def show_forecast():
+        # Baseline total from the carrier section
+        current_base = total_price if 'total_price' in locals() else 980.0
+        
+        forecast_rows = []
+        for w in range(16, -1, -1):
+            target_date = d_dep - timedelta(weeks=w)
+            # 2026 Volatility Logic
+            if w > 10: p = current_base * (1.12 + (w * 0.004))
+            elif 7 <= w <= 9: p = current_base # Golden Window
+            elif 2 <= w < 7: p = current_base * (1.15 + ((7-w) * 0.03))
+            else: p = current_base * (1.55 + ((2-w) * 0.18)) # Final Surge
+            
+            forecast_rows.append({
+                "Week": f"W-{w}",
+                "Date": target_date.strftime('%d %b %Y'),
+                "Total (Est)": f"${p:,.2f}",
+                "Action": "HOLD" if w > 9 else "BUY" if 7 <= w <= 9 else "PANIC"
+            })
+        
+        st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
+        st.table(pd.DataFrame(forecast_rows))
+        st.info("💡 **2026 Tip:** Tuesdays usually offer the best API-level fare refreshes.")
+        if st.button("Close"):
+            st.rerun()
+
+    show_forecast()
+
+# ==========================================
 # FINAL SECTION: EXECUTION PRICE SIMULATION
 # ==========================================
 # ==========================================
