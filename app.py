@@ -859,7 +859,6 @@ with tab5:
     st.divider()
 
     # 5. STRATEGIC 16-WEEK FORECAST (RESTORED)
-   STRATEGIC 16-WEEK FORECAST (RECOVERY-SAFE)
     st.divider()
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
     
