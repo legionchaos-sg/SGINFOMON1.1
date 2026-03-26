@@ -747,33 +747,6 @@ with tab5:
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore"], key="g10_t5_dest_country")
     v_land_airport = st.selectbox(f"Select Landing Airport:", china_list if dest_country == "China" else ["BKK", "DMK", "NRT", "HND", "SIN"], key="g10_t5_land")
 
-    # 3. 🛡️ VISA REGULATION CROSS-CHECK (2026 OPEN SOURCE SYNC)
-    def get_visa_status(nat, dest):
-        gcc_list = ["Emirati", "Saudi", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
-        
-        # 2026 China Unilateral Exemption for GCC
-        if nat in gcc_list and dest == "China":
-            return "✅ 30-Day Visa-Free (Trial extended to Dec 2026). Digital Arrival Card Required."
-        if nat == "Singaporean" and dest == "China":
-            return "✅ 30-Day Visa-Free Reciprocal Agreement Active."
-        if nat in gcc_list and dest == "Thailand":
-            return "✅ 60-Day Visa-Free (Tourism). TDAC QR Code required 72h before."
-        if nat in ["Emirati", "Qatari"] and dest == "Japan":
-            return "✅ 30-Day Visa-Free (for ePassport holders)."
-        if nat == "Saudi" and dest == "Japan":
-            return "⚠️ eVisa Required (Short-term Tourist)."
-        return "🔍 Standard 2026 Protocol: Verify via IATA/Embassy portal."
-
-    visa_msg = get_visa_status(u_nationality, dest_country)
-    
-    # Red Alert Display
-    st.markdown(f"""
-    <div style="border:2px solid #FF4B4B; padding:10px; border-radius:5px; background-color:#FFF5F5;">
-        <span style="color:#FF4B4B; font-weight:bold;">🔴 2026 VISA ADVISORY:</span><br>
-        <span style="color:black;">{u_nationality} to {dest_country}: <b>{visa_msg}</b></span>
-    </div>
-    """, unsafe_allow_html=True)
-
     # 4. 📅 DATES & STRATEGIC WINDOW
     d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     
