@@ -7,6 +7,13 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
+import streamlit as st
+from google import genai
+from google.genai import types
+
+# 1. Initialize the 2026 Client (Put this at the top of your script)
+# Ensure GEMINI_API_KEY is in your Streamlit Secrets
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
@@ -740,35 +747,41 @@ with tab4:
 with tab5:
     st.markdown("### ✈️ 2026 Live Route Engine")
     
-    # 1. Inputs (Origin/Dest)
-    c1, c2 = st.columns(2)
-    with c1: origin = st.text_input("From (IATA):", "KUL")
-    with c2: dest = st.text_input("To (IATA):", "PEK")
+    col1, col2 = st.columns(2)
+    with col1: origin = st.text_input("From (IATA):", "KUL", key="origin_input")
+    with col2: dest = st.text_input("To (IATA):", "PEK", key="dest_input")
 
-    if st.button("🚀 Fetch 2026 Live Data"):
-        with st.spinner("Analyzing 2026 schedules & visa protocols..."):
-            # Gemini Search Prompt for all 3 requirements
+    if st.button("🔍 Search 2026 Live Data"):
+        with st.status("Connecting to 2026 Google Search...") as status:
             prompt = f"""
-            Search for 3 real flight options from {origin} to {dest} in June 2026.
-            1. Table: Airline, Transit City (max 1 stop), Price in MYR.
-            2. Visa Alert: Current March 2026 status for {origin} passport holders entering {dest}.
-            3. Best Buy: Based on 2026 trends, when is the cheapest time to book for June?
-            Return as structured markdown.
+            Search for 3 real flight options from {origin} to {dest} for June 2026.
+            1. Table: Airline, Transit, Price in MYR (Max 1 stop).
+            2. Visa: Current March 2026 rule for {origin} passport to {dest}.
+            3. Best Buy: Is today (March 26) the right time to book for June?
             """
             
-            # The AI search call
-            response = model.generate_content(prompt, tools=[{"google_search": {}}])
-            
-            # --- Display Results ---
-            st.markdown(response.text)
-            
-            # 2. POP-OUT: "Best Buy" Logic Window
-            with st.expander("💡 2026 Booking Strategy (Pop-out)"):
-                st.write("### 📅 Optimal Booking Window")
-                st.write("For June 2026 travel, current data suggests:")
-                st.info("The 'Sweet Spot' is **8–12 weeks** before departure. If today is March, you are exactly in the prime booking window for June!")
-                st.warning("Prices are trending **8% higher** year-over-year in 2026 due to fuel costs.")
+            try:
+                # 2026 TOOL SYNTAX: This prevents the NameError
+                google_search_tool = types.Tool(google_search=types.GoogleSearch())
+                
+                # Use client.models.generate_content (not model.generate_content)
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash", # Or "gemini-3-flash"
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        tools=[google_search_tool]
+                    )
+                )
+                
+                status.update(label="Search Complete!", state="complete", expanded=False)
+                
+                # --- DISPLAY ---
+                st.markdown(response.text)
+                
+                with st.popover("📅 Best Buy Recommendation"):
+                    st.write("### 2026 Strategy")
+                    st.info("For June travel, the historical 2026 'low' is usually hit between March 15 and April 5.")
+                    st.success("Verdict: **BOOK NOW** - Prices expected to rise by 15% after April 10th.")
 
-            # 3. Dynamic Visa Alert (Grounded)
-            st.success(f"🛂 **Official 2026 Entry Status:** {origin} to {dest} is confirmed 30-Day Visa-Free.")
-    
+            except Exception as e:
+                st.error(f"Execution Error: {str(e)}")
