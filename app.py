@@ -920,7 +920,8 @@ df_weekly = pd.DataFrame(weekly_data)
 
 #if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
 # If inside a loop, use: key=f"btn_{carrier_name}"
-if st.button("🚀 View Weekly Price Forecast (Pop-out)");#, key="unique_forecast_btn_2026"):
+#if st.button("🚀 View Weekly Price Forecast (Pop-out)"):#, key="unique_forecast_btn_2026"):
+    st.button("🚀 View Weekly Price Forecast (Pop-out)"):
     @st.dialog("16-Week Price Forecast")
     def show_forecast():
         st.write(f"**Origin:** {v_origin_final} | **Destination:** {v_land_airport}")
