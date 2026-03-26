@@ -8,6 +8,14 @@ from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
 
+# --- THE ANCHOR (Lays Outside the Tabs) ---
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = 0  # Default to Tab 1
+
+# This "remembers" your Tab 3 input even when the panel resets
+if "g10_target_fix" not in st.session_state:
+    st.session_state.g10_target_fix = 0.0000
+
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
     st.write(f"### 📍 {ftype} Price List")
@@ -39,7 +47,7 @@ def get_dynamic_flights(origin, dest):
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
 # 1. Page Configuration
-st.set_page_config(page_title="SG INFO MON 10.9", page_icon="🇸🇬", layout="wide")
+st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
 
 # 2. Adaptive CSS
