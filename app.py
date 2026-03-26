@@ -502,7 +502,7 @@ with tab3:
         sgt = pytz.timezone('Asia/Singapore')
         now_sgt = datetime.now(sgt)
         
-        # Market Status Logic (Saturday 06:00 to Monday 05:00 SGT)
+        # Market Status Logic
         is_weekend = (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
                      (now_sgt.weekday() == 6) or \
                      (now_sgt.weekday() == 0 and now_sgt.hour < 5)
@@ -539,7 +539,6 @@ with tab3:
                     "high": 5.41, "low": 5.35, "std": 0.01, "closed": is_weekend, "heartbeat": "⚠️ FEED DELAY"}
 
     # 2. HEADER WITH HEARTBEAT
-    # Initialize session state for currency if not set
     if "g10_t3_i_final" not in st.session_state:
         st.session_state["g10_t3_i_final"] = "CNY"
         
@@ -565,8 +564,6 @@ with tab3:
     
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
     selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
-    
-    # Refresh data for selected currency
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
     with r1_c3:
@@ -581,8 +578,6 @@ with tab3:
             </div>
         """, unsafe_allow_html=True)
 
-    #st.divider()
-    
     # 4. ROW 2: AMOUNT & TARGET
     r2_c1, r2_c2 = st.columns(2)
     with r2_c1:
@@ -605,40 +600,63 @@ with tab3:
     
     with out_c1:
         st.markdown(f"**Suggest Action Date: {action_dt}**")
-        
         p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
-        st.markdown(f"""
-            <div style="margin-bottom: 20px;">
-                <small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
-                <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;">
-                    <div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="margin-bottom: 20px;"><small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
+            <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;"><div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div></div></div>""", unsafe_allow_html=True)
         
         label = "Closed Trading Value" if m_data['closed'] else "Live Market Rate"
         st.metric(label, f"{m_data['rate']:.4f}")
         
-        # PREV RATE & TIMESTAMP
         price_diff = m_data['rate'] - m_data['prev']
         diff_color = "#00ff7f" if price_diff >= 0 else "#ff4b4b"
-        st.markdown(f"""
-            <div style="font-size: 0.85rem; margin-top: -12px; margin-bottom: 8px;">
+        st.markdown(f"""<div style="font-size: 0.85rem; margin-top: -12px; margin-bottom: 8px;">
                 <span style="color: #888;">Prev: </span><span style="color: {diff_color}; font-weight: bold;">{m_data['prev']:.4f}</span>
-                <span style="color: #666; margin-left: 10px;">🕒 {m_data['timestamp']} SGT</span>
-            </div>
-            <div style="color: #555; font-size: 0.8rem;">Est. Spread: {m_data['spread']:.4f}</div>
-        """, unsafe_allow_html=True)
-
-        if m_data['closed'] and m_data.get('countdown'):
-            st.info(f"{m_data['countdown']} | Associated: Global Interbank")
+                <span style="color: #666; margin-left: 10px;">🕒 {m_data['timestamp']} SGT</span></div>
+            <div style="color: #555; font-size: 0.8rem;">Est. Spread: {m_data['spread']:.4f}</div>""", unsafe_allow_html=True)
 
     with out_c2:
         path = np.linspace(m_data['rate'], u_target, 10)
         st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=150)
 
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
-        st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
+    # 7. NEW: DAILY PREDICTION POP-UP FUNCTION
+    st.divider()
+    btn_col1, btn_col2 = st.columns(2)
+    
+    with btn_col1:
+        if st.button("🚀 View Daily Rate Prediction", use_container_width=True, key="g10_t3_predict"):
+            @st.dialog(f"Forecast: SGD/{selected_iso} ({lookback}D Basis)")
+            def show_daily_prediction():
+                import numpy as np
+                from datetime import datetime, timedelta
+                
+                st.write(f"**Current Base Rate:** {m_data['rate']:.4f}")
+                st.write(f"**Calculated Volatility (Std Dev):** {m_data['std']:.4f}")
+                
+                predict_rows = []
+                for d in range(lookback):
+                    day_num = d + 1
+                    target_date = datetime.now() + timedelta(days=d)
+                    
+                    # Statistical Drift Prediction
+                    drift = (m_data['std'] * speed_mult * np.sqrt(day_num))
+                    high_est = m_data['rate'] + drift
+                    low_est = m_data['rate'] - drift
+                    
+                    predict_rows.append({
+                        "Day": f"Day {day_num}",
+                        "Date": target_date.strftime('%d %b'),
+                        "Expected High": f"{high_est:.4f}",
+                        "Expected Low": f"{low_est:.4f}",
+                        "Trend": "📈" if high_est > m_data['high'] else "📉" if low_est < m_data['low'] else "↔️"
+                    })
+                st.table(predict_rows)
+                st.caption("Note: Predictions based on Browninan Motion volatility models.")
+                if st.button("Close"): st.rerun()
+            show_daily_prediction()
+
+    with btn_col2:
+        if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
+            st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
 
 #==========================================
 # TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
