@@ -859,55 +859,26 @@ with tab5:
     st.divider()
 
     # 5. STRATEGIC 16-WEEK FORECAST (RESTORED)
-   STRATEGIC 16-WEEK FORECAST (RECOVERY-SAFE)
-    st.divider()
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    
-    if st.button("🚀 View Weekly Price Forecast (Top 3 Focus)", key="g10_t5_forecast_btn"):
+    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_t5_forecast_btn"):
         @st.dialog("16-Week Execution Roadmap")
         def show_forecast():
             st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
-            
-            # --- NEW: AIRLINE PREFERENCE TOGGLE ---
-            # Identifies the Home Airline based on the destination you picked
-            home_airline = next((c for c in master_carriers if c["home"] == dest_country), master_carriers[0])
-            top_3_names = [c["name"] for c in final_sorted[:3]]
-            
-            use_home = st.toggle(f"Predict based on Home Carrier ({home_airline['name']})", value=False, key="g10_t5_home_toggle")
-            
-            # Set the weight: Use Home Carrier if toggled, otherwise use the #1 ranked carrier
-            active_weight = home_airline['w'] if use_home else final_sorted[0]['w']
-            active_unit = final_unit * active_weight
-            
-            st.caption(f"Showing estimates for: **{home_airline['name'] if use_home else top_3_names[0]}**")
-
+            total_est = final_unit # simplified for adult unit
             forecast_rows = []
             for w in range(16, -1, -1):
                 target_date = d_dep - timedelta(weeks=w)
+                if w > 9: advice = "HOLD"
+                elif 7 <= w <= 9: advice = "BUY"
+                else: advice = "PANIC"
                 
-                # Logic for Advice & Top 3
-                if w > 9: 
-                    advice = "HOLD"
-                elif 7 <= w <= 9: 
-                    # --- NEW: INDICATE TOP 3 AIRLINES ---
-                    advice = f"BUY: {', '.join(top_3_names)}"
-                else: 
-                    advice = "PANIC (Price Surge)"
-                
-                # Pricing Math
-                p = active_unit * (1.0 if 7 <= w <= 9 else 1.28)
-                
+                p = total_est * (1.0 if advice == "BUY" else 1.25)
                 forecast_rows.append({
                     "Weeks to Go": f"W-{w}",
                     "Date": target_date.strftime('%d %b %Y'),
-                    "Est. Price": f"${p:,.0f}",
-                    "Strategic Action": advice
+                    "Est. Total": f"${p:,.0f}",
+                    "Advice": advice
                 })
-            
             st.table(forecast_rows)
             if st.button("Close"): st.rerun()
-            
         show_forecast()
-
-    # [Visa Advisory remains below]
-    st.markdown(f"**🛂 2026 Entry Protocol:** {visa_alert}")
