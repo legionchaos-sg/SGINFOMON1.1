@@ -728,112 +728,108 @@ with tab5:
     # 1. ORIGIN & NATIONALITY CONFIG
     col_a, col_b = st.columns(2)
     with col_a:
-        # Fixed Origin Selection
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China"]
-        u_origin_cat = st.selectbox("Select Origin Country/City:", origin_options, index=0, key="g10_t5_orig")
+        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        # Sub-selection if Origin is China
+        china_list = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
+        
         if u_origin_cat == "China":
-            china_origins = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
-            v_origin_final = st.selectbox("Select China Origin Airport:", china_origins, key="g10_t5_china_orig")
+            v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
         else:
             v_origin_final = u_origin_cat
 
     with col_b:
-        u_nationality = st.text_input("Enter Nationality (e.g. Singaporean, Chinese):", value="Singaporean", key="g10_t5_nat").strip().title()
+        u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DYNAMIC DESTINATION & AIRPORT SELECTION
-    st.subheader("📍 Destination Selection")
-    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Other"], key="g10_t5_dest_country")
+    # 2. DYNAMIC DESTINATION
+    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Other"], key="g10_t5_dest_country")
     
-    # Airport Mapping based on Country Selection
     airport_map = {
-        "China": ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"],
+        "China": china_list,
         "Thailand": ["Bangkok (BKK)", "Bangkok (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
+        "Singapore": ["Singapore (SIN)"]
     }
     
-    if dest_country in airport_map:
-        v_land_airport = st.selectbox(f"Select Landing Airport in {dest_country}:", airport_map[dest_country], key="g10_t5_land")
-    else:
-        v_land_airport = st.text_input("Enter Destination Airport Code/City:", value="London (LHR)", key="g10_t5_dest_other")
+    v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
 
-    # 3. VISA REQUIREMENT ALERT ENGINE (2026 DATA)
-    def check_visa(nat, dest):
-        # 2026 Reciprocal Rules
+    # 3. VISA ALERT ENGINE (RED ALERT TEXT)
+    def get_visa_alert(nat, dest):
+        # Data for 2026 travel cycles
         rules = {
-            ("Singaporean", "China"): "✅ Visa-Free (up to 30 days).",
+            ("Singaporean", "China"): "✅ Visa-Free (up to 30 days) extended through Dec 2026.",
             ("Singaporean", "Thailand"): "✅ Visa-Free (up to 60 days).",
-            ("Singaporean", "Japan"): "✅ Visa-Free (up to 90 days).",
             ("Chinese", "Singapore"): "✅ Visa-Free (up to 30 days).",
-            ("Chinese", "Thailand"): "✅ Visa-Free (up to 60 days).",
-            ("Chinese", "Japan"): "⚠️ Visa Required Prior to Departure.",
             ("Thai", "Japan"): "✅ Visa-Free (up to 15 days).",
-            ("Thai", "China"): "✅ Visa-Free (up to 30 days).",
+            ("Thai", "China"): "✅ Visa-Free (up to 30 days)."
         }
-        return rules.get((nat, dest), "🔍 Check with Embassy (Standard Rules Apply).")
+        res = rules.get((nat, dest), "🔍 Check Embassy: Standard 2026 Visa Rules Apply.")
+        return res
 
-    visa_status = check_visa(u_nationality, dest_country)
-    st.warning(f"**Visa Alert for {u_nationality} entering {dest_country}:** {visa_status}")
+    visa_text = get_visa_alert(u_nationality, dest_country)
+    # Using red blockquote for the alert
+    st.markdown(f"""
+    > 🔴 **VISA ALERT ( {u_nationality} → {dest_country} ):** > **{visa_text}** > *Verify passport validity >6 months before booking.*
+    """, unsafe_allow_html=True)
 
-    # 4. DATE & PASSENGERS
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
-        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
-        dep_day = d_dep.strftime('%A')
-    with col_d2:
-        if v_trip_type == "Round Trip":
-            st.date_input(f"Return (to {v_origin_final}):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
-
+    # 4. PRICE & DATE LOGIC
+    d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     p1, p2, p3 = st.columns(3)
     with p1: adults = st.number_input("Adults:", 1, 10, 1)
-    with p2: children = st.number_input("Children (2-11):", 0, 10, 0)
-    with p3: teens = st.number_input("Teens (12-17):", 0, 10, 0)
+    with p2: children = st.number_input("Children:", 0, 10, 0)
+    with p3: teens = st.number_input("Teens:", 0, 10, 0)
 
     st.divider()
 
-    # 5. AIRFARE PREDICTION (7-AIRLINE SYNC)
+    # 5. CARRIER PRIORITY GRID
+    master_carriers = [
+        {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
+        {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
+        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK/PKX"},
+        {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN/PKX"},
+        {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"},
+        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "NRT/HND"}
+    ]
+
+    # Re-order: Destination Home Carrier(s) first
+    priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
+    other_carriers = [c for c in master_carriers if c["home"] != dest_country]
+    final_sorted = priority_carriers + other_carriers
+
+    # Airfare Math
     is_peak = d_dep.month in [6, 12]
-    is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
-    
-    # Base Multipliers
-    day_mod = 0.88 if is_cheap_day else 1.05
-    trip_mod = 1.0 if v_trip_type == "Round Trip" else 0.65
-    peak_mod = 1.45 if is_peak else 1.0
-    
-    # Hub Price Weighting: CZ & Air China are cheaper for China-based routes
-    base_price = 850 if "China" in v_origin_final else 980
-    base_unit = base_price * peak_mod * trip_mod * day_mod
-    total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
+    base_price = 820 if "China" in u_origin_cat else 980
+    multiplier = (1.45 if is_peak else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
+    final_unit = base_price * multiplier
 
-    res_l, res_r = st.columns([1.5, 1])
-    with res_l:
-        st.markdown(f"#### 🔮 Flight Forecast: {v_origin_final} ➔ {v_land_airport}")
-        st.write(f"Fare predicted using current 2026 capacity for **7 Carriers**.")
-        st.success(f"**Best Window:** {'18 weeks' if is_peak else '8 weeks'} prior to {d_dep.strftime('%d/%m/%y')}")
-    with res_r:
-        st.metric("Estimated Total (SGD)", f"${total_price:,.0f}")
+    grid_data = []
+    for c in final_sorted:
+        # Route Validation (Traffic Rights)
+        # N.A if domestic flight by foreign carrier
+        is_domestic = (u_origin_cat == dest_country)
+        can_fly = True
+        if is_domestic and c["home"] != dest_country:
+            can_fly = False
+            
+        if can_fly:
+            price = final_unit * c["w"]
+            grid_data.append({
+                "Carrier": c["name"],
+                "Adult Est.": f"${price:,.0f}",
+                "Child Est.": f"${price*0.75:,.0f}",
+                "Transit Hub": c["hub"] if c["home"] != u_origin_cat and c["home"] != dest_country else "Direct"
+            })
+        else:
+            grid_data.append({"Carrier": c["name"], "Adult Est.": "N.A", "Child Est.": "N.A", "Transit Hub": "No Rights"})
 
-    # 6. CARRIER COMPARISON TABLE
-    carriers = {
-        "Singapore Airlines": {"w": 1.0, "r": "Direct"},
-        "ANA / JAL": {"w": 0.94, "r": "Direct"},
-        "Cathay Pacific": {"w": 0.81, "r": "1-Stop HKG"},
-        "Thai Airways (TG)": {"w": 0.72, "r": "1-Stop BKK"},
-        "China Southern (CZ)": {"w": 0.65, "r": "Direct/1-Stop CAN"},
-        "Air China": {"w": 0.62, "r": "1-Stop PEK"}
-    }
-    
-    grid = []
-    for c, info in carriers.items():
-        p = base_unit * info["w"]
-        grid.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Route": info["r"]})
-    st.table(grid)
+    st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
+    st.table(grid_data)
 
-    # 7. TREND CHART
-    st.write(f"**22-Week Price Trajectory for {v_land_airport}**")
+    # 6. CHART
+    total_est = (adults + teens + (children * 0.75)) * final_unit
+    st.write(f"**22-Week Price Projection: {v_origin_final} ➔ {v_land_airport}**")
     weeks = list(range(22, 0, -1))
-    prices = [total_price * (1.25 if w > 18 else 0.85 if w > 8 else 1.2) for w in weeks]
-    st.area_chart(pd.DataFrame({"Price": prices}, index=weeks), color="#ffd700")
+    prices = [total_est * (1.3 if w > 17 else 0.88 if w > 7 else 1.15) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price (Est)": prices}, index=weeks), color="#ffd700")
     
