@@ -9,4 +9,4 @@ deep-translator
 numpy
 scikit-learn
 yfinance
-
+google-genai
