@@ -7,6 +7,7 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
+import google.generativeai as genai
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
@@ -26,6 +27,23 @@ def show_fuel_details(ftype):
                 </span>
             </div>
         """, unsafe_allow_html=True)
+
+
+#using GEMINI
+# Setup your 2026 Gemini 3 Flash model
+model = genai.GenerativeModel(
+    model_name='gemini-3-flash-preview',
+    tools=[{"google_search": {}}] # <--- THIS IS THE MAGIC
+)
+
+def get_dynamic_flights(origin, dest):
+    prompt = f"""
+    Find 3 current flight options from {origin} to {dest} for June 2026.
+    Requirements: Max 1 stop, show airline and estimated price in MYR.
+    Return ONLY a JSON list of dictionaries.
+    """
+    response = model.generate_content(prompt)
+    return response.text
 
 # SG INFO MONITOR - Weather & Traffic Update 10.9.3
 
