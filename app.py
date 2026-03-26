@@ -722,25 +722,59 @@ with tab4:
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - AIRFARE PREDICTOR
 # ==========================================
+from datetime import date, timedelta
+import pandas as pd
+
+# ==========================================
+# TAB 5: AF STRATEGIC BUY - INTELLIGENT HUB
+# ==========================================
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     
-    # 1. TRIP & LOCATION CONFIG
+    # 1. ORIGIN & TRIP CONFIGURATION
     t_col1, t_col2 = st.columns([1, 2])
     with t_col1:
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
+    
     with t_col2:
-        u_input = st.text_input("Enter Country or City (Origin: SIN):", value="China", key="g10_t5_loc")
+        origin_options = ["Singapore (SIN)", "Bangkok", "Hong Kong (HKG)", "China"]
+        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig_cat")
+        
+        origin_map = {
+            "Bangkok": ["Bangkok Suvarnabhumi (BKK)", "Bangkok Don Mueang (DMK)"],
+            "China": [
+                "Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", 
+                "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", 
+                "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", 
+                "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"
+            ]
+        }
+        
+        if u_origin_cat in origin_map:
+            v_origin_final = st.selectbox(f"Select Specific {u_origin_cat} Origin:", origin_map[u_origin_cat], key="g10_t5_orig_final")
+        else:
+            v_origin_final = u_origin_cat
 
-    # 2. INTERNAL AIRPORT ENGINE (Includes China Southern Hubs)
+    # 2. DESTINATION ENGINE
+    u_dest_input = st.text_input("Enter Destination Country or City:", value="Japan", key="g10_t5_loc")
+    
+    # Combined China list for consistency
+    china_hubs = [
+        "Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", 
+        "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", 
+        "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", 
+        "Changsha (CSX)", "Qingdao (TAO)"
+    ]
+
     geo_atlas = {
-        "China": ["Guangzhou Baiyun (CAN)", "Shanghai Pudong (PVG)", "Beijing Daxing (PKX)", "Shenzhen (SZX)"],
+        "China": china_hubs,
         "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
-        "Thailand": ["Bangkok (BKK)", "Phuket (HKT)"]
+        "Thailand": ["Bangkok (BKK)", "Bangkok (DMK)", "Phuket (HKT)"],
+        "Singapore": ["Singapore (SIN)"]
     }
     
-    found_hubs = geo_atlas.get(u_input, [f"{u_input} Intl (Primary)"])
-    v_selected_hubs = st.multiselect("Strategic Hub Selection:", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
+    found_hubs = geo_atlas.get(u_dest_input, [f"{u_dest_input} Intl (Primary)"])
+    v_selected_hubs = st.multiselect("Strategic Destination Hub(s):", found_hubs, default=found_hubs[0], key="g10_t5_hubs")
 
     # 3. DATE & PASSENGER DATA
     col_d1, col_d2 = st.columns(2)
@@ -749,7 +783,7 @@ with tab5:
         dep_day = d_dep.strftime('%A')
     with col_d2:
         if v_trip_type == "Round Trip":
-            d_ret = st.date_input("Return (to SIN):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
+            d_ret = st.date_input(f"Return (to {v_origin_final}):", value=d_dep + timedelta(days=10), format="DD/MM/YYYY", key="g10_t5_ret")
         else:
             st.info("Direct Leg Selected")
 
@@ -760,58 +794,52 @@ with tab5:
 
     st.divider()
 
-    # 4. 7-AIRLINE PREDICTION LOGIC (2026 Trends)
+    # 4. HUB-AWARE PREDICTION LOGIC
     is_peak = d_dep.month in [6, 12]
     is_cheap_day = dep_day in ["Tuesday", "Wednesday"]
     
-    # China Southern (CZ) is often cheapest on Tuesdays for the SIN-CAN route.
-    rec_buy_week = "18-20 weeks out" if is_peak else "7-9 weeks out"
-    predicted_cheapest_day = "Tuesday" if "China Southern" in str(v_selected_hubs) else "Wednesday"
-    
+    # Hub Affinity Mapping
+    affinity = "Standard"
+    if "HKG" in v_origin_final: affinity = "Cathay"
+    elif "BKK" in v_origin_final or "DMK" in v_origin_final: affinity = "Thai"
+    elif any(h in v_origin_final for h in ["CAN", "PKX", "PVG", "PEK"]): affinity = "ChinaMainland"
+    elif "SIN" in v_origin_final: affinity = "SIA"
+
     res_l, res_r = st.columns([1.8, 1])
     with res_l:
-        st.markdown(f"#### 🔮 Strategic Forecast: All 7 Carriers")
-        st.success(f"""
-            **Optimal Purchase Window:** {rec_buy_week} before {d_dep.strftime('%d/%m/%y')}  
-            **Predicted Cheapest Day:** {predicted_cheapest_day}  
-            **Model Stance:** Current departure ({dep_day}) is {'✅ Optimal' if is_cheap_day else '⚠️ Peak Day Pricing'}.
-        """)
+        st.markdown(f"#### 🔮 Strategic Forecast: {u_origin_cat} ➔ {u_dest_input}")
+        st.info(f"**Hub Affinity Detected:** {affinity} Priority Applied.")
+        st.success(f"**Best Booking Window:** {'18 weeks' if is_peak else '8 weeks'} prior to {d_dep.strftime('%d/%m/%y')}")
 
     with res_r:
-        # Multipliers: Base (980) * Peak (1.45) * TripType (0.65 for One-way) * Day (0.88 if CheapDay)
         day_mod = 0.88 if is_cheap_day else 1.05
         trip_mod = 1.0 if v_trip_type == "Round Trip" else 0.65
         peak_mod = 1.45 if is_peak else 1.0
         
         base_unit = 980 * peak_mod * trip_mod * day_mod
         total_price = ((adults + teens) * base_unit) + (children * base_unit * 0.75)
-        st.metric("7-Airline Avg Prediction", f"${total_price:,.0f}")
+        st.metric("Unified 7-Airline Avg", f"${total_price:,.0f}")
 
-    # 5. FULL 7-CARRIER PERFORMANCE GRID
-    # Pricing weights: 1.0 (Base), Connections are 0.6-0.8x of SIA base.
-    carriers = {
-        "Singapore Airlines": {"base": 1.0, "route": "Direct"},
-        "ANA / JAL": {"base": 0.94, "route": "Direct"},
-        "Cathay Pacific": {"base": 0.81, "route": "1-Stop via HKG"},
-        "Thai Airways (TG)": {"base": 0.72, "route": "1-Stop via BKK"},
-        "China Southern (CZ)": {"base": 0.65, "route": "Direct/1-Stop via CAN"},
-        "Air China": {"base": 0.62, "route": "1-Stop via PEK"}
+    # 5. HUB-PRIORITIZED CARRIER GRID
+    # Pricing adjusts based on the "Origin" hub
+    carrier_data = {
+        "Singapore Airlines": {"weight": 1.0 if affinity != "SIA" else 0.90, "type": "Hub Carrier" if affinity == "SIA" else "Direct/Premium"},
+        "ANA / JAL": {"weight": 0.94, "type": "Partner/Direct"},
+        "Cathay Pacific": {"weight": 1.0 if affinity != "Cathay" else 0.82, "type": "Hub Carrier" if affinity == "Cathay" else "1-Stop via HKG"},
+        "Thai Airways (TG)": {"weight": 1.0 if affinity != "Thai" else 0.78, "type": "Hub Carrier" if affinity == "Thai" else "1-Stop via BKK"},
+        "China Southern (CZ)": {"weight": 1.0 if affinity != "ChinaMainland" else 0.70, "type": "Hub Carrier" if affinity == "ChinaMainland" else "1-Stop via CAN"},
+        "Air China": {"weight": 0.62, "type": "1-Stop via PEK"}
     }
     
-    grid_data = []
-    for c, info in carriers.items():
-        p = base_unit * info["base"]
-        grid_data.append({
-            "Carrier": c,
-            "Adult Est.": f"${p:,.0f}",
-            "Child Est.": f"${p*0.75:,.0f}",
-            "Route Style": info["route"]
-        })
-    st.table(grid_data)
+    grid = []
+    for c, info in carrier_data.items():
+        p = base_unit * info["weight"]
+        grid.append({"Carrier": c, "Adult Est.": f"${p:,.0f}", "Child Est.": f"${p*0.75:,.0f}", "Strategic Role": info["type"]})
+    st.table(grid)
 
-    # 6. PRICE TREND CHART (Original Syntax)
-    st.write(f"**Price Projection: Weeks leading to {d_dep.strftime('%d/%m/%y')}**")
+    # 6. PRICE TREND CHART
+    st.write(f"**Price Projection: {v_origin_final} ➔ {u_dest_input}**")
     weeks = list(range(22, 0, -1))
-    prices = [total_price * (1.25 if w > 18 else 0.88 if w > 8 else 1.15) for w in weeks]
-    st.area_chart(pd.DataFrame({"Price (SGD)": prices}, index=weeks), color="#ffd700")
+    prices = [total_price * (1.25 if w > 18 else 0.85 if w > 8 else 1.2) for w in weeks]
+    st.area_chart(pd.DataFrame({"Price (Est)": prices}, index=weeks), color="#ffd700")
     
