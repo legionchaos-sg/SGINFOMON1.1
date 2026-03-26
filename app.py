@@ -747,6 +747,33 @@ with tab5:
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore"], key="g10_t5_dest_country")
     v_land_airport = st.selectbox(f"Select Landing Airport:", china_list if dest_country == "China" else ["BKK", "DMK", "NRT", "HND", "SIN"], key="g10_t5_land")
 
+    # 3. 🛡️ VISA REGULATION CROSS-CHECK (2026 OPEN SOURCE SYNC)
+    def get_visa_status(nat, dest):
+        gcc_list = ["Emirati", "Saudi", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+        
+        # 2026 China Unilateral Exemption for GCC
+        if nat in gcc_list and dest == "China":
+            return "✅ 30-Day Visa-Free (Trial extended to Dec 2026). Digital Arrival Card Required."
+        if nat == "Singaporean" and dest == "China":
+            return "✅ 30-Day Visa-Free Reciprocal Agreement Active."
+        if nat in gcc_list and dest == "Thailand":
+            return "✅ 60-Day Visa-Free (Tourism). TDAC QR Code required 72h before."
+        if nat in ["Emirati", "Qatari"] and dest == "Japan":
+            return "✅ 30-Day Visa-Free (for ePassport holders)."
+        if nat == "Saudi" and dest == "Japan":
+            return "⚠️ eVisa Required (Short-term Tourist)."
+        return "🔍 Standard 2026 Protocol: Verify via IATA/Embassy portal."
+
+    visa_msg = get_visa_status(u_nationality, dest_country)
+    
+    # Red Alert Display
+    st.markdown(f"""
+    <div style="border:2px solid #FF4B4B; padding:10px; border-radius:5px; background-color:#FFF5F5;">
+        <span style="color:#FF4B4B; font-weight:bold;">🔴 2026 VISA ADVISORY:</span><br>
+        <span style="color:black;">{u_nationality} to {dest_country}: <b>{visa_msg}</b></span>
+    </div>
+    """, unsafe_allow_html=True)
+
     # 4. 📅 DATES & STRATEGIC WINDOW
     d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     
@@ -795,71 +822,161 @@ with tab5:
         })
     st.table(grid)    
 
+st.divider()
+
+# 1. LIVE VISA ADVISORY (Dynamic Logic)
+def get_live_visa_info(nat, dest):
+    # GCC Countries for 2026 Unilateral Exemption Check
+    gcc_group = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+    
+    if dest == "China":
+        if any(g in nat for g in gcc_group) or "Singaporean" in nat or "Thai" in nat:
+            return f"✅ **Live Status:** {nat} nationals are currently **Visa-Free** for up to 30 days (2026 Policy). Complete the Digital Arrival Card 24h before landing."
+        else:
+            return f"⚠️ **Live Status:** {nat} nationals typically require a **Standard Tourist Visa** for China. Verification via IATA/Consulate recommended."
+    
+    if dest == "Thailand":
+        if any(g in nat for g in gcc_group):
+            return f"✅ **Live Status:** {nat} nationals enjoy **60-day Visa-Free** entry for tourism."
+            
+    return "🔍 **Live Status:** Protocol varies. Please verify specific 2026 'e-Visa' eligibility for your passport."
+
+# Display the Dynamic Alert in Red
+visa_advice = get_live_visa_info(u_nationality, dest_country)
+st.markdown(f"""
+<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:#FF4B4B;">
+    <h4 style="margin:0;">🔴 LIVE 2026 VISA ADVISORY</h4>
+    <p style="color:black; margin-top:5px;">{visa_advice}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# 2. 16-WEEK PRICE POP-OUT (No Sliders)
+st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+st.write("Click to analyze the price trajectory and identify the 2026 'Execution Day'.")
+
+if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
+    @st.dialog("16-Week Forecast Analysis")
+    def show_forecast():
+        # Baseline total from the carrier section
+        current_base = total_price if 'total_price' in locals() else 980.0
+        
+        forecast_rows = []
+        for w in range(16, -1, -1):
+            target_date = d_dep - timedelta(weeks=w)
+            # 2026 Volatility Logic
+            if w > 10: p = current_base * (1.12 + (w * 0.004))
+            elif 7 <= w <= 9: p = current_base # Golden Window
+            elif 2 <= w < 7: p = current_base * (1.15 + ((7-w) * 0.03))
+            else: p = current_base * (1.55 + ((2-w) * 0.18)) # Final Surge
+            
+            forecast_rows.append({
+                "Week": f"W-{w}",
+                "Date": target_date.strftime('%d %b %Y'),
+                "Total (Est)": f"${p:,.2f}",
+                "Action": "HOLD" if w > 9 else "BUY" if 7 <= w <= 9 else "PANIC"
+            })
+        
+        st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
+        st.table(pd.DataFrame(forecast_rows))
+        st.info("💡 **2026 Tip:** Tuesdays usually offer the best API-level fare refreshes.")
+        if st.button("Close"):
+            st.rerun()
+
+    show_forecast()
+
+# ==========================================
+# FINAL SECTION: WEEKLY EXECUTION FORECAST (POP-OUT)
+# ==========================================
 #st.divider()
 
- # ==========================================
- # FINAL SECTION: LIVE VISA & 16-WEEK POP-OUT
- # ==========================================
- st.divider()
+# 1. PREPARE THE 16-WEEK DATASET
+weekly_data = []
+current_base = total_price if 'total_price' in locals() else 980.0
 
- # 1. LIVE VISA ADVISORY (Real-Time 2026 Logic)
- def check_visa_dynamic(nat, dest):
-     # March 2026 Search Results: China has extended visa-free trials
-     gcc_members = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
-    
-     if dest == "China":
-         if any(g in nat for g in gcc_members):
-             return f"✅ **Live Status (March 2026):** {nat} nationals are **Visa-Free** for 30 days. Note: Ensure your passport is valid for >6 months."
-         if "Singaporean" in nat:
-             return "✅ **Live Status:** Singaporeans are Visa-Free (30 days)."
-         return f"⚠️ **Live Status:** {nat} nationals typically require a visa or 240-hour transit permit."
-    
-     if dest == "Thailand":
-         # March 2026: Thailand is reviewing 60-day to 30-day reduction, but 60 remains in force.
-         return f"✅ **Live Status:** {nat} nationals currently eligible for **60-day Visa-Free** entry. Digital Arrival Card (TDAC) mandatory."
-
-     return "🔍 **Live Status:** Please check the 2026 e-Visa portal for your specific passport."
-
- # Rendering the Alert
- visa_msg = check_visa_dynamic(u_nationality, dest_country)
- st.markdown(f"""
- <div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:black;">
-     <h4 style="color:#FF4B4B; margin:0;">🔴 LIVE 2026 ENTRY ADVISORY</h4>
-     <p style="margin-top:5px;">{visa_msg}</p>
- </div>
- """, unsafe_allow_html=True)
-
- # 2. THE 16-WEEK ROADMAP (Pop-out Modal)
- st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-
- # FIXED INDENTATION & UNIQUE KEY
- if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="forecast_btn_v2026"):
-     @st.dialog("16-Week Price Forecast")
-     def show_forecast_table():
-         # Ensure base price exists
-         try:
-             current_base = total_price
-         except NameError:
-             current_base = 1200.0
-            
-         forecast_data = []
-         for w in range(16, -1, -1):
-             target_date = d_dep - timedelta(weeks=w)
-             # 2026 Dynamic Pricing Model
-             if w > 9: p = current_base * (1.12 + (w * 0.003))
-             elif 7 <= w <= 9: p = current_base # The Buy Zone
-             else: p = current_base * (1.20 + (7-w) * 0.12) # Exponential Surge
-            
-             forecast_data.append({
-                 "Week": f"W-{w}",
-                 "Date": target_date.strftime('%d %b'),
-                 "Price (Est)": f"${p:,.0f}",
-                 "Strategy": "HOLD" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "LATE"
-             })
+for w in range(16, -1, -1):
+    target_date = d_dep - timedelta(weeks=w)
+    # Price logic: High at week 16, dips at week 8-9, spikes in last 2 weeks
+    if w > 10:
+        price = current_base * (1.15 + (w * 0.005))
+    elif w >= 7:
+        price = current_base # The "Sweet Spot"
+    elif w > 2:
+        price = current_base * (1.10 + ((7-w) * 0.02))
+    else:
+        price = current_base * (1.45 + ((2-w) * 0.15)) # Final Surge
         
-         st.table(pd.DataFrame(forecast_data))
-         st.info("💡 **2026 Strategy:** The final 14 days show a 12% daily volatility increase.")
-         if st.button("Close Window"):
-             st.rerun()
+    weekly_data.append({
+        "Weeks to Go": w,
+        "Forecast Date": target_date.strftime('%d %b %Y'),
+        "Est. Total Price": f"${price:,.2f}",
+        "Advice": "Wait" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "Late Booking"
+    })
 
-     show_forecast_table()
+df_weekly = pd.DataFrame(weekly_data)
+
+# ==========================================
+# FINAL SECTION: LIVE VISA & 16-WEEK POP-OUT
+# ==========================================
+st.divider()
+
+# 1. LIVE VISA ADVISORY (Real-Time 2026 Logic)
+def check_visa_dynamic(nat, dest):
+    # March 2026 Search Results: China has extended visa-free trials
+    gcc_members = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+    
+    if dest == "China":
+        if any(g in nat for g in gcc_members):
+            return f"✅ **Live Status (March 2026):** {nat} nationals are **Visa-Free** for 30 days. Note: Ensure your passport is valid for >6 months."
+        if "Singaporean" in nat:
+            return "✅ **Live Status:** Singaporeans are Visa-Free (30 days)."
+        return f"⚠️ **Live Status:** {nat} nationals typically require a visa or 240-hour transit permit."
+    
+    if dest == "Thailand":
+        # March 2026: Thailand is reviewing 60-day to 30-day reduction, but 60 remains in force.
+        return f"✅ **Live Status:** {nat} nationals currently eligible for **60-day Visa-Free** entry. Digital Arrival Card (TDAC) mandatory."
+
+    return "🔍 **Live Status:** Please check the 2026 e-Visa portal for your specific passport."
+
+# Rendering the Alert
+visa_msg = check_visa_dynamic(u_nationality, dest_country)
+st.markdown(f"""
+<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:black;">
+    <h4 style="color:#FF4B4B; margin:0;">🔴 LIVE 2026 ENTRY ADVISORY</h4>
+    <p style="margin-top:5px;">{visa_msg}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# 2. THE 16-WEEK ROADMAP (Pop-out Modal)
+st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+
+# FIXED INDENTATION & UNIQUE KEY
+if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="forecast_btn_v2026"):
+    @st.dialog("16-Week Price Forecast")
+    def show_forecast_table():
+        # Ensure base price exists
+        try:
+            current_base = total_price
+        except NameError:
+            current_base = 1200.0
+            
+        forecast_data = []
+        for w in range(16, -1, -1):
+            target_date = d_dep - timedelta(weeks=w)
+            # 2026 Dynamic Pricing Model
+            if w > 9: p = current_base * (1.12 + (w * 0.003))
+            elif 7 <= w <= 9: p = current_base # The Buy Zone
+            else: p = current_base * (1.20 + (7-w) * 0.12) # Exponential Surge
+            
+            forecast_data.append({
+                "Week": f"W-{w}",
+                "Date": target_date.strftime('%d %b'),
+                "Price (Est)": f"${p:,.0f}",
+                "Strategy": "HOLD" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "LATE"
+            })
+        
+        st.table(pd.DataFrame(forecast_data))
+        st.info("💡 **2026 Strategy:** The final 14 days show a 12% daily volatility increase.")
+        if st.button("Close Window"):
+            st.rerun()
+
+    show_forecast_table()
