@@ -781,7 +781,7 @@ with tab5:
         thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)", "Krabi (KBV)", "Mae Fah Luang–Chiang Rai (CEI)", "U-Tapao (UTP)", "Samui (USM)", "Hat Yai (HDY)"]
         if u_origin_cat == "China":
             v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
-        else if u_origin_cat == "Thailand":
+        elif u_origin_cat == "Thailand":
             v_origin_final = st.selectbox("Select Thailand Origin Airport:", thailand_list, key="g10_t6_china_orig")
         else
             v_origin_final = u_origin_cat
