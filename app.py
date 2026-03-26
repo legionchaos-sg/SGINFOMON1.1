@@ -797,69 +797,69 @@ with tab5:
 
 #st.divider()
 
-# ==========================================
-# FINAL SECTION: LIVE VISA & 16-WEEK POP-OUT
-# ==========================================
-st.divider()
+ # ==========================================
+ # FINAL SECTION: LIVE VISA & 16-WEEK POP-OUT
+ # ==========================================
+ st.divider()
 
-# 1. LIVE VISA ADVISORY (Real-Time 2026 Logic)
-def check_visa_dynamic(nat, dest):
-    # March 2026 Search Results: China has extended visa-free trials
-    gcc_members = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+ # 1. LIVE VISA ADVISORY (Real-Time 2026 Logic)
+ def check_visa_dynamic(nat, dest):
+     # March 2026 Search Results: China has extended visa-free trials
+     gcc_members = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
     
-    if dest == "China":
-        if any(g in nat for g in gcc_members):
-            return f"✅ **Live Status (March 2026):** {nat} nationals are **Visa-Free** for 30 days. Note: Ensure your passport is valid for >6 months."
-        if "Singaporean" in nat:
-            return "✅ **Live Status:** Singaporeans are Visa-Free (30 days)."
-        return f"⚠️ **Live Status:** {nat} nationals typically require a visa or 240-hour transit permit."
+     if dest == "China":
+         if any(g in nat for g in gcc_members):
+             return f"✅ **Live Status (March 2026):** {nat} nationals are **Visa-Free** for 30 days. Note: Ensure your passport is valid for >6 months."
+         if "Singaporean" in nat:
+             return "✅ **Live Status:** Singaporeans are Visa-Free (30 days)."
+         return f"⚠️ **Live Status:** {nat} nationals typically require a visa or 240-hour transit permit."
     
-    if dest == "Thailand":
-        # March 2026: Thailand is reviewing 60-day to 30-day reduction, but 60 remains in force.
-        return f"✅ **Live Status:** {nat} nationals currently eligible for **60-day Visa-Free** entry. Digital Arrival Card (TDAC) mandatory."
+     if dest == "Thailand":
+         # March 2026: Thailand is reviewing 60-day to 30-day reduction, but 60 remains in force.
+         return f"✅ **Live Status:** {nat} nationals currently eligible for **60-day Visa-Free** entry. Digital Arrival Card (TDAC) mandatory."
 
-    return "🔍 **Live Status:** Please check the 2026 e-Visa portal for your specific passport."
+     return "🔍 **Live Status:** Please check the 2026 e-Visa portal for your specific passport."
 
-# Rendering the Alert
-visa_msg = check_visa_dynamic(u_nationality, dest_country)
-st.markdown(f"""
-<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:black;">
-    <h4 style="color:#FF4B4B; margin:0;">🔴 LIVE 2026 ENTRY ADVISORY</h4>
-    <p style="margin-top:5px;">{visa_msg}</p>
-</div>
-""", unsafe_allow_html=True)
+ # Rendering the Alert
+ visa_msg = check_visa_dynamic(u_nationality, dest_country)
+ st.markdown(f"""
+ <div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5; color:black;">
+     <h4 style="color:#FF4B4B; margin:0;">🔴 LIVE 2026 ENTRY ADVISORY</h4>
+     <p style="margin-top:5px;">{visa_msg}</p>
+ </div>
+ """, unsafe_allow_html=True)
 
-# 2. THE 16-WEEK ROADMAP (Pop-out Modal)
-st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+ # 2. THE 16-WEEK ROADMAP (Pop-out Modal)
+ st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
 
-# FIXED INDENTATION & UNIQUE KEY
-if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="forecast_btn_v2026"):
-    @st.dialog("16-Week Price Forecast")
-    def show_forecast_table():
-        # Ensure base price exists
-        try:
-            current_base = total_price
-        except NameError:
-            current_base = 1200.0
+ # FIXED INDENTATION & UNIQUE KEY
+ if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="forecast_btn_v2026"):
+     @st.dialog("16-Week Price Forecast")
+     def show_forecast_table():
+         # Ensure base price exists
+         try:
+             current_base = total_price
+         except NameError:
+             current_base = 1200.0
             
-        forecast_data = []
-        for w in range(16, -1, -1):
-            target_date = d_dep - timedelta(weeks=w)
-            # 2026 Dynamic Pricing Model
-            if w > 9: p = current_base * (1.12 + (w * 0.003))
-            elif 7 <= w <= 9: p = current_base # The Buy Zone
-            else: p = current_base * (1.20 + (7-w) * 0.12) # Exponential Surge
+         forecast_data = []
+         for w in range(16, -1, -1):
+             target_date = d_dep - timedelta(weeks=w)
+             # 2026 Dynamic Pricing Model
+             if w > 9: p = current_base * (1.12 + (w * 0.003))
+             elif 7 <= w <= 9: p = current_base # The Buy Zone
+             else: p = current_base * (1.20 + (7-w) * 0.12) # Exponential Surge
             
-            forecast_data.append({
-                "Week": f"W-{w}",
-                "Date": target_date.strftime('%d %b'),
-                "Price (Est)": f"${p:,.0f}",
-                "Strategy": "HOLD" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "LATE"
-            })
+             forecast_data.append({
+                 "Week": f"W-{w}",
+                 "Date": target_date.strftime('%d %b'),
+                 "Price (Est)": f"${p:,.0f}",
+                 "Strategy": "HOLD" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "LATE"
+             })
         
-        st.table(pd.DataFrame(forecast_data))
-        st.info("💡 **2026 Strategy:** The final 14 days show a 12% daily volatility increase.")
-        if st.button("Close Window"):
-            st.rerun()
+         st.table(pd.DataFrame(forecast_data))
+         st.info("💡 **2026 Strategy:** The final 14 days show a 12% daily volatility increase.")
+         if st.button("Close Window"):
+             st.rerun()
 
-    show_forecast_table()
+     show_forecast_table()
