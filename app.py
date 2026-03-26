@@ -550,9 +550,7 @@ with tab3:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-
-    st.divider()
-
+    #st.divider()
     # 3. ROW 2: AMOUNT & TARGET PRICE
     r2_col1, r2_col2 = st.columns(2)
     with r2_col1:
@@ -599,7 +597,7 @@ with tab3:
 
     if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
         st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
-# [APPEND IMMEDIATELY AFTER TAB 3 BLOCK]
+
 # ==========================================
 # TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
 # ==========================================
