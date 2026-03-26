@@ -628,12 +628,12 @@ with tab3:
         st.markdown('</div>', unsafe_allow_html=True) # Close the ID div
     # ---------------------------------------------------------
 
-    # 4. ROW 2: AMOUNT & TARGET
-    r2_c1, r2_c2 = st.columns(2)
-    with r2_c1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
-    with r2_c2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
+    # 4. ROW 2: AMOUNT & TARGET (to remove
+    #r2_c1, r2_c2 = st.columns(2)
+    #with r2_c1:
+    #    t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
+    #with r2_c2:
+    #    u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
     # 5. LOGIC & PROBABILITY
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
