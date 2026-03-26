@@ -29,12 +29,7 @@ def show_fuel_details(ftype):
         """, unsafe_allow_html=True)
 
 
-#using GEMINI
-# Setup your 2026 Gemini 3 Flash model
-model = genai.GenerativeModel(
-    model_name='gemini-3-flash-preview',
-    tools=[{"google_search": {}}] # <--- THIS IS THE MAGIC
-)
+
 
 def get_dynamic_flights(origin, dest):
     prompt = f"""
