@@ -819,3 +819,66 @@ with tab5:
             "Status": "Home Carrier" if c["home"] == dest_country else "Partner"
         })
     st.table(grid)    
+
+    # ==========================================
+# FINAL SECTION: EXECUTION PRICE SIMULATION
+# ==========================================
+st.divider()
+st.subheader("📉 Post-Execution Price Volatility Analysis")
+st.write("This chart simulates the price movement surrounding your **Recommended Execution Date** versus the final countdown to departure.")
+
+# Logic for the Simulation Data
+# Start 5 days before execution up to 1 day before departure
+days_to_sim = []
+curr_date = execution_day - timedelta(days=5)
+while curr_date < d_dep:
+    days_to_sim.append(curr_date)
+    curr_date += timedelta(days=1)
+
+# Price curve logic: 
+# 1. 5 days before execution: Prices are volatile/high.
+# 2. Execution Day (Tuesday): Lowest point.
+# 3. Post-Execution: Slow climb.
+# 4. Last 14 days: "Panic Spike" (exponential increase).
+sim_prices = []
+base_val = total_est # Using the calculated total from previous section
+
+for d in days_to_sim:
+    days_from_exec = (d - execution_day).days
+    days_before_dep = (d_dep - d).days
+    
+    if days_from_exec < 0:
+        # Pre-execution: Slightly higher than target
+        p = base_val * (1.05 + (abs(days_from_exec) * 0.01))
+    elif days_from_exec == 0:
+        # Execution Day: The Target Price
+        p = base_val
+    else:
+        # Post-Execution logic
+        if days_before_dep > 14:
+            # Steady climb
+            p = base_val * (1.0 + (days_from_exec * 0.005))
+        else:
+            # The 14-day Surge (Late booking penalty)
+            surge_factor = (14 - days_before_dep) * 0.08
+            p = base_val * (1.1 + surge_factor)
+    sim_prices.append(p)
+
+# Create DataFrame for Slider/Chart
+chart_df = pd.DataFrame({
+    "Date": days_to_sim,
+    "Estimated Price (Total)": sim_prices
+}).set_index("Date")
+
+# Interactive Slider for X-Axis range
+start_idx, end_idx = st.select_slider(
+    'Zoom into specific Date Range:',
+    options=days_to_sim,
+    value=(days_to_sim[0], days_to_sim[-1]),
+    format_func=lambda x: x.strftime('%d %b')
+)
+
+filtered_df = chart_df.loc[start_idx:end_idx]
+st.line_chart(filtered_df, color="#FF0000")
+
+st.info(f"💡 **Analysis:** Purchasing on **{execution_day.strftime('%A, %d %b')}** avoids the predicted **{((sim_prices[-1]/base_val)-1)*100:.1f}%** late-booking surge observed in the final 14 days.")
