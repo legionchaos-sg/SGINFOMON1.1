@@ -492,9 +492,7 @@ with tab2:
 # TAB 3: SYSTEM TOOLS (Safely Appended)
 # ==========================================
 with tab3:
-    st.header("🎯 Tactical Trade Scheduler")
-    
-    # 1. DATA ENGINE (With Market Association for gold 10)
+    # 1. DATA ENGINE (Updated with Price Tracking & Timestamp)
     @st.cache_data(ttl=60)
     def fetch_market_engine_g10(target_iso, days_lookback):
         import yfinance as yf
@@ -504,48 +502,66 @@ with tab3:
         sgt = pytz.timezone('Asia/Singapore')
         now_sgt = datetime.now(sgt)
         
-        # Market Window: Saturday 06:00 SGT to Monday 05:00 SGT
-        is_weekend = False
-        countdown_msg = None
+        # Market Status Logic
+        is_weekend = (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
+                     (now_sgt.weekday() == 6) or \
+                     (now_sgt.weekday() == 0 and now_sgt.hour < 5)
         
-        if (now_sgt.weekday() == 5 and now_sgt.hour >= 6) or \
-           (now_sgt.weekday() == 6) or \
-           (now_sgt.weekday() == 0 and now_sgt.hour < 5):
-            is_weekend = True
-            
-            # Calculate time until Monday 05:00 SGT (Sydney FX Open)
+        countdown_msg = None
+        if is_weekend:
             target_open = now_sgt + timedelta(days=(7 - now_sgt.weekday()) % 7)
             target_open = target_open.replace(hour=5, minute=0, second=0, microsecond=0)
-            if now_sgt.weekday() == 0: 
-                 target_open = now_sgt.replace(hour=5, minute=0, second=0)
-                 
+            if now_sgt.weekday() == 0: target_open = now_sgt.replace(hour=5, minute=0, second=0)
             diff = target_open - now_sgt
             hours, remainder = divmod(int(diff.total_seconds()), 3600)
             minutes, _ = divmod(remainder, 60)
-            # Association Label Added Here
             countdown_msg = f"⏳ Sydney FX Open in {hours}h {minutes}m"
 
         try:
             ticker = yf.Ticker(f"SGD{target_iso}=X")
+            # Fetch 5m intervals to get a "Previous" point
             latest_df = ticker.history(period="1d", interval="5m")
+            
             curr_rate = latest_df['Close'].iloc[-1]
+            prev_rate = latest_df['Close'].iloc[-2] if len(latest_df) > 1 else curr_rate
+            last_update = now_sgt.strftime("%H:%M:%S")
             
             hist_df = ticker.history(period=f"{days_lookback}d")
             hist_rates = hist_df['Close'].tolist()
             
             return {
-                "rate": curr_rate, 
+                "rate": curr_rate,
+                "prev": prev_rate,
+                "timestamp": last_update,
                 "spread": {"CNY": 0.0008, "THB": 0.0015}.get(target_iso, 0.0010),
                 "high": max(hist_rates), 
                 "low": min(hist_rates), 
                 "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.005,
                 "closed": is_weekend,
-                "countdown": countdown_msg
+                "countdown": countdown_msg,
+                "heartbeat": "🔴 MARKET CLOSED" if is_weekend else "🟢 MARKET LIVE"
             }
         except:
-            return {"rate": 5.3771, "spread": 0.0012, "high": 5.41, "low": 5.35, "std": 0.01, "closed": is_weekend, "countdown": countdown_msg}
+            return {"rate": 5.3771, "prev": 5.3770, "timestamp": "--:--", "spread": 0.0012, 
+                    "high": 5.41, "low": 5.35, "std": 0.01, "closed": is_weekend, "heartbeat": "⚠️ FEED DELAY"}
 
-    # 2. UI INPUTS
+    # 2. UI HEADER (Heartbeat)
+    m_data = fetch_market_engine_g10(st.session_state.get("g10_t3_i_final", "CNY"), 10)
+    
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">🎯 Tactical Trade Scheduler</h2>
+            <div style="background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid #444;">
+                <span style="font-size: 0.8rem; font-weight: bold; color: {'#00ff7f' if 'LIVE' in m_data['heartbeat'] else '#ff4b4b'};">
+                    {m_data['heartbeat']}
+                </span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.divider()
+
+    # 3. ROW 1: INPUTS
     r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
     with r1_col1:
         p_stance = st.radio("MAS Policy Stance:", ["Hawkish", "Neutral", "Dovish"], horizontal=True, key="g10_t3_p_final")
@@ -554,65 +570,37 @@ with tab3:
 
     supported_iso = ["CNY", "THB", "JPY", "MYR", "EUR", "USD", "GBP"]
     selected_iso = st.selectbox("Target Currency:", supported_iso, key="g10_t3_i_final", label_visibility="collapsed")
-    
     m_data = fetch_market_engine_g10(selected_iso, lookback)
 
-    # 3. RANGE BOXES
-    with r1_col3:
-        st.markdown(f"""
-            <div style="display: flex; gap: 8px; justify-content: center;">
-                <div style="background: rgba(0,255,127,0.1); padding: 5px; border-radius: 5px; border: 1px solid #00ff7f; width: 100px; text-align:center;">
-                    <small>Model High</small><br><strong>{m_data['high']:.4f}</strong>
-                </div>
-                <div style="background: rgba(255,75,75,0.1); padding: 5px; border-radius: 5px; border: 1px solid #ff4b4b; width: 100px; text-align:center;">
-                    <small>Model Low</small><br><strong>{m_data['low']:.4f}</strong>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.divider()
-
-    # 4. TARGET INPUTS
-    r2_col1, r2_col2 = st.columns(2)
-    with r2_col1:
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
-    with r2_col2:
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
-
-    # 5. OUTPUT DISPLAY
-    speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
-    price_gap = abs(u_target - m_data['rate'])
-    days_req = int(np.ceil(price_gap / (m_data['std'] * speed_mult))) if price_gap > 0 else 0
-    action_dt = (datetime.now(pytz.timezone('Asia/Singapore')) + pd.Timedelta(days=days_req)).strftime('%d %b %Y')
-    z_score = price_gap / (m_data['std'] * np.sqrt(max(days_req, 1)))
-    prob_val = max(5, min(99, 100 * (1 - (z_score / 3))))
-
+    # 4. ROW 2: PRICE & METRICS
     st.markdown("---")
     out_c1, out_c2 = st.columns([1.5, 2])
     with out_c1:
-        st.markdown(f"**Suggest Action Date: {action_dt}**")
-        
-        # Probability Bar
-        p_color = "#00ff7f" if prob_val > 60 else "#ffaa00" if prob_val > 30 else "#ff4b4b"
-        st.markdown(f"""<div style="margin-bottom: 20px;"><small>Possibility Rate:</small> <strong>{prob_val:.1f}%</strong>
-            <div style="background: #333; height: 8px; border-radius: 4px; width: 100%;"><div style="background: {p_color}; height: 8px; border-radius: 4px; width: {prob_val}%;"></div></div></div>""", unsafe_allow_html=True)
-        
-        # STATUS & ASSOCIATION
-        label = "Closed Trading Value (Weekend Gap)" if m_data['closed'] else "Live Market Rate"
+        label = "Closed Trading Value" if m_data['closed'] else "Live Market Rate"
         st.metric(label, f"{m_data['rate']:.4f}")
         
-        if m_data['closed'] and m_data['countdown']:
-            st.info(f"{m_data['countdown']} | Associated: Global Interbank Market")
+        # --- NEW: PREVIOUS RATE & TIMESTAMP ---
+        price_diff = m_data['rate'] - m_data['prev']
+        diff_color = "#00ff7f" if price_diff >= 0 else "#ff4b4b"
+        st.markdown(f"""
+            <div style="font-size: 0.85rem; margin-top: -12px; margin-bottom: 8px;">
+                <span style="color: #888;">Prev: </span>
+                <span style="color: {diff_color}; font-weight: bold;">{m_data['prev']:.4f}</span>
+                <span style="color: #666; margin-left: 10px;">🕒 {m_data['timestamp']} SGT</span>
+            </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown(f"""<div style="color: #888; font-size: 0.85rem; margin-top: -15px;">Est. Market Spread: <span style="color: #aaa;">{m_data['spread']:.4f}</span></div>""", unsafe_allow_html=True)
+        # SPREAD INFO (Pushed below the timestamp)
+        st.markdown(f"""<div style="color: #555; font-size: 0.8rem;">Est. Spread: {m_data['spread']:.4f}</div>""", unsafe_allow_html=True)
+
+        if m_data['closed'] and m_data.get('countdown'):
+            st.info(m_data['countdown'])
 
     with out_c2:
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
+        # Line chart logic...
         path = np.linspace(m_data['rate'], u_target, 10)
-        st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=180)
-
-    if st.button("🔒 Confirm Tactical Execution", use_container_width=True, key="g10_t3_exec_final"):
-        st.success(f"Execution plan locked for {action_dt}. Target Prob: {prob_val:.1f}%")
-# ==========================================
+        st.line_chart(pd.DataFrame({"Path": path, "Model High": [m_data['high']]*10, "Model Low": [m_data['low']]*10}), height=150)# ==========================================
 # TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
 # ==========================================
 with tab4:
