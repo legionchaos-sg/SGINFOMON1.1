@@ -769,19 +769,21 @@ with tab4:
 # TAB 5: AIRFARE & DYNAMIC VISA ENGINE
 # ==========================================
 with tab5:
-    st.header("✈️ Global Airfare Prediction Engine")
+    st.header("✈️ Asia Airfare Prediction Engine")
     
     # 1. ORIGIN & NATIONALITY CONFIG
     col_a, col_b = st.columns(2)
     with col_a:
-        origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China"]
+        origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
         china_list = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
-        
+        thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)", "Krabi (KBV)", "Mae Fah Luang–Chiang Rai (CEI)", "U-Tapao (UTP)", "Samui (USM)", "Hat Yai (HDY)"]
         if u_origin_cat == "China":
             v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
-        else:
+        elseif u_origin_cat == "thailand":
+            v_origin_final = st.selectbox("Select Thailand Origin Airport:", thailand_list, key="g10_t6_china_orig")
+        else
             v_origin_final = u_origin_cat
 
     with col_b:
@@ -793,8 +795,9 @@ with tab5:
     
     airport_map = {
         "China": china_list,
-        "Thailand": ["Bangkok (BKK)", "Bangkok (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
+        "Thailand": thailand_list,
         "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
+        "Hong Kong": ["Hong Kong (HKG"]
         "Singapore": ["Singapore (SIN)"]
     }
     v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
@@ -806,7 +809,7 @@ with tab5:
     with p2: children = st.number_input("Children:", 0, 10, 0)
     with p3: teens = st.number_input("Teens:", 0, 10, 0)
 
-    st.divider()
+    #st.divider()
 
     # 4. CARRIER PRIORITY GRID
     master_carriers = [
