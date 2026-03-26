@@ -619,11 +619,11 @@ with tab3:
         r2_c1, r2_c2 = st.columns(2)
         
         with r2_c1:
-        # NOTE: Using a new unique key 'g10_t3_a_tight' to avoid the Duplicate Error
-        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_tight")
+            # NOTE: Using a new unique key 'g10_t3_a_tight' to avoid the Duplicate Error
+            t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_tight")
         with r2_c2:
-        # NOTE: Using a new unique key 'g10_t3_t_tight' to avoid the Duplicate Error
-        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_tight")
+            # NOTE: Using a new unique key 'g10_t3_t_tight' to avoid the Duplicate Error
+            u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_tight")
             
         st.markdown('</div>', unsafe_allow_html=True) # Close the ID div
     # ---------------------------------------------------------
