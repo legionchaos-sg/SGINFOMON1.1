@@ -754,26 +754,7 @@ with tab5:
     
     v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
 
-    # 3. VISA ALERT ENGINE (RED ALERT TEXT)
-    def get_visa_alert(nat, dest):
-        # Data for 2026 travel cycles
-        rules = {
-            ("Singaporean", "China"): "✅ Visa-Free (up to 30 days) extended through Dec 2026.",
-            ("Singaporean", "Thailand"): "✅ Visa-Free (up to 60 days).",
-            ("Chinese", "Singapore"): "✅ Visa-Free (up to 30 days).",
-            ("Thai", "Japan"): "✅ Visa-Free (up to 15 days).",
-            ("Thai", "China"): "✅ Visa-Free (up to 30 days)."
-        }
-        res = rules.get((nat, dest), "🔍 Check Embassy: Standard 2026 Visa Rules Apply.")
-        return res
-
-    visa_text = get_visa_alert(u_nationality, dest_country)
-    # Using red blockquote for the alert
-    st.markdown(f"""
-    > 🔴 **VISA ALERT ( {u_nationality} → {dest_country} ):** > **{visa_text}** > *Verify passport validity >6 months before booking.*
-    """, unsafe_allow_html=True)
-
-    # 4. PRICE & DATE LOGIC
+    # 3. PRICE & DATE LOGIC
     d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     p1, p2, p3 = st.columns(3)
     with p1: adults = st.number_input("Adults:", 1, 10, 1)
@@ -782,7 +763,7 @@ with tab5:
 
     st.divider()
 
-    # 5. CARRIER PRIORITY GRID
+    # 4. CARRIER PRIORITY GRID
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
@@ -792,12 +773,10 @@ with tab5:
         {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "NRT/HND"}
     ]
 
-    # Re-order: Destination Home Carrier(s) first
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
 
-    # Airfare Math
     is_peak = d_dep.month in [6, 12]
     base_price = 820 if "China" in u_origin_cat else 980
     multiplier = (1.45 if is_peak else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
@@ -805,12 +784,8 @@ with tab5:
 
     grid_data = []
     for c in final_sorted:
-        # Route Validation (Traffic Rights)
-        # N.A if domestic flight by foreign carrier
         is_domestic = (u_origin_cat == dest_country)
-        can_fly = True
-        if is_domestic and c["home"] != dest_country:
-            can_fly = False
+        can_fly = not (is_domestic and c["home"] != dest_country)
             
         if can_fly:
             price = final_unit * c["w"]
@@ -826,10 +801,44 @@ with tab5:
     st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
     st.table(grid_data)
 
-    # 6. CHART
-    total_est = (adults + teens + (children * 0.75)) * final_unit
-    st.write(f"**22-Week Price Projection: {v_origin_final} ➔ {v_land_airport}**")
-    weeks = list(range(22, 0, -1))
-    prices = [total_est * (1.3 if w > 17 else 0.88 if w > 7 else 1.15) for w in weeks]
-    st.area_chart(pd.DataFrame({"Price (Est)": prices}, index=weeks), color="#ffd700")
+    # 5. STRATEGIC 16-WEEK FORECAST (POP-OUT MODAL)
+    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+    st.write("Click below to view the predicted weekly price trajectory and 2026 entry protocols.")
+
+    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_tab5_forecast_btn"):
+        @st.dialog("16-Week Execution Roadmap")
+        def show_forecast():
+            st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
+            
+            # Dynamic Visa Logic Check
+            gcc_countries = ["Saudi", "Emirati", "Qatari", "Kuwaiti", "Omani", "Bahraini"]
+            visa_status = "🔍 Status: Check 2026 Portal"
+            if dest_country == "China":
+                if any(g in u_nationality for g in gcc_countries) or "Singaporean" in u_nationality:
+                    visa_status = "✅ 30-Day Visa-Free entry confirmed for 2026."
+            
+            st.info(f"🛂 **Live Visa Update:** {visa_status}")
+            
+            total_est = (adults + teens + (children * 0.75)) * final_unit
+            forecast_rows = []
+            for w in range(16, -1, -1):
+                target_date = d_dep - timedelta(weeks=w)
+                # 2026 Pricing Algorithm
+                if w > 10: p = total_est * (1.15 + (w * 0.005))
+                elif 7 <= w <= 9: p = total_est # Target Buy Window
+                elif 2 <= w < 7: p = total_est * (1.10 + (7-w) * 0.04)
+                else: p = total_est * (1.50 + (2-w) * 0.15) # Final Surge
+                
+                forecast_rows.append({
+                    "Weeks to Go": f"W-{w}",
+                    "Date": target_date.strftime('%d %b %Y'),
+                    "Est. Total": f"${p:,.0f}",
+                    "Advice": "HOLD" if w > 9 else "BUY" if 7 <= w <= 9 else "PANIC"
+                })
+            
+            st.table(pd.DataFrame(forecast_rows))
+            if st.button("Close Forecast"):
+                st.rerun()
+
+        show_forecast()
     
