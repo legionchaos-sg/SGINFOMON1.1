@@ -858,36 +858,6 @@ if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
     show_forecast()
 
 # ==========================================
-# FINAL SECTION: WEEKLY EXECUTION FORECAST (POP-OUT)
-# ==========================================
-#st.divider()
-
-# 1. PREPARE THE 16-WEEK DATASET
-weekly_data = []
-current_base = total_price if 'total_price' in locals() else 980.0
-
-for w in range(16, -1, -1):
-    target_date = d_dep - timedelta(weeks=w)
-    # Price logic: High at week 16, dips at week 8-9, spikes in last 2 weeks
-    if w > 10:
-        price = current_base * (1.15 + (w * 0.005))
-    elif w >= 7:
-        price = current_base # The "Sweet Spot"
-    elif w > 2:
-        price = current_base * (1.10 + ((7-w) * 0.02))
-    else:
-        price = current_base * (1.45 + ((2-w) * 0.15)) # Final Surge
-        
-    weekly_data.append({
-        "Weeks to Go": w,
-        "Forecast Date": target_date.strftime('%d %b %Y'),
-        "Est. Total Price": f"${price:,.2f}",
-        "Advice": "Wait" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "Late Booking"
-    })
-
-df_weekly = pd.DataFrame(weekly_data)
-
-# ==========================================
 # FINAL SECTION: LIVE VISA & 16-WEEK POP-OUT
 # ==========================================
 st.divider()
