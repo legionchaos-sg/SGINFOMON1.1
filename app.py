@@ -806,7 +806,7 @@ with tab5:
     def check_visa_dynamic(nat, dest):
         # Official 2026 Exemption List per Embassy Circular (50+ Countries)
         exempt_30d = [
-            "Brunei", "France", "Germany", "Italy", "Spain", "Netherlands", "Switzerland", 
+            "Brunei", ""Malaysia", "France", "Germany", "Italy", "Spain", "Netherlands", "Switzerland", 
             "Ireland", "Hungary", "Austria", "Belgium", "Luxembourg", "New Zealand", 
             "Australia", "Poland", "Portugal", "Greece", "Cyprus", "Slovenia", "Slovakia", 
             "Norway", "Finland", "Denmark", "Iceland", "Andorra", "Monaco", "Liechtenstein", 
