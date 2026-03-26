@@ -722,6 +722,9 @@ with tab4:
 # ==========================================
 # TAB 5: AF STRATEGIC BUY - ENHANCED LOGIC
 # ==========================================
+# ==========================================
+# TAB 5: AIRFARE & DYNAMIC VISA ENGINE
+# ==========================================
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     
@@ -785,7 +788,6 @@ with tab5:
     for c in final_sorted:
         is_domestic = (u_origin_cat == dest_country)
         can_fly = not (is_domestic and c["home"] != dest_country)
-            
         if can_fly:
             price = final_unit * c["w"]
             grid_data.append({
@@ -800,10 +802,10 @@ with tab5:
     st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
     st.table(grid_data)
 
-    # --- INJECTED DYNAMIC VISA ADVISORY (ONE-LINER) ---
-    def get_dynamic_visa_info(nat, dest):
-        # Official 2026 30-Day Visa-Free List (Expanded to 50+ Countries)
-        v_free_list = [
+    # --- INJECTED DYNAMIC 2026 EMBASSY VISA ADVISOR ---
+    def check_visa_dynamic(nat, dest):
+        # Official 2026 Exemption List per Embassy Circular (50+ Countries)
+        exempt_30d = [
             "Brunei", "France", "Germany", "Italy", "Spain", "Netherlands", "Switzerland", 
             "Ireland", "Hungary", "Austria", "Belgium", "Luxembourg", "New Zealand", 
             "Australia", "Poland", "Portugal", "Greece", "Cyprus", "Slovenia", "Slovakia", 
@@ -814,36 +816,34 @@ with tab5:
             "Canada", "United Kingdom", "Uae", "Qatar", "Singaporean", "Thai"
         ]
         
-        # Clean input for matching
         nat_clean = nat.replace("British", "United Kingdom").replace("Uk", "United Kingdom")
         
-        if nat == dest: return "✅ Visa Not Required (Home Country)."
+        if nat.lower() == dest.lower(): return "✅ Visa Not Required (Home Country)."
         
         if dest == "China":
-            # Match against the expanded 50-country list
-            if any(country.lower() in nat_clean.lower() for country in v_free_list):
-                return "✅ Visa Not Required (30 Days Visa-Free for Tourism/Business/Transit)."
-            return "⚠️ Visa Required (Apply for Tourist L-Visa)."
-            
+            if any(c.lower() in nat_clean.lower() for c in exempt_30d):
+                return "✅ Visa Not Required (30 Days Visa-Free: Tourism/Business/Transit)."
+            return "⚠️ Visa Required (Official L-Visa Required for Entry)."
+        
         elif dest == "Thailand":
-            if "Singaporean" in nat or any(g in nat for g in ["Saudi", "Oman", "Kuwait", "Bahrain", "Uae", "Qatar"]):
+            if "Singaporean" in nat or any(g in nat for g in ["Saudi", "Uae", "Qatar", "Oman"]):
                 return "✅ Visa Not Required (60 Days Visa-Free)."
             return "⚠️ Visa Required (e-Visa or VOA)."
+            
+        return "🔍 Status: Check 2026 Portal for bilateral updates."
 
-        return "🔍 Status: Check 2026 Portal for specific bilateral rules."
-
-    # Render the result below the pricing table
-    visa_display = get_dynamic_visa_info(u_nationality, dest_country)
-    st.write(f"**🛂 2026 Entry Protocol:** {visa_display}")
+    visa_alert = check_visa_dynamic(u_nationality, dest_country)
+    st.markdown(f"**🛂 2026 Entry Protocol:** {visa_alert}")
     # --------------------------------------------------
+
+    st.divider()
 
     # 5. STRATEGIC 16-WEEK FORECAST (POP-OUT MODAL)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_tab5_forecast_btn"):
+    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_t5_forecast_btn"):
         @st.dialog("16-Week Execution Roadmap")
         def show_forecast():
             st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
-            
             total_est = (adults + teens + (children * 0.75)) * final_unit
             forecast_rows = []
             for w in range(16, -1, -1):
@@ -859,10 +859,7 @@ with tab5:
                     "Est. Total": f"${p:,.0f}",
                     "Advice": "HOLD" if w > 9 else "BUY" if 7 <= w <= 9 else "PANIC"
                 })
-            
             st.table(pd.DataFrame(forecast_rows))
-            if st.button("Close Forecast"):
-                st.rerun()
-
+            if st.button("Close"): st.rerun()
         show_forecast()
     
