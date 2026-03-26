@@ -856,10 +856,7 @@ with tab5:
     visa_alert = check_visa_dynamic(u_nationality, dest_country)
     st.markdown(f"**🛂 2026 Entry Protocol:** {visa_alert}")
 
-    st.divider()
-
     # 5. STRATEGIC 16-WEEK FORECAST (RESTORED)
-    st.divider()
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
     
     if st.button("🚀 View Weekly Price Forecast (Top 3 Focus)", key="g10_t5_forecast_btn"):
@@ -869,7 +866,8 @@ with tab5:
             
             # --- NEW: AIRLINE PREFERENCE TOGGLE ---
             # Identifies the Home Airline based on the destination you picked
-            home_airline = next((c for c in master_carriers if c["home"] == dest_country), master_carriers[0])
+            #home_airline = next((c for c in master_carriers if c["home"] == dest_country), master_carriers[0])
+            home_airline = next((c for c in master_carriers if c["home"] == origin_label), master_carriers[0])
             top_3_names = [c["name"] for c in final_sorted[:3]]
             
             use_home = st.toggle(f"Predict based on Home Carrier ({home_airline['name']})", value=False, key="g10_t5_home_toggle")
