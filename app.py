@@ -797,7 +797,7 @@ with tab5:
         "China": china_list,
         "Thailand": thailand_list,
         "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
-        "Hong Kong": ["Hong Kong (HKG"]
+        "Hong Kong": ["Hong Kong (HKG"],
         "Singapore": ["Singapore (SIN)"]
     }
     v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
