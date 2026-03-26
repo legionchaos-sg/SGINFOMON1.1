@@ -792,7 +792,6 @@ with tab5:
     """)
 
     # 5. CARRIER GRID & TRANSIT
-    st.divider()
     adults = st.number_input("Adults:", 1, 10, 1)
     
     master_carriers = [
