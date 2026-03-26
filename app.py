@@ -538,19 +538,25 @@ with tab3:
     import yfinance as yf
 
 @st.cache_data(ttl=60) # Refreshes every 1 minute for true live tracking
+@st.cache_data(ttl=60)
 def fetch_market_engine_g10(target_iso, days_lookback):
     ticker_symbol = f"SGD{target_iso}=X"
     try:
-        # 1. Pull Intraday Data (1-minute intervals for the last day)
         ticker = yf.Ticker(ticker_symbol)
+        # FIX: We use '1d' period with '1m' interval to ensure we get today's data
         latest_df = ticker.history(period="1d", interval="1m")
         
+        # If today is a holiday or market is thin, 1m might be empty. 
+        # Fallback to 5m interval which is more stable.
         if latest_df.empty:
-            raise ValueError("No live data found")
+            latest_df = ticker.history(period="1d", interval="5m")
+
+        if latest_df.empty:
+            return None # Trigger the error message in the UI
             
         curr_rate = latest_df['Close'].iloc[-1]
         
-        # 2. Pull Historical Data for Volatility/High/Low
+        # Get historical high/low for the range boxes
         hist_df = ticker.history(period=f"{days_lookback}d")
         hist_rates = hist_df['Close'].tolist()
         
@@ -558,13 +564,18 @@ def fetch_market_engine_g10(target_iso, days_lookback):
             "rate": curr_rate,
             "high": max(hist_rates),
             "low": min(hist_rates),
-            "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.002
+            "std": np.std(hist_rates) if len(hist_rates) > 1 else curr_rate * 0.002,
+            "success": True
         }
-    except Exception as e:
-        # Fallback to hardcoded verified rates if API is throttled
-        fb = {"CNY": 5.3771, "THB": 25.5533}.get(target_iso, 1.0)
-        return {"rate": fb, "high": fb*1.005, "low": fb*0.995, "std": fb*0.003}
+    except:
+        return None
 
+# --- UI EXECUTION ---
+m_data = fetch_market_engine_g10(selected_iso, lookback)
+
+if m_data is None:
+    st.error(f"⚠️ Connection to Yahoo Finance failed for {selected_iso}. Please try again in a moment.")
+    st.stop() # Prevents the rest of the code from running and showing a blank screen
     # 2. ROW 1: POLICY | DURATION | MODEL RANGE
     r1_col1, r1_col2, r1_col3 = st.columns([2, 1, 2], vertical_alignment="center")
     
