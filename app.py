@@ -783,14 +783,13 @@ with tab5:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        china_list = ["Beijing (PEK)", "Beijing (PKX)", "Shanghai (PVG)", "Shanghai (SHA)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (CTU)", "Chengdu (TFU)", "Hangzhou (HGH)", "Xi'an (XIY)", "Sanya (SYX)", "Chongqing (CKG)", "Kunming (KMG)", "Wuhan (WUH)", "Nanjing (NKG)", "Changsha (CSX)", "Qingdao (TAO)"]
-        thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)", "Krabi (KBV)", "Mae Fah Luang–Chiang Rai (CEI)", "U-Tapao (UTP)", "Samui (USM)", "Hat Yai (HDY)"]
+        china_list = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"]
+        thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
         
-        # FIXED SYNTAX: elif and colons restored
         if "China" in u_origin_cat:
-            v_origin_final = st.selectbox("Select China Origin Airport:", china_list, key="g10_t5_china_orig")
+            v_origin_final = st.selectbox("Select China Origin:", china_list, key="g10_t5_china_orig")
         elif "Thailand" in u_origin_cat:
-            v_origin_final = st.selectbox("Select Thailand Origin Airport:", thailand_list, key="g10_t5_thai_orig_fix")
+            v_origin_final = st.selectbox("Select Thailand Origin:", thailand_list, key="g10_t5_thai_orig")
         else:
             v_origin_final = u_origin_cat
 
@@ -798,25 +797,15 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DYNAMIC DESTINATION & DATES
-    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Other"], key="g10_t5_dest_country")
-    
-    airport_map = {
-        "China": china_list,
-        "Thailand": thailand_list,
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"],
-        "Hong Kong": ["Hong Kong (HKG)"],
-        "Singapore": ["Singapore (SIN)"]
-    }
-    v_land_airport = st.selectbox(f"Select Landing Airport:", airport_map.get(dest_country, ["Other Intl"]), key="g10_t5_land")
-
+    # 2. DATES & DESTINATION
     d_col1, d_col2 = st.columns(2)
     with d_col1:
         d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     with d_col2:
-        # Return date logic restored
         d_ret = st.date_input("Return Date:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
 
+    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Other"], key="g10_t5_dest_country")
+    
     # 3. CARRIER PRIORITY GRID
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
@@ -831,9 +820,8 @@ with tab5:
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
 
-    is_peak = d_dep.month in [6, 12]
     base_price = 820 if "China" in u_origin_cat else 980
-    multiplier = (1.45 if is_peak else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
+    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
     final_unit = base_price * multiplier
 
     grid_data = []
@@ -842,46 +830,62 @@ with tab5:
         grid_data.append({
             "Carrier": c["name"],
             "Adult Est. ($)": f"{price:,.0f}",
-            "Child Est. ($)": f"{price*0.75:,.0f}",
             "Transit Hub": c["hub"] if c["home"] != u_origin_cat and c["home"] != dest_country else "Direct"
         })
 
     st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
     st.table(grid_data)
 
-    # 4. VISA ADVISORY (RESTORED)
-    def check_visa_dynamic(nat, dest):
-        exempt_30d = ["Singaporean", "Thai", "Japan", "Malaysia", "Brunei"]
-        if nat.title() in exempt_30d and dest in ["China", "Thailand"]:
-            return "✅ Visa Not Required (30-60 Days Visa-Free)."
-        return "⚠️ Check 2026 Portal for Entry Requirements."
-
-    visa_alert = check_visa_dynamic(u_nationality, dest_country)
-    st.markdown(f"**🛂 2026 Entry Protocol:** {visa_alert}")
+    # 4. VISA ADVISORY
+    visa_alert = "✅ Visa Not Required (30-60 Days)." if u_nationality in ["Singaporean", "Thai"] and dest_country in ["China", "Thailand"] else "⚠️ Check 2026 Portal."
+    st.info(f"**🛂 2026 Entry Protocol:** {visa_alert}")
 
     st.divider()
 
-    # 5. STRATEGIC 16-WEEK FORECAST (RESTORED)
+    # 5. STRATEGIC 16-WEEK FORECAST (INTERACTIVE POP-UP)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    if st.button("🚀 View Weekly Price Forecast (Pop-out)", key="g10_t5_forecast_btn"):
+    if st.button("🚀 View Weekly Price Forecast (Interactive)", key="g10_t5_forecast_btn"):
         @st.dialog("16-Week Execution Roadmap")
         def show_forecast():
+            # Home Base Logic (Origin)
+            origin_label = u_origin_cat.split(" (")[0]
+            home_airline = next((c for c in master_carriers if c["home"] == origin_label), master_carriers[0])
+            top_3_names = [c["name"] for c in final_sorted[:3]]
+            
+            # --- NEW: AIRLINE SELECTOR INSIDE POP-UP ---
+            st.markdown("### 🛠️ Strategy Configuration")
+            col1, col2 = st.columns(2)
+            with col1:
+                use_home = st.toggle(f"Use Home Base ({home_airline['name']})", value=False, key="g10_t5_pop_home")
+            with col2:
+                selected_carrier_name = st.selectbox("Or Select Specific Airline:", [c["name"] for c in master_carriers], key="g10_t5_pop_select")
+            
+            # Pricing Logic based on selection
+            if use_home:
+                active_carrier = home_airline
+            else:
+                active_carrier = next(c for c in master_carriers if c["name"] == selected_carrier_name)
+            
+            active_unit = final_unit * active_carrier["w"]
+            
             st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
-            total_est = final_unit # simplified for adult unit
+            st.success(f"📈 Showing Strategy for: **{active_carrier['name']}**")
+            
             forecast_rows = []
             for w in range(16, -1, -1):
                 target_date = d_dep - timedelta(weeks=w)
-                if w > 9: advice = "HOLD"
-                elif 7 <= w <= 9: advice = "BUY"
-                else: advice = "PANIC"
+                # Advice includes the Top 3 regardless of which airline is selected for pricing
+                if w > 9: advice = "⏳ HOLD"
+                elif 7 <= w <= 9: advice = f"✅ BUY: {', '.join(top_3_names)}"
+                else: advice = "🚨 PANIC"
                 
-                p = total_est * (1.0 if advice == "BUY" else 1.25)
+                p = active_unit * (1.0 if 7 <= w <= 9 else 1.25)
                 forecast_rows.append({
-                    "Weeks to Go": f"W-{w}",
                     "Date": target_date.strftime('%d %b %Y'),
-                    "Est. Total": f"${p:,.0f}",
-                    "Advice": advice
+                    "Est. Total ($)": f"{p:,.0f}",
+                    "Strategic Advice": advice
                 })
+            
             st.table(forecast_rows)
             if st.button("Close"): st.rerun()
         show_forecast()
