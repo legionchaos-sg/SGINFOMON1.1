@@ -800,6 +800,8 @@ with tab5:
         {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN/PKX"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
         {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"}
+        {"name": "ANA", "home": "Japan", "w": 0.75, "hub": "NRT"}
+        {"name": "Japan Airlines", "home": "Japan", "w": 0.75, "hub": "HND"}
     ]
     
     # Priority Sort: Destination Home Carrier First
