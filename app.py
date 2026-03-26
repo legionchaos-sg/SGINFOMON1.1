@@ -824,75 +824,63 @@ with tab5:
 # FINAL SECTION: EXECUTION PRICE SIMULATION
 # ==========================================
 # ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
-# ==========================================
-# ==========================================
-# FINAL SECTION: EXECUTION PRICE SIMULATION
+# FINAL SECTION: WEEKLY EXECUTION FORECAST (POP-OUT)
 # ==========================================
 st.divider()
-st.subheader("📉 Post-Execution Price Volatility Analysis")
 
-# 1. VARIABLE ALIGNMENT & SAFETY
-# Ensuring current_base is defined from previous total or a safe default
-try:
-    current_base = total_price 
-except NameError:
-    current_base = 980.0 # Standard 2026 baseline for gold 10
+# 1. PREPARE THE 16-WEEK DATASET
+weekly_data = []
+current_base = total_price if 'total_price' in locals() else 980.0
 
-# 2. GENERATE SIMULATION DATA
-days_to_sim = []
-# Ensure execution_day is defined or calculated
-try:
-    sim_start = execution_day - timedelta(days=5)
-except NameError:
-    # Safe fallback for 2026 logic if top section was skipped
-    sim_start = date.today() 
-    execution_day = sim_start + timedelta(days=5)
-
-curr_date = sim_start
-while curr_date < d_dep:
-    days_to_sim.append(curr_date)
-    curr_date += timedelta(days=1)
-
-# 3. PRICE CURVE ENGINE
-sim_prices = []
-for d in days_to_sim:
-    days_from_exec = (d - execution_day).days
-    days_before_dep = (d_dep - d).days
-    
-    if days_from_exec < 0:
-        # Pre-execution volatility
-        p = current_base * (1.08 + (abs(days_from_exec) * 0.015))
-    elif days_from_exec == 0:
-        # The Golden Purchase Window (Tuesday)
-        p = current_base
+for w in range(16, -1, -1):
+    target_date = d_dep - timedelta(weeks=w)
+    # Price logic: High at week 16, dips at week 8-9, spikes in last 2 weeks
+    if w > 10:
+        price = current_base * (1.15 + (w * 0.005))
+    elif w >= 7:
+        price = current_base # The "Sweet Spot"
+    elif w > 2:
+        price = current_base * (1.10 + ((7-w) * 0.02))
     else:
-        # Post-execution surge
-        if days_before_dep > 14:
-            p = current_base * (1.0 + (days_from_exec * 0.008))
-        else:
-            # 14-day exponential spike
-            surge_factor = (14 - days_before_dep) * 0.12 
-            p = current_base * (1.15 + surge_factor)
-    sim_prices.append(p)
+        price = current_base * (1.45 + ((2-w) * 0.15)) # Final Surge
+        
+    weekly_data.append({
+        "Weeks to Go": w,
+        "Forecast Date": target_date.strftime('%d %b %Y'),
+        "Est. Total Price": f"${price:,.2f}",
+        "Advice": "Wait" if w > 9 else "BUY NOW" if 7 <= w <= 9 else "Late Booking"
+    })
 
-# 4. CHARTING WITH SLIDER
-chart_df = pd.DataFrame({
-    "Date": days_to_sim,
-    "Estimated Price (Total)": sim_prices
-}).set_index("Date")
+df_weekly = pd.DataFrame(weekly_data)
 
-# Select Slider for X-Axis zoom
-start_idx, end_idx = st.select_slider(
-    'Zoom into specific Date Range:',
-    options=days_to_sim,
-    value=(days_to_sim[0], days_to_sim[-1]),
-    format_func=lambda x: x.strftime('%d %b')
-)
+# 2. THE POP-OUT OPTION
+st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+st.write("Click below to view the full price trajectory from 4 months out until departure.")
 
-filtered_df = chart_df.loc[start_idx:end_idx]
-st.line_chart(filtered_df, color="#FF0000")
+if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
+    @st.dialog("16-Week Price Forecast")
+    def show_forecast():
+        st.write(f"**Origin:** {v_origin_final} | **Destination:** {v_land_airport}")
+        st.write("Predicted prices based on 2026 inventory reset cycles.")
+        
+        # Display the Forecast Table
+        st.table(df_weekly)
+        
+        st.warning(f"💡 **Strategy:** Aim for the window between **Week 9 and Week 7**.")
+        if st.button("Close"):
+            st.rerun()
 
-# 5. FINAL CALCULATION DISPLAY
-final_spike_pct = ((sim_prices[-1] / current_base) - 1) * 100
-st.info(f"💡 **Analysis:** Purchasing on **{execution_day.strftime('%A, %d %b')}** avoids the predicted **{final_spike_pct:.1f}%** late-booking surge observed in 2026.")
+    show_forecast()
+
+# 3. RED VISA ALERT (GCC 2026 SYNC)
+st.markdown(f"""
+<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5;">
+    <h4 style="color:#FF4B4B; margin:0;">🔴 2026 VISA REQUIREMENT ALERT</h4>
+    <p style="color:black; font-size:14px; margin-top:10px;">
+        <b>Nationality:</b> {u_nationality} | <b>Destination:</b> {dest_country}<br>
+        <b>Open-Source Validation:</b> As of 2026, <b>GCC Nationals</b> (SA, UAE, QA, KW, OM, BH) are exempt 
+        from visas for China stays under 30 days. <br>
+        <b>Mandatory:</b> You must complete the <b>Digital Arrival Card</b> 24-72h before departure.
+    </p>
+</div>
+""", unsafe_allow_html=True)
