@@ -934,15 +934,4 @@ if st.button("🚀 View Weekly Price Forecast (Pop-out)"):
 
     show_forecast()
 
-# 3. RED VISA ALERT (GCC 2026 SYNC)
-st.markdown(f"""
-<div style="border:2px solid #FF4B4B; padding:15px; border-radius:10px; background-color:#FFF5F5;">
-    <h4 style="color:#FF4B4B; margin:0;">🔴 2026 VISA REQUIREMENT ALERT</h4>
-    <p style="color:black; font-size:14px; margin-top:10px;">
-        <b>Nationality:</b> {u_nationality} | <b>Destination:</b> {dest_country}<br>
-        <b>Open-Source Validation:</b> As of 2026, <b>GCC Nationals</b> (SA, UAE, QA, KW, OM, BH) are exempt 
-        from visas for China stays under 30 days. <br>
-        <b>Mandatory:</b> You must complete the <b>Digital Arrival Card</b> 24-72h before departure.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+
