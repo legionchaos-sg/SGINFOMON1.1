@@ -582,58 +582,13 @@ with tab3:
         """, unsafe_allow_html=True)
 
     #st.divider()
-    # ---------------------------------------------------------
-    # Format ROW 2: AMOUNT & TARGET ( gold 10 - TIGHTENED SPACING )
-    # ---------------------------------------------------------
-    st.markdown("""
-        <style>
-            /* Target 'g10_r2_cols' to remove gap between the columns */
-            div[data-testid="stColumn"]#g10_r2_cols > div {
-                gap: 0px !important;
-            }
-            
-            /* Tighten padding inside the inputs to pull numbers together */
-            #g10_r2_cols input[type="number"] {
-                padding-left: 8px !important;
-                padding-right: 8px !important;
-                text-align: center !important; /* Optional: centers numbers for better look */
-            }
-            
-            /* Remove margins from label and input to condense vertically */
-            #g10_r2_cols .stNumberInput div[data-testid="stMarkdownContainer"] {
-                margin-bottom: 2px !important;
-            }
-            #g10_r2_cols .stNumberInput {
-                margin-bottom: 5px !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # 1. Create a container with a unique ID for targeting
-    with st.container():
-        # 2. Assign the unique ID to the column group for CSS targeting
-        # This prevents the CSS from affecting any other columns in your app.
-        st.markdown('<div id="g10_r2_cols">', unsafe_allow_html=True)
-        
-        # 3. Define the columns with NO GAP specified in CSS above
-        r2_c1, r2_c2 = st.columns(2)
-        
-        with r2_c1:
-            # NOTE: Using a new unique key 'g10_t3_a_tight' to avoid the Duplicate Error
-            t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_tight")
-        with r2_c2:
-            # NOTE: Using a new unique key 'g10_t3_t_tight' to avoid the Duplicate Error
-            u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_tight")
-            
-        st.markdown('</div>', unsafe_allow_html=True) # Close the ID div
-    # ---------------------------------------------------------
-
-    # 4. ROW 2: AMOUNT & TARGET (to remove
-    #r2_c1, r2_c2 = st.columns(2)
-    #with r2_c1:
-    #    t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
-    #with r2_c2:
-    #    u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
+    
+    # 4. ROW 2: AMOUNT & TARGET
+    r2_c1, r2_c2 = st.columns(2)
+    with r2_c1:
+        t_amt = st.number_input("Amount (SGD):", min_value=0, value=1000, key="g10_t3_a_final")
+    with r2_c2:
+        u_target = st.number_input("Target Price:", value=m_data['rate']*1.002, format="%.4f", key="g10_t3_t_final")
 
     # 5. LOGIC & PROBABILITY
     speed_mult = {"Hawkish": 1.15, "Neutral": 1.0, "Dovish": 0.80}[p_stance]
