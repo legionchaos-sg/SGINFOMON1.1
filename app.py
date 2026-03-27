@@ -182,7 +182,7 @@ with tab1:
         m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.2f}", f"{m_live['Gold'][1]:+.2f}%")
         m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.2f}%")
         m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.2f}%")
-        m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.1f}%")
+        m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.2f}%")
 
     # 4. Foreign Exchange
