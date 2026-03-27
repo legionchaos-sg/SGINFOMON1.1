@@ -140,36 +140,36 @@ with tab1:
 
     # 5. COE Results
     with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
-    coe_list = get_latest_coe()
-    cc = st.columns(4)
+         coe_list = get_latest_coe()
+         cc = st.columns(4)
     
-    for i, data in enumerate(coe_list):
+        for i, data in enumerate(coe_list):
         # Calculate Oversubscription
-        ratio = data['b'] / data['q']
-        over_label = f'<span class="over-badge">OVER {ratio:.1f}x</span>' if data['b'] > data['q'] else ""
+         ratio = data['b'] / data['q']
+         over_label = f'<span class="over-badge">OVER {ratio:.1f}x</span>' if data['b'] > data['q'] else ""
         
-        cc[i].markdown(f"""
-            <div class="c-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <b style="font-size: 0.9rem;">{data['cat']}</b>
-                        {over_label}
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span style="color:#ff4b4b; font-size:1.2rem; font-weight:bold;">${data['p']:,}</span><br>
-                        <small class="up">▲ ${data['ch']:,}</small>
-                    </div>
-                </div>
+         cc[i].markdown(f"""
+             <div class="c-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                 <div>
+                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                         <b style="font-size: 0.9rem;">{data['cat']}</b>
+                         {over_label}
+                     </div>
+                     <div style="margin-top: 5px;">
+                         <span style="color:#ff4b4b; font-size:1.2rem; font-weight:bold;">${data['p']:,}</span><br>
+                         <small class="up">▲ ${data['ch']:,}</small>
+                     </div>
+                 </div>
                 
-                <div style="margin-top: 10px;">
-                    <hr style="margin: 5px 0; border: 0.5px solid #444; opacity: 0.3;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; opacity: 0.8;">
-                        <span>Quota: <b>{data['q']}</b></span>
-                        <span>Bids: <b>{data['b']}</b></span>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+                 <div style="margin-top: 10px;">
+                     <hr style="margin: 5px 0; border: 0.5px solid #444; opacity: 0.3;">
+                     <div style="display: flex; justify-content: space-between; font-size: 0.72rem; opacity: 0.8;">
+                         <span>Quota: <b>{data['q']}</b></span>
+                         <span>Bids: <b>{data['b']}</b></span>
+                     </div>
+                 </div>
+             </div>
+         """, unsafe_allow_html=True)
             
     # 6. FUEL MONITOR SECTION (Moved after COE)
     f_avg, f_trends, f_brands = fetch_fuel_logic()
