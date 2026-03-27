@@ -80,6 +80,8 @@ def get_latest_coe():
         {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
+#eND OF dATA eNGINE
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -106,8 +108,6 @@ with tab1:
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
-
-    #st.divider()
     
     # 2. News & Holidays
     holiday_info = get_upcoming_holiday()
@@ -116,8 +116,6 @@ with tab1:
     nc1, nc2 = st.columns([2, 1])
     with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
     with nc2: v_mode = st.selectbox("Source:", ["Unified", "CNA Only", "Straits Times Only"])
-
-    #st.divider()
 
     # 3. Markets & Commodities
     m_live = fetch_live_market_data()
@@ -140,7 +138,6 @@ with tab1:
 
     # 5. COE Results
    # 3. Dynamic COE Results
-    st.divider()
     with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
         coe_list = get_latest_coe()
         cc = st.columns(4)
