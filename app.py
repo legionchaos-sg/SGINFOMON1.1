@@ -665,24 +665,49 @@ with tab4:
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
-    # 1. INITIALIZE VARIABLES (Prevents NameError)
-    grid_rows = [] 
-    final_sorted = []
-    
-    # 2. SETUP (ORIGIN & NATIONALITY)
+    # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
     with col_a:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        # ... (Your Origin Logic here) ...
+        china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)"]
+        thai_orig = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
+        
+        if "China" in u_origin_cat:
+            v_origin_final = st.selectbox("Select China Origin:", china_orig, key="g10_t5_china_orig")
+        elif "Thailand" in u_origin_cat:
+            v_origin_final = st.selectbox("Select Thailand Origin:", thai_orig, key="g10_t5_thai_orig")
+        else:
+            v_origin_final = u_origin_cat
 
-    # 3. DESTINATION & AIRPORT
+    with col_b:
+        u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
+        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
+
+    # 2. DESTINATION
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
-    # ... (Your Airport Master logic here) ...
+    airport_master = {
+        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"],
+        "Thailand": ["Bangkok (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
+    }
 
-    # 4. CARRIER MASTER DATA & SORTING
+    if dest_country in airport_master:
+        selected_airport = st.selectbox(f"Select Preferred Landing Airport in {dest_country}:", 
+                                       airport_master[dest_country], 
+                                       key="g10_t5_airport_dest")
+    else:
+        selected_airport = "SIN" if dest_country == "Singapore" else "HKG"
+
+    d_col1, d_col2 = st.columns(2)
+    with d_col1:
+        d_dep = st.date_input("Departure:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+    with d_col2:
+        d_ret = st.date_input("Return:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
+
+    # 3. CARRIER MASTER DATA & INITIALIZATION
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
@@ -695,62 +720,66 @@ with tab5:
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
+    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    # 5. GENERATE THE DATA (This is where grid_rows is built)
+    # 4. PRICING TABLE
     base_price = 820 if "China" in u_origin_cat else 980
-    # multiplier logic...
+    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
     
+    grid_rows = []
     for c in final_sorted:
-        # Check for specific direct/transit logic (e.g., SIA to Xi'an)
+        p = base_price * multiplier * c["w"]
         is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
         route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
         
         grid_rows.append({
             "Carrier": c["name"],
-            "Adult ($)": f"{base_price * c['w']:,.0f}", # Example calc
+            "Adult ($)": f"{p:,.0f}",
             "Route / Type": route_type
         })
 
-    # 6. DISPLAY (This will no longer throw NameError)
-    st.subheader(f"📊 Live Results for {selected_airport}")
-    if grid_rows:
-        st.dataframe(grid_rows, hide_index=True, use_container_width=True)
-    else:
-        st.warning("No flight data available for the selected criteria.")
-    
-    # ... (Rest of your roadmap loop) ...
+    st.subheader(f"📊 Live Pricing Table to {selected_airport}")
+    st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
-    # 5. THE 16-WEEK PREDICTION TABLE (ROADMAP)
-    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    
-    # Selection for which airline to track in the roadmap
-    roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
-    active_c = next(c for c in final_sorted if c["name"] == roadmap_airline)
+    st.divider()
 
-    pop_data = []
-    for w in range(16, -1, -1):
-        t_date = d_dep - timedelta(weeks=w)
-        # Strategic Advice Logic
-        if 7 <= w <= 9:
-            advice = f"✅ BUY: {', '.join(top_3_list[:2])}"
-            color = "green"
-        elif w > 9:
-            advice = "⏳ HOLD: Prices Stagnant"
-            color = "blue"
-        else:
-            advice = "🚨 PANIC: Late Booking Surge"
-            color = "red"
-            
-        # Price fluctuations over time
-        w_price = (base_price * multiplier * active_c["w"]) * (1.0 if 7 <= w <= 9 else (1.15 if w > 9 else 1.40))
+    # 5. STRATEGIC POP-UP LOGIC
+    @st.dialog("16-Week Flight Strategy", width="large")
+    def show_strategy_roadmap(airline_choice):
+        active_c = next(c for c in final_sorted if c["name"] == airline_choice)
+        st.write(f"### 🗓️ Forecast for {active_c['name']}")
         
-        pop_data.append({
-            "Weeks Prior": w,
-            "Target Date": t_date.strftime('%d %b %Y'),
-            "Est. Price ($)": f"{w_price:,.0f}",
-            "Action": advice
-        })
-    
-    st.dataframe(pop_data, hide_index=True, use_container_width=True)
-    st.info("💡 **Strategy:** Statistically, the best prices for Asia-Pacific routes are found **7 to 9 weeks** before departure.")
+        pop_data = []
+        for w in range(16, -1, -1):
+            t_date = d_dep - timedelta(weeks=w)
+            if 7 <= w <= 9:
+                advice = f"✅ BUY: {', '.join(top_3_list[:2])}"
+            elif w > 9:
+                advice = "⏳ HOLD: Prices Stagnant"
+            else:
+                advice = "🚨 PANIC: Late Booking Surge"
+            
+            w_price = (base_price * multiplier * active_c["w"]) * (1.0 if 7 <= w <= 9 else (1.15 if w > 9 else 1.40))
+            
+            pop_data.append({
+                "Weeks Prior": w,
+                "Target Date": t_date.strftime('%d %b %Y'),
+                "Est. Price ($)": f"{w_price:,.0f}",
+                "Action": advice
+            })
+        
+        st.dataframe(pop_data, hide_index=True, use_container_width=True)
+        st.info("💡 **Strategy:** Statistically, the best prices for Asia-Pacific routes are found **7 to 9 weeks** before departure.")
+        if st.button("Close"):
+            st.rerun()
+
+    # Triggering UI
+    st.subheader("🗓️ Purchase Strategy")
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
+    with c2:
+        st.write("##") # Alignment
+        if st.button("🚀 Open Strategic Roadmap", use_container_width=True):
+            show_strategy_roadmap(roadmap_airline)
 
