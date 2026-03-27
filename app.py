@@ -662,12 +662,6 @@ with tab4:
 # ==========================================
 # TAB 5: AIRFARE & DYNAMIC VISA ENGINE
 # ==========================================
-# ==========================================
-# TAB 5: AIRFARE ENGINE (Interactive Pop-up)
-# ==========================================
-# ==========================================
-# TAB 5: REFINED POP-UP (TOP 3 VISIBILITY)
-# ==========================================
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
@@ -692,25 +686,21 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DESTINATION & DATES (DYNAMIC AIRPORT LISTS)
+    # 2. DESTINATION & DATES
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
-    # Dynamic Airport Data (Major & Regional)
     airport_master = {
-        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)", "Kunming (KMG)", "Xi'an (XIY)", "Hangzhou (HGH)", "Chongqing (CKG)"],
-        "Thailand": ["Bangkok (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)", "Koh Samui (USM)", "Krabi (KBV)", "Hat Yai (HDY)", "Udon Thani (UTH)"],
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)", "Nagoya (NGO)", "Okinawa (OKA)", "Sendai (SDJ)", "Hiroshima (HIJ)"]
+        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)", "Kunming (KMG)"],
+        "Thailand": ["Bangkok (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
     }
 
-    # Conditional Dropdown for Japan, China, Thailand
     if dest_country in airport_master:
         selected_airport = st.selectbox(f"Select Preferred Landing Airport in {dest_country}:", 
                                        airport_master[dest_country], 
                                        key="g10_t5_airport_dest")
     else:
-        # Defaults for Singapore and Hong Kong
-        selected_airport = "Changi (SIN)" if dest_country == "Singapore" else "Chek Lap Kok (HKG)"
-        st.info(f"Standard Landing: **{selected_airport}**")
+        selected_airport = "SIN" if dest_country == "Singapore" else "HKG"
 
     d_col1, d_col2 = st.columns(2)
     with d_col1:
@@ -725,35 +715,36 @@ with tab5:
         {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK"},
         {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN"},
         {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"},
-        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND"}
+        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND/NRT"}
     ]
 
-    # Sort Priority: Destination Carriers First
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
-    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    # 4. PRICING TABLE & VISA
-    # Logic: Regional airports add a 15% 'Remote Tax' to the base price
-    is_regional = any(reg in selected_airport for reg in ["Okinawa", "Sapporo", "Krabi", "Samui", "Xi'an"])
-    regional_multiplier = 1.15 if is_regional else 1.0
-    
+    # 4. PRICING TABLE (REMOVED HUB/LANDING, ADDED TRANSIT LOGIC)
     base_price = 820 if "China" in u_origin_cat else 980
-    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65) * regional_multiplier
+    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
     
     grid_rows = []
     for c in final_sorted:
         p = base_price * multiplier * c["w"]
+        
+        # TRANSIT LOGIC: If the airline is not from the origin OR destination country, it requires a transit at its hub.
+        is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
+        route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
+        
         grid_rows.append({
             "Carrier": c["name"],
             "Adult ($)": f"{p:,.0f}",
-            "Landing At": selected_airport,
-            "Hub": c["hub"] if c["home"] not in [u_origin_cat, dest_country] else "Direct"
+            "Route / Type": route_type
         })
 
-    st.subheader(f"📊 Live Pricing Table to {dest_country}")
+    st.subheader(f"📊 Live Pricing Table to {selected_airport}")
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
+
+    visa_txt = "✅ Visa Free (30 Days)" if u_nationality == "Singaporean" and dest_country == "China" else "⚠️ Check 2026 Entry Requirements"
+    st.warning(f"**🛂 Visa Status for {u_nationality}:** {visa_txt}")
 
     visa_txt = "✅ Visa Free (30 Days)" if u_nationality == "Singaporean" and dest_country == "China" else "⚠️ Check 2026 Entry Requirements"
     st.warning(f"**🛂 Visa Status for {u_nationality}:** {visa_txt}")
