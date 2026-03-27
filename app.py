@@ -665,35 +665,14 @@ with tab4:
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
-    # 1. SETUP (ORIGIN & NATIONALITY)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
-        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
-        
-        # Origin Airport Logic
-        china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)"]
-        if "China" in u_origin_cat:
-            v_origin_final = st.selectbox("Select China Origin:", china_orig, key="g10_t5_china_orig")
-        else:
-            v_origin_final = u_origin_cat
+    # ... (Keep your Origin and Nationality setup code here) ...
 
-    with col_b:
-        u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
-        v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
-
-    # 2. DESTINATION 
+    # 2. DESTINATION & AIRPORT
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
-    airport_master = {
-        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Xi'an (XIY)", "Chengdu (TFU)"],
-        "Thailand": ["Bangkok (BKK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"]
-    }
+    # ... (Keep your airport_master and selected_airport code here) ...
 
-    selected_airport = st.selectbox(f"Select Landing Airport:", airport_master.get(dest_country, ["SIN"]), key="g10_t5_airport_dest")
-
-    # 3. UPDATED CARRIER DATA WITH TRANSIT LOGIC
+    # 3. CARRIER MASTER DATA (MOVED TO TOP TO ENSURE GLOBAL ACCESS)
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
@@ -703,39 +682,27 @@ with tab5:
         {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND/NRT"}
     ]
 
-    # 4. PRICING TABLE WITH SEARCH-LIKE VALIDATION
-    grid_rows = []
-    for c in master_carriers:
-        # Base price calculation
-        p = (820 if "China" in u_origin_cat else 980) * c["w"]
-        
-        # DYNAMIC ROUTE VALIDATION
-        # Case A: Singapore Airlines to Xi'an (Must be Scoot/Transit)
-        if c["name"] == "Singapore Airlines" and "XIY" in selected_airport:
-            route_type = "🟠 Scoot Operated (Direct)"
-        
-        # Case B: Airline is the "Home" carrier for the destination (Direct)
-        elif c["home"] == dest_country:
-            route_type = f"✈️ Direct ({c['name']})"
-            
-        # Case C: Airline is the "Home" carrier for the origin (Direct)
-        elif c["home"] in u_origin_cat:
-            route_type = "✈️ Direct Service"
-            
-        # Case D: Everything else requires a transit via the carrier's hub
-        else:
-            route_type = f"🔄 Transit via {c['hub']}"
-        
-        grid_rows.append({
-            "Carrier": c["name"],
-            "Adult ($)": f"{p:,.0f}",
-            "Route / Type": route_type
-        })
+    # DEFINING THESE OUTSIDE ANY BUTTONS/LOGIC TO PREVENT NameError
+    priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
+    other_carriers = [c for c in master_carriers if c["home"] != dest_country]
+    final_sorted = priority_carriers + other_carriers
+    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    st.subheader(f"📊 Live Results for {selected_airport}")
+    # 4. PRICING TABLE
+    # ... (Your pricing loop code here) ...
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
-    # 16-Week Table Logic remains below...
+    st.divider()
+
+    # 5. 16-WEEK ROADMAP (NOW HAS ACCESS TO final_sorted)
+    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+    
+    # This was failing because final_sorted wasn't guaranteed to exist
+    roadmap_airline = st.selectbox("Select Airline to Forecast:", 
+                                     [c["name"] for c in final_sorted], 
+                                     key="g10_t5_roadmap_select")
+    
+    # ... (Rest of your roadmap loop) ...
 
     # 5. THE 16-WEEK PREDICTION TABLE (ROADMAP)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
