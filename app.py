@@ -671,9 +671,8 @@ with tab5:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        # Origin Airport Logic
-        china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"]
-        thai_orig = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"]
+        china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)"]
+        thai_orig = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
         
         if "China" in u_origin_cat:
             v_origin_final = st.selectbox("Select China Origin:", china_orig, key="g10_t5_china_orig")
@@ -686,11 +685,11 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DESTINATION & DATES
+    # 2. DESTINATION
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
     airport_master = {
-        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)", "Kunming (KMG)"],
+        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"],
         "Thailand": ["Bangkok (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
         "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
     }
@@ -721,16 +720,15 @@ with tab5:
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
+    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    # 4. PRICING TABLE (REMOVED HUB/LANDING, ADDED TRANSIT LOGIC)
+    # 4. PRICING TABLE
     base_price = 820 if "China" in u_origin_cat else 980
     multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
     
     grid_rows = []
     for c in final_sorted:
         p = base_price * multiplier * c["w"]
-        
-        # TRANSIT LOGIC: If the airline is not from the origin OR destination country, it requires a transit at its hub.
         is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
         route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
         
@@ -743,8 +741,39 @@ with tab5:
     st.subheader(f"📊 Live Pricing Table to {selected_airport}")
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
-    visa_txt = "✅ Visa Free (30 Days)" if u_nationality == "Singaporean" and dest_country == "China" else "⚠️ Check 2026 Entry Requirements"
-    st.warning(f"**🛂 Visa Status for {u_nationality}:** {visa_txt}")
+    st.divider()
 
-    visa_txt = "✅ Visa Free (30 Days)" if u_nationality == "Singaporean" and dest_country == "China" else "⚠️ Check 2026 Entry Requirements"
-    st.warning(f"**🛂 Visa Status for {u_nationality}:** {visa_txt}")
+    # 5. THE 16-WEEK PREDICTION TABLE (ROADMAP)
+    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+    
+    # Selection for which airline to track in the roadmap
+    roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
+    active_c = next(c for c in final_sorted if c["name"] == roadmap_airline)
+
+    pop_data = []
+    for w in range(16, -1, -1):
+        t_date = d_dep - timedelta(weeks=w)
+        # Strategic Advice Logic
+        if 7 <= w <= 9:
+            advice = f"✅ BUY: {', '.join(top_3_list[:2])}"
+            color = "green"
+        elif w > 9:
+            advice = "⏳ HOLD: Prices Stagnant"
+            color = "blue"
+        else:
+            advice = "🚨 PANIC: Late Booking Surge"
+            color = "red"
+            
+        # Price fluctuations over time
+        w_price = (base_price * multiplier * active_c["w"]) * (1.0 if 7 <= w <= 9 else (1.15 if w > 9 else 1.40))
+        
+        pop_data.append({
+            "Weeks Prior": w,
+            "Target Date": t_date.strftime('%d %b %Y'),
+            "Est. Price ($)": f"{w_price:,.0f}",
+            "Action": advice
+        })
+    
+    st.dataframe(pop_data, hide_index=True, use_container_width=True)
+    st.info("💡 **Strategy:** Statistically, the best prices for Asia-Pacific routes are found **7 to 9 weeks** before departure.")
+
