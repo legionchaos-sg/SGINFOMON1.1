@@ -112,61 +112,61 @@ with tab1:
     
     # 2. News & Holidays
     # 2. News & Holidays
-holiday_info = get_upcoming_holiday()
-st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
-
-# Define sources and headers
-news_sources = {
-    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
-    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
-    "Mothership": "https://mothership.sg/feed/", 
-    "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
-}
-headers = {'User-Agent': 'Mozilla/5.0'}
-
-# UI Controls
-nc1, nc2 = st.columns([2, 1])
-with nc1: 
-    search_q = st.text_input("🔍 Search Keywords:", key="news_search")
-with nc2: 
-    v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
-    do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
-
-news_list = []
-# FIX: Corrected indentation for the loop
-for src, url in news_sources.items():
-    # Improved logic: Check if "Unified" is picked OR if the specific source name is in the selection
-    if "Unified" in v_mode or src in v_mode:
-        try:
-            resp = requests.get(url, headers=headers, timeout=5)
-            if resp.status_code == 200:
-                feed = feedparser.parse(resp.content)
-                # Limit to 1 if Unified, else 10
-                limit = 1 if "Unified" in v_mode else 10
-                for entry in feed.entries[:limit]:
-                    if not search_q or search_q.lower() in entry.title.lower():
-                        news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
-        except Exception: 
-            pass
-
-# Translation Logic
-tr_dict = {}
-if do_tr and news_list:
-    # Only translate English sources (exclude 8world which is already Chinese)
-    en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
-    if en_titles:
-        try:
-            # Join with a unique delimiter to ensure split accuracy
-            translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
-            tr_dict = dict(zip(en_titles, translated))
-        except Exception: 
-            pass
-
-# Display results
-for item in news_list:
-    st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-    if do_tr and item['title'] in tr_dict:
-        st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
+        holiday_info = get_upcoming_holiday()
+        st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
+        
+        # Define sources and headers
+        news_sources = {
+            "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
+            "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
+            "Mothership": "https://mothership.sg/feed/", 
+            "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
+        }
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        
+        # UI Controls
+        nc1, nc2 = st.columns([2, 1])
+        with nc1: 
+            search_q = st.text_input("🔍 Search Keywords:", key="news_search")
+        with nc2: 
+            v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+            do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
+        
+        news_list = []
+        # FIX: Corrected indentation for the loop
+        for src, url in news_sources.items():
+            # Improved logic: Check if "Unified" is picked OR if the specific source name is in the selection
+            if "Unified" in v_mode or src in v_mode:
+                try:
+                    resp = requests.get(url, headers=headers, timeout=5)
+                    if resp.status_code == 200:
+                        feed = feedparser.parse(resp.content)
+                        # Limit to 1 if Unified, else 10
+                        limit = 1 if "Unified" in v_mode else 10
+                        for entry in feed.entries[:limit]:
+                            if not search_q or search_q.lower() in entry.title.lower():
+                                news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
+                except Exception: 
+                    pass
+        
+        # Translation Logic
+        tr_dict = {}
+        if do_tr and news_list:
+            # Only translate English sources (exclude 8world which is already Chinese)
+            en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
+            if en_titles:
+                try:
+                    # Join with a unique delimiter to ensure split accuracy
+                    translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
+                    tr_dict = dict(zip(en_titles, translated))
+                except Exception: 
+                    pass
+        
+        # Display results
+        for item in news_list:
+            st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
+            if do_tr and item['title'] in tr_dict:
+                st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     
 
