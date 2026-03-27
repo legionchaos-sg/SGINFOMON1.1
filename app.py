@@ -37,7 +37,6 @@ def fetch_fuel_logic():
     }
     return averages, trends, brands
 
-
 @st.cache_data(ttl=300)
 def fetch_live_forex():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
@@ -81,7 +80,6 @@ def get_latest_coe():
         {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
-# eND OF dATA eNGINE
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -105,70 +103,59 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVIC
 
 with tab1:
     # 1. Clocks
-    t_cols = st.columns(6)
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
-    
-    # 2. News & Holidays
-    # 2. News & Holidays
-holiday_info = get_upcoming_holiday()
-st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
+    t_cols = st.columns(6)# 2. News & Holidays (FIXED INDENTATION)
+    st.divider()
+    holiday_info = get_upcoming_holiday()
+    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
 
-# Define sources and headers
-news_sources = {
-    "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
-    "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
-    "Mothership": "https://mothership.sg/feed/", 
-    "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
-}
-headers = {'User-Agent': 'Mozilla/5.0'}
+    # Define sources and headers
+    news_sources = {
+        "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
+        "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
+        "Mothership": "https://mothership.sg/feed/", 
+        "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
+    }
+    headers = {'User-Agent': 'Mozilla/5.0'}
 
-# UI Controls
-nc1, nc2 = st.columns([2, 1])
-with nc1: 
-    search_q = st.text_input("🔍 Search Keywords:", key="news_search")
-with nc2: 
-    v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
-    do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
+    # UI Controls
+    nc1, nc2 = st.columns([2, 1])
+    with nc1: 
+        search_q = st.text_input("🔍 Search Keywords:", key="news_search")
+    with nc2: 
+        v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+        do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
 
-news_list = []
-# FIX: Corrected indentation for the loop
-for src, url in news_sources.items():
-    # Improved logic: Check if "Unified" is picked OR if the specific source name is in the selection
-    if "Unified" in v_mode or src in v_mode:
-        try:
-            resp = requests.get(url, headers=headers, timeout=5)
-            if resp.status_code == 200:
-                feed = feedparser.parse(resp.content)
-                # Limit to 1 if Unified, else 10
-                limit = 1 if "Unified" in v_mode else 10
-                for entry in feed.entries[:limit]:
-                    if not search_q or search_q.lower() in entry.title.lower():
-                        news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
-        except Exception: 
-            pass
+    news_list = []
+    for src, url in news_sources.items():
+        if "Unified" in v_mode or src in v_mode:
+            try:
+                resp = requests.get(url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    feed = feedparser.parse(resp.content)
+                    limit = 1 if "Unified" in v_mode else 10
+                    for entry in feed.entries[:limit]:
+                        if not search_q or search_q.lower() in entry.title.lower():
+                            news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
+            except: pass
 
-# Translation Logic
-tr_dict = {}
-if do_tr and news_list:
-    # Only translate English sources (exclude 8world which is already Chinese)
-    en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
-    if en_titles:
-        try:
-            # Join with a unique delimiter to ensure split accuracy
-            translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
-            tr_dict = dict(zip(en_titles, translated))
-        except Exception: 
-            pass
+    # Translation Logic
+    tr_dict = {}
+    if do_tr and news_list:
+        en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
+        if en_titles:
+            try:
+                translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
+                tr_dict = dict(zip(en_titles, translated))
+            except: pass
 
-# Display results
-for item in news_list:
-    st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-    if do_tr and item['title'] in tr_dict:
-        st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
+    # Display results
+    for item in news_list:
+        st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
+        if do_tr and item['title'] in tr_dict:
+            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     # 3. Markets & Commodities
+    st.divider()
     m_live = fetch_live_market_data()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
         m_cols = st.columns(4)
@@ -188,7 +175,6 @@ for item in news_list:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-   # 3. Dynamic COE Results
     with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
         coe_list = get_latest_coe()
         cc = st.columns(4)
@@ -213,18 +199,16 @@ for item in news_list:
                     </div>
                 </div>
             """, unsafe_allow_html=True)    
-    # 6. FUEL MONITOR SECTION (Moved after COE)
+
+    # 6. FUEL MONITOR SECTION
     f_avg, f_trends, f_brands = fetch_fuel_logic()
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         fuel_cols = st.columns(5)
         grades = ["92", "95", "98", "Premium", "Diesel"]
-        
         for i, g in enumerate(grades):
             with fuel_cols[i]:
                 is_up = f_trends[g]
-                arrow = "▲" if is_up else "▼"
-                color_class = "up" if is_up else "down"
-                
+                arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
                 st.markdown(f"""
                     <div class="f-card">
                         <span class="stat-label">Grade {g}</span><br>
@@ -232,29 +216,17 @@ for item in news_list:
                         <span class="{color_class}">{arrow}</span>
                     </div>
                 """, unsafe_allow_html=True)
-                
-                # Dynamic Pop-up with Brand Indicators
                 with st.popover(f"Quotes: {g}"):
-                    st.caption(f"Quotes for {g} as of {datetime.now().strftime('%d %b %H:%M')}")
                     for brand, price in f_brands[g].items():
                         if price != "N/A":
-                            # Brand-specific indicator matches the grade trend for this logic
-                            b_arrow = "↑" if is_up else "↓"
-                            b_color = "#ff4b4b" if is_up else "#28a745"
-                            p_str = f"${price:.2f}"
-                            st.write(f"**{brand}**: {p_str} <span style='color:{b_color}; font-weight:bold;'>{b_arrow}</span>", unsafe_allow_html=True)
-                        else:
-                            st.write(f"**{brand}**: N/A")
-                    st.divider()
-                    st.info(f"Market: {'Price Hike' if is_up else 'Price Dip/Stable'}")
-
-with tab3:
-    st.markdown("### 🛠️ Tactical Trade Scheduler (gold 10)")
-    st.write(f"Adjustment ID: `{st.session_state.g10_target_fix}`")
-    st.button("🔄 Full System Refresh")
-
-# --- FINAL FOOTER ---
-st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
+                            b_arrow, b_color = ("↑", "#ff4b4b") if is_up else ("↓", "#28a745")
+                            st.write(f"**{brand}**: ${price:.2f} <span style='color:{b_color}; font-weight:bold;'>{b_arrow}</span>", unsafe_allow_html=True)
+                        else: st.write(f"**{brand}**: N/A")
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    
+    
 
 # ==========================================
 # TAB 2: PUBLIC SERVICES
