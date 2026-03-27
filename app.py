@@ -741,8 +741,6 @@ with tab5:
     st.subheader(f"📊 Live Pricing Table to {selected_airport}")
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
-    st.divider()
-
     # 5. STRATEGIC POP-UP LOGIC
     @st.dialog("16-Week Flight Strategy", width="large")
     def show_strategy_roadmap(airline_choice):
@@ -775,7 +773,7 @@ with tab5:
 
     # Triggering UI
     st.subheader("🗓️ Purchase Strategy")
-    c1, c2 = st.columns([2, 1])
+    c1, c2 = st.columns([1, 1])
     with c1:
         roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
     #with c2:
