@@ -178,12 +178,12 @@ with tab1:
     sg_econ = fetch_sg_economy()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
         m_cols = st.columns(7)
-        m_cols[0].metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.5f}%")
-        m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.2f}", f"{m_live['Gold'][1]:+.5f}%")
-        m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.5f}%")
-        m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.5f}%")
-        m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
-        m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.2f}%")
+        m_cols[0].metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
+        m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.6f}", f"{m_live['Gold'][1]:+.2f}%")
+        m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.2f}%")
+        m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.2f}%")
+        m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.6f}", f"{sg_econ['inf_delta']:+.2f}%")
+        m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.6f}", f"{sg_econ['cpi_delta']:+.2f}%")
 
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
