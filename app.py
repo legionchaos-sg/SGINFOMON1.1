@@ -177,14 +177,16 @@ with tab1:
     m_live = fetch_live_market_data()
     sg_econ = fetch_sg_economy()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
-        m_cols = st.columns(7)
+       # Each column now occupies exactly 1/6th of the expander width
+        m_cols = st.columns(6)
         m_cols[0].metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
         m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.2f}", f"{m_live['Gold'][1]:+.2f}%")
         m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.4f}%")
         m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.2f}%")
+        
+        # These will now be perfectly aligned with the market data
         m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.5f}%")
-
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
