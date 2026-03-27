@@ -778,7 +778,7 @@ with tab5:
     c1, c2 = st.columns([2, 1])
     with c1:
         roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
-    with c2:
+    #with c2:
         st.write("##") # Alignment
         if st.button("🚀 Open Strategic Roadmap", use_container_width=True):
             show_strategy_roadmap(roadmap_airline)
