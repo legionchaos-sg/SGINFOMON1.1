@@ -1,184 +1,141 @@
 import streamlit as st
-import feedparser, requests, pytz
 import pandas as pd
-import numpy as np
-from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
-from deep_translator import GoogleTranslator
-from datetime import date, timedelta
-import yfinance as yf
+import requests, feedparser, pytz, yfinance as yf
+from datetime import datetime, date
 from io import StringIO
+from streamlit_autorefresh import st_autorefresh
 
-# --- 1. PAGE CONFIG & STYLES (gold 10 Concise) ---
-st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
-st_autorefresh(interval=180000, key="sync_109_stable")
+# --- 1. CONFIG & STYLES (gold 10 Concise) ---
+st.set_page_config(page_title="SGINFOMON 10.9", page_icon="🇸🇬", layout="wide")
+st_autorefresh(interval=600000, key="global_sync") # 10-min global sync
 
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; color: var(--text-color); }
-    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150_px; color: var(--text-color); line-height: 1.1; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
-    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
-    .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
-    .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
-    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
-    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
-    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
+    .main .block-container { max-width: 95%; padding-top: 1.5rem; font-size: 14px; }
+    .t-card { background: #1a1a1a; border: 1px solid #333; padding: 4px; border-radius: 4px; text-align: center; }
+    .c-card { background: #222; border-left: 4px solid #ff4b4b; padding: 10px; border-radius: 6px; margin-bottom: 8px; }
+    .price-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; }
+    .brand-name { font-weight: 600; color: #bbb; }
+    .price-val { font-weight: 700; color: #007bff; font-family: monospace; }
+    button[kind="secondary"] { height: 24px; line-height: 1; font-size: 11px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. THE BRAIN: LIVE FUEL SCRAPER ---
-def get_live_fuel_sync():
-    # March 2026 Baseline Template
-    data = {
-        "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0]},
-        "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
-        "98 Octane": {"Esso": [3.97, 0.0], "Shell": [3.99, 0.0], "SPC": [3.97, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.97, 0.0], "Smart Energy": [2.99, 0.0]},
-        "Premium":   {"Caltex": [4.16, 0.0], "Shell": [4.21, 0.0], "Sinopec": [4.10, 0.0]},
-        "Diesel":    {"Esso": [3.73, 0.0], "Caltex": [3.73, 0.0], "Shell": [3.73, 0.0], "SPC": [3.56, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.72, 0.0], "Smart Energy": [2.83, 0.0]}
+# --- 2. THE CORE SCRAPER (NO STATIC CACHE) ---
+def fetch_motorist_data():
+    """Hard-pulls the latest table from Motorist.sg"""
+    # Baseline fallback if site is down
+    fallback = {
+        "92": {"Esso": 3.43, "Caltex": 3.43, "SPC": 3.43},
+        "95": {"Esso": 3.47, "Shell": 3.47, "Caltex": 3.47, "SPC": 3.46, "Sinopec": 3.47},
+        "98": {"Esso": 3.97, "Shell": 3.99, "SPC": 3.97, "Sinopec": 3.97},
+        "Premium": {"Shell": 4.21, "Caltex": 4.16, "Sinopec": 4.10},
+        "Diesel": {"Esso": 3.93, "Shell": 3.93, "Caltex": 3.73, "SPC": 3.66, "Sinopec": 3.72}
     }
     try:
         url = "https://www.motorist.sg/petrol-prices"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        resp = requests.get(url, headers=headers, timeout=5)
-        df = pd.read_html(StringIO(resp.text), header=0)[0]
-
-        for _, row in df.iterrows():
-            brand_raw = str(row.iloc[0]).lower()
-            for b_name in ["Esso", "Shell", "Caltex", "SPC", "Sinopec", "Cnergy", "Smart Energy"]:
-                if b_name.lower() in brand_raw:
-                    for grade, col in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
-                        val = str(row.get(col, '-')).replace('$', '').strip()
-                        if val not in ['-', 'nan', 'N/A']:
-                            try:
-                                data[grade][b_name] = [float(val), 0.0]
-                            except: continue
-    except: pass
-    return data
-
-# --- 3. THE BEAUTY: DYNAMIC POP-UP ---
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    with st.spinner("Syncing 2026 Live Prices..."):
-        live_data = get_live_fuel_sync()
-    
-    st.write(f"### 📍 {ftype} Price List")
-    st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
-    
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        b_data = live_data[ftype].get(brand, ("N/A", 0))
-        price, change = b_data
-        if brand == "Shell" and ftype == "92 Octane": continue
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        response = requests.get(url, headers=headers, timeout=10)
         
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:4px; border-bottom:1px solid #333; font-size:14px;'>
-                <b>{brand}</b>
-                <span>
-                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
-                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+        # Scrape all tables
+        tables = pd.read_html(StringIO(response.text))
+        df = tables[0] # The main comparison table
+        
+        live_data = {"92": {}, "95": {}, "98": {}, "Premium": {}, "Diesel": {}}
+        
+        for _, row in df.iterrows():
+            brand_raw = str(row.iloc[0]).split()[0] # E.g., "Esso"
+            for grade in live_data.keys():
+                if grade in df.columns:
+                    val = str(row[grade]).replace('$', '').strip()
+                    if val.replace('.', '', 1).isdigit():
+                        live_data[grade][brand_raw] = float(val)
+        
+        return live_data, datetime.now().strftime("%H:%M:%S")
+    except Exception as e:
+        return fallback, f"Offline (Using Baseline)"
 
-# --- 4. DATA ENGINES (Market, FX, Economy, Holidays) ---
-def get_upcoming_holiday():
-    sg_tz = pytz.timezone('Asia/Singapore')
-    now = datetime.now(sg_tz).date()
-    holidays_2026 = [("New Year's Day", date(2026, 1, 1)), ("Chinese New Year", date(2026, 2, 17)), ("Hari Raya Puasa", date(2026, 3, 21)), ("Good Friday", date(2026, 4, 3)), ("Labour Day", date(2026, 5, 1)), ("Hari Raya Haji", date(2026, 5, 27)), ("Vesak Day", date(2026, 5, 31)), ("National Day", date(2026, 8, 9)), ("Deepavali", date(2026, 11, 8)), ("Christmas Day", date(2026, 12, 25))]
-    for name, h_date in holidays_2026:
-        if h_date >= now: return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
-    return ""
+# --- 3. DYNAMIC POP-UP LOGIC ---
+@st.dialog("Fuel Brand Details")
+def show_brand_dialog(grade_key):
+    st.write(f"### ⛽ {grade_key} Octane")
+    
+    # Force a re-scrape inside the dialog to ensure "latest"
+    with st.spinner("Syncing with Motorist.sg..."):
+        current_prices, sync_time = fetch_motorist_data()
+    
+    st.caption(f"Last Verified: {sync_time}")
+    
+    data = current_prices.get(grade_key, {})
+    if not data:
+        st.warning("No live data found for this grade.")
+    else:
+        for brand, price in data.items():
+            st.markdown(f"""
+                <div class="price-row">
+                    <span class="brand-name">{brand}</span>
+                    <span class="price-val">${price:.2f}</span>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    if st.button("Close"):
+        st.rerun()
 
-@st.cache_data(ttl=300)
-def fetch_live_market_data():
-    tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Brent": "BZ=F", "NatGas": "NG=F"}
-    results = {}
-    for label, sym in tickers.items():
-        try:
-            hist = yf.Ticker(sym).history(period="5d")
-            curr, prev = hist['Close'].iloc[-1], hist['Close'].iloc[-2]
-            results[label] = (curr, ((curr - prev) / prev) * 100)
-        except: results[label] = (0.0, 0.0)
-    return results
+# --- 4. MAIN UI LAYOUT ---
+st.title("🇸🇬 SGINFOMON 10.9.4")
 
-@st.cache_data(ttl=300)
-def fetch_live_forex():
-    fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
-    results = {}
-    for label, sym in fx_tickers.items():
-        try:
-            hist = yf.Ticker(sym).history(period="5d")
-            curr, prev = hist['Close'].iloc[-1], hist['Close'].iloc[-2]
-            results[label] = (curr, ((curr - prev) / prev) * 100)
-        except: results[label] = (0.0, 0.0)
-    return results
+# Initialize global data in session state
+if "global_fuel" not in st.session_state:
+    st.session_state.global_fuel, st.session_state.sync_time = fetch_motorist_data()
 
-# --- 5. UI LAYOUT: TAB 1 ---
-st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG SERVICES", "🛠️ TOOLS", "🔮 COE", "✈️ FLIGHTS"])
+tab1, tab2, tab3 = st.tabs(["📊 LIVE MONITOR", "🏢 SERVICES", "🔮 COE"])
 
 with tab1:
-    # Clocks
-    t_cols = st.columns(6)
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    # Top Row: Clocks
+    c1, c2, c3, c4 = st.columns(4)
+    c1.markdown(f'<div class="t-card"><small>SGT</small><br><b>{datetime.now(pytz.timezone("Asia/Singapore")).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    c2.markdown(f'<div class="t-card"><small>BKK</small><br><b>{datetime.now(pytz.timezone("Asia/Bangkok")).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    c3.markdown(f'<div class="t-card"><small>TYO</small><br><b>{datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    c4.markdown(f'<div class="t-card"><small>SYD</small><br><b>{datetime.now(pytz.timezone("Australia/Sydney")).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
     st.divider()
+
+    # Petrol Section
+    st.subheader(f"⛽ Petrol Prices (Sync: {st.session_state.sync_time})")
+    p_cols = st.columns(5)
+    grades = ["92", "95", "98", "Premium", "Diesel"]
     
-    # News & Holidays
-    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{get_upcoming_holiday()}</span>', unsafe_allow_html=True)
-    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/"}
-    for src, url in news_sources.items():
-        try:
-            feed = feedparser.parse(requests.get(url, timeout=5).content)
-            entry = feed.entries[0]
-            st.write(f"<span class='news-tag'>{src}</span> **[{entry.title}]({entry.link})**", unsafe_allow_html=True)
-        except: pass
+    for i, g in enumerate(grades):
+        prices = st.session_state.global_fuel[g].values()
+        avg = sum(prices)/len(prices) if prices else 0
+        
+        with p_cols[i]:
+            st.metric(f"Grade {g}", f"${avg:.2f}")
+            if st.button(f"View {g}", key=f"btn_{g}"):
+                show_brand_dialog(g)
 
     st.divider()
 
-    # Markets
-    m_live = fetch_live_market_data()
-    with st.expander("📈 Market Indices", expanded=True):
-        mc = st.columns(5)
-        for i, label in enumerate(["STI", "Gold", "Silver", "Brent", "NatGas"]):
-            mc[i].metric(label, f"{m_live[label][0]:,.2f}", f"{m_live[label][1]:+.2f}%")
+    # Markets & News
+    m_cols = st.columns([2, 1])
+    with m_cols[0]:
+        with st.expander("📈 Live Tickers", expanded=True):
+            tc = st.columns(3)
+            for i, (l, s) in enumerate([("STI", "^STI"), ("Gold", "GC=F"), ("USD/SGD", "SGDSGD=X")]):
+                val = yf.Ticker(s).fast_info['last_price']
+                tc[i].metric(l, f"{val:,.2f}")
+    
+    with m_cols[1]:
+        with st.expander("🗞️ Headlines", expanded=True):
+            feed = feedparser.parse("https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416")
+            for entry in feed.entries[:2]:
+                st.markdown(f"<small>**• {entry.title[:50]}...**</small>", unsafe_allow_html=True)
 
-    # Forex
-    fx_data = fetch_live_forex()
-    with st.expander("💱 Forex (1 SGD)", expanded=True):
-        fc_fx = st.columns(5)
-        for i, label in enumerate(["MYR", "JPY", "THB", "CNY", "USD"]):
-            fc_fx[i].metric(f"SGD/{label}", f"{fx_data[label][0]:.2f}", f"{fx_data[label][1]:+.2f}%")
-
-    # COE Results
-    with st.expander("🚗 COE Bidding (Mar 2026)", expanded=True):
-        coe = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
-        cc = st.columns(5)
-        for i, (cat, p, d) in enumerate(coe):
-            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>', unsafe_allow_html=True)
-
-    # 5. FUEL PRICES: DYNAMIC LOGIC (gold 10)
-    with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-        # Initial sync for the summary averages
-        current_summary = get_live_fuel_sync() 
-        fc = st.columns(5)
-        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-
-        for i, ftype in enumerate(ftypes):
-            # Calculate Average (Ignoring 'N/A')
-            prices = [v[0] for v in current_summary[ftype].values() if isinstance(v[0], (int, float))]
-            avg = sum(prices) / len(prices) if prices else 0
-            
-            fc[i].metric(ftype, f"${avg:.2f}")
-            
-            # View Brands Button triggers Dialog with a fresh DYNAMIC pull
-            if fc[i].button("View Brands", key=f"vbtn_{ftype}_{i}"):
-                show_fuel_details(ftype)
+with tab3:
+    st.subheader("🔮 COE Results (March 2026)")
+    coe_data = [("Cat A", 106320), ("Cat B", 110890), ("Cat E", 112000)]
+    for cat, price in coe_data:
+        st.markdown(f'<div class="c-card"><b>{cat}</b>: <span style="float:right; color:#ff4b4b;">${price:,}</span></div>', unsafe_allow_html=True)
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
