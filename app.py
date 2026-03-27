@@ -7,32 +7,72 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
+from io import StringIO
 
-# --- THE ANCHOR (Lays Outside the Tabs) ---
-if "active_tab" not in st.session_state:
-    st.session_state.active_tab = 0  # Default to Tab 1
+# --- 1. PAGE CONFIG & STYLES (gold 10 Concise) ---
+st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
+st_autorefresh(interval=180000, key="sync_109_stable")
 
-# This "remembers" your Tab 3 input even when the panel resets
-if "g10_target_fix" not in st.session_state:
-    st.session_state.g10_target_fix = 0.0000
+st.markdown("""
+    <style>
+    .main .block-container { max-width: 95%; color: var(--text-color); }
+    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
+    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150_px; color: var(--text-color); line-height: 1.1; }
+    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
+    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
+    .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
+    .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
+    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
+    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
+    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
+# --- 2. THE BRAIN: LIVE FUEL SCRAPER ---
+def get_live_fuel_sync():
+    # March 2026 Baseline Template
+    data = {
+        "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0]},
+        "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
+        "98 Octane": {"Esso": [3.97, 0.0], "Shell": [3.99, 0.0], "SPC": [3.97, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.97, 0.0], "Smart Energy": [2.99, 0.0]},
+        "Premium":   {"Caltex": [4.16, 0.0], "Shell": [4.21, 0.0], "Sinopec": [4.10, 0.0]},
+        "Diesel":    {"Esso": [3.73, 0.0], "Caltex": [3.73, 0.0], "Shell": [3.73, 0.0], "SPC": [3.56, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.72, 0.0], "Smart Energy": [2.83, 0.0]}
+    }
+    try:
+        url = "https://www.motorist.sg/petrol-prices"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=5)
+        df = pd.read_html(StringIO(resp.text), header=0)[0]
+
+        for _, row in df.iterrows():
+            brand_raw = str(row.iloc[0]).lower()
+            for b_name in ["Esso", "Shell", "Caltex", "SPC", "Sinopec", "Cnergy", "Smart Energy"]:
+                if b_name.lower() in brand_raw:
+                    for grade, col in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
+                        val = str(row.get(col, '-')).replace('$', '').strip()
+                        if val not in ['-', 'nan', 'N/A']:
+                            try:
+                                data[grade][b_name] = [float(val), 0.0]
+                            except: continue
+    except: pass
+    return data
+
+# --- 3. THE BEAUTY: DYNAMIC POP-UP ---
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
-    # Fetch fresh data the moment this is called
-    live_data = get_live_fuel_sync()
+    with st.spinner("Syncing 2026 Live Prices..."):
+        live_data = get_live_fuel_sync()
     
     st.write(f"### 📍 {ftype} Price List")
-    st.caption(f"Last Updated: {pd.Timestamp.now().strftime('%H:%M:%S')}")
+    st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
     
     brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
     for brand in brand_order:
-        data = live_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
+        b_data = live_data[ftype].get(brand, ("N/A", 0))
+        price, change = b_data
         if brand == "Shell" and ftype == "92 Octane": continue
         
         display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        
-        # gold 10 Concise Style
         st.markdown(f"""
             <div style='display:flex; justify-content:space-between; padding:4px; border-bottom:1px solid #333; font-size:14px;'>
                 <b>{brand}</b>
@@ -42,223 +82,46 @@ def show_fuel_details(ftype):
                 </span>
             </div>
         """, unsafe_allow_html=True)
-        
-def get_dynamic_flights(origin, dest):
-    prompt = f"""
-    Find 3 current flight options from {origin} to {dest} for June 2026.
-    Requirements: Max 1 stop, show airline and estimated price in MYR.
-    Return ONLY a JSON list of dictionaries.
-    """
-    response = model.generate_content(prompt)
-    return response.text
 
-# SG INFO MONITOR - Weather & Traffic Update 10.9.3
-
-# 1. Page Configuration
-st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
-st_autorefresh(interval=180000, key="sync_109_stable")
-
-# 2. Adaptive CSS
-st.markdown("""
-    <style>
-    .main .block-container { max-width: 95%; color: var(--text-color); }
-    .t-card { background: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 5px; color: var(--text-color); }
-    .c-card { background: var(--secondary-background-color); border-left: 5px solid #ff4b4b; padding: 7px; border-radius: 6px; margin-bottom: 8px; min-height: 150_px; color: var(--text-color); line-height: 1.1; }
-    .f-card { background: var(--secondary-background-color); border: 1px solid #007bff; padding: 10px; border-radius: 10px; text-align: center; color: var(--text-color); line-height: 1.2; }
-    .news-tag { font-size: 0.65rem; background: var(--secondary-background-color); padding: 2px 4px; border-radius: 3px; color: var(--text-color); opacity: 0.8; margin-right: 5px; font-weight: bold; border: 1px solid var(--border-color); }
-    .trans-box { font-size: 0.85rem; color: #666; margin-left: 45px; margin-bottom: 8px; font-style: italic; border-left: 2px solid #ddd; padding-left: 10px; }
-    .up { color: #ff4b4b !important; font-weight: bold; font-size: 0.82rem; } 
-    .down { color: #28a745 !important; font-weight: bold; font-size: 0.82rem; }
-    .stat-label { font-size: 0.72rem; color: var(--text-color); opacity: 0.6; text-transform: uppercase; }
-    .holiday-text { font-size: 0.95rem; color: #28a745; font-weight: bold; margin-left: 10px; }
-    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
-    div[data-testid="stExpander"] [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
-    .stButton>button { height: 26px; padding: 0 10px; font-size: 0.75rem; min-height: 26px; }
-    .traffic-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: inline-block; margin-bottom: 5px; width: 100%; text-align: center;}
-    .weather-box { background: var(--secondary-background-color); border-radius: 10px; padding: 15px; text-align: center; border: 1px solid var(--border-color); }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 3. Logic Functions
+# --- 4. DATA ENGINES (Market, FX, Economy, Holidays) ---
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
-    holidays_2026 = [("New Year's Day", datetime(2026, 1, 1).date()), ("Chinese New Year", datetime(2026, 2, 17).date()), ("Hari Raya Puasa", datetime(2026, 3, 21).date()), ("Good Friday", datetime(2026, 4, 3).date()), ("Labour Day", datetime(2026, 5, 1).date()), ("Hari Raya Haji", datetime(2026, 5, 27).date()), ("Vesak Day", datetime(2026, 5, 31).date()), ("National Day", datetime(2026, 8, 9).date()), ("Deepavali", datetime(2026, 11, 8).date()), ("Christmas Day", datetime(2026, 12, 25).date())]
+    holidays_2026 = [("New Year's Day", date(2026, 1, 1)), ("Chinese New Year", date(2026, 2, 17)), ("Hari Raya Puasa", date(2026, 3, 21)), ("Good Friday", date(2026, 4, 3)), ("Labour Day", date(2026, 5, 1)), ("Hari Raya Haji", date(2026, 5, 27)), ("Vesak Day", date(2026, 5, 31)), ("National Day", date(2026, 8, 9)), ("Deepavali", date(2026, 11, 8)), ("Christmas Day", date(2026, 12, 25))]
     for name, h_date in holidays_2026:
-        if h_date >= now:
-            return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
+        if h_date >= now: return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
-# NEW: Reliable NEA Data Fetcher
-def fetch_nea_live(endpoint):
-    try:
-        url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoint}"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get('data', {}).get('items', [{}])[0]
-    except: return None
-    return None
-
-# --- NEW: LIVE MARKET ENGINE (gold 10) ---
 @st.cache_data(ttl=300)
 def fetch_live_market_data():
-    tickers = {
-        "STI": "^STI", 
-        "Gold": "GC=F", 
-        "Silver": "SI=F", 
-        "Brent": "BZ=F", 
-        "NatGas": "NG=F"
-    }
+    tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Brent": "BZ=F", "NatGas": "NG=F"}
     results = {}
     for label, sym in tickers.items():
         try:
-            ticker = yf.Ticker(sym)
-            # Fetch 5 days to ensure we have data even over long weekends
-            hist = ticker.history(period="5d")
-            if not hist.empty and len(hist) >= 2:
-                current_val = hist['Close'].iloc[-1]
-                prev_val = hist['Close'].iloc[-2]
-                delta_pct = ((current_val - prev_val) / prev_val) * 100
-                results[label] = (current_val, delta_pct)
-            else:
-                results[label] = (0.0, 0.0)
-        except Exception:
-            results[label] = (0.0, 0.0)
+            hist = yf.Ticker(sym).history(period="5d")
+            curr, prev = hist['Close'].iloc[-1], hist['Close'].iloc[-2]
+            results[label] = (curr, ((curr - prev) / prev) * 100)
+        except: results[label] = (0.0, 0.0)
     return results
 
-# --- NEW: SG ECONOMY DATA ENGINE ---
-@st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
-def fetch_sg_economy():
-    """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
-    try:
-        # Using a reliable financial API or SingStat API
-        # For this example, we use the latest Mar 2026 data points confirmed by MAS
-        data = {
-            "cpi_val": 101.9,      # Feb 2026 Base 2024=100
-            "cpi_delta": -0.60,    # MoM Change
-            "inf_val": 1.20,       # Feb 2026 YoY
-            "inf_delta": -0.20     # Change vs Jan 2026 (1.4%)
-        }
-        return data
-    except:
-        return {"cpi_val": 100.7, "cpi_delta": 0.0, "inf_val": 1.4, "inf_delta": 0.0}
-
-# --- 1. FX DATA ENGINE ---
 @st.cache_data(ttl=300)
-def fetch_live_forex():  # Name synchronized with UI call
-    """Explicitly pulls 1 SGD to Target Currency rates with fallback logic"""
-    # Using explicit SGD-Base Tickers (1 SGD = X Target)
-    fx_tickers = {
-        "MYR": "SGDMYR=X", 
-        "JPY": "SGDJPY=X", 
-        "THB": "SGDTHB=X", 
-        "CNY": "SGDCNY=X", 
-        "USD": "SGDUSD=X" 
-    }
-    
-    fx_results = {}
+def fetch_live_forex():
+    fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
+    results = {}
     for label, sym in fx_tickers.items():
         try:
-            ticker = yf.Ticker(sym)
-            hist = ticker.history(period="5d")
-            if not hist.empty and len(hist) >= 2:
-                curr = hist['Close'].iloc[-1]
-                prev = hist['Close'].iloc[-2]
-                delta = ((curr - prev) / prev) * 100
-                fx_results[label] = (curr, delta)
-            else:
-                # If hist is empty, return 0 to trigger the hard-coded fallback below
-                fx_results[label] = (0.0, 0.0)
-        except:
-            fx_results[label] = (0.0, 0.0)
-            
-    # --- HARD VALIDATION FOR ACCURACY ---
-    # Ensures THB (~27) and CNY (~5.4) don't show 0 or USD rates (6.9)
-    if fx_results.get("CNY", (0,0))[0] < 1.0 or fx_results.get("CNY", (0,0))[0] > 6.0: 
-        fx_results["CNY"] = (5.41, -0.05) # Realistic Mar 2026 SGD/CNY
-    if fx_results.get("THB", (0,0))[0] < 5.0:
-        fx_results["THB"] = (26.92, +0.12) # Realistic Mar 2026 SGD/THB
-        
-    return fx_results
+            hist = yf.Ticker(sym).history(period="5d")
+            curr, prev = hist['Close'].iloc[-1], hist['Close'].iloc[-2]
+            results[label] = (curr, ((curr - prev) / prev) * 100)
+        except: results[label] = (0.0, 0.0)
+    return results
 
-# --- UI IMPLEMENTATION (Tab 1) ---
-fx_data = fetch_live_forex()  # This now matches the function name above
-
-#--- NEW: SENTIMENT LOGIC ---
-def get_market_sentiment(m_data):
-    # Aggregating signals from STI and Brent (Proxy for global/local health)
-    sti_perf = m_data.get("STI", (0,0))[1]
-    brent_perf = m_data.get("Brent", (0,0))[1]
-    
-    score = sti_perf + (brent_perf * 0.5)
-    
-    if score > 0.8: return ":green[🚀 BULLISH]", "STRONG BUY"
-    elif score < -0.8: return ":red[📉 BEARISH]", "RISK OFF"
-    else: return ":orange[⚖️ CAUTIOUS]", "NEUTRAL"
-
-# [Logic Functions for Holidays and Fuel remain as per original code]
-
-@st.cache_data(ttl=3600)
-def get_live_fuel_sync():
-    # 1. TEMPLATE BASELINE (gold 10)
-    data = {
-        "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
-        "98 Octane": {"Esso": [3.97, 0.0], "Shell": [3.99, 0.0], "SPC": [3.97, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.97, 0.0], "Smart Energy": [2.99, 0.0]},
-        "Premium":   {"Caltex": [4.16, 0.0], "Shell": [4.21, 0.0], "Sinopec": [4.10, 0.0], "Cnergy": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "Diesel":    {"Esso": [3.73, 0.0], "Caltex": [3.73, 0.0], "Shell": [3.73, 0.0], "SPC": [3.56, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.72, 0.0], "Smart Energy": [2.83, 0.0]}
-    }
-
-    try:
-        url = "https://www.motorist.sg/petrol-prices"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        # Pull the table and set the first row as headers for accuracy
-        tables = pd.read_html(url, storage_options=headers, header=0)
-        df = tables[0]
-
-        # 2. MATCHING LOGIC BY COLUMN NAME (Instead of Index Number)
-        # Shell usually populates: 95, 98, and V-Power (Premium)
-        for _, row in df.iterrows():
-            brand = str(row[0]).lower()
-            
-            if 'shell' in brand:
-                # Direct target mapping for Shell's unique columns
-                # We use .get() to avoid errors if the column name changes slightly
-                try:
-                    data["95 Octane"]["Shell"] = (float(str(row.get('95', 3.47)).replace('$', '')), 0.0)
-                    data["98 Octane"]["Shell"] = (float(str(row.get('98', 3.99)).replace('$', '')), 0.0)
-                    data["Premium"]["Shell"]   = (float(str(row.get('V-Power', 4.21)).replace('$', '')), 0.0)
-                    data["Diesel"]["Shell"]    = (float(str(row.get('Diesel', 3.73)).replace('$', '')), 0.0)
-                except: continue
-            
-            # 3. Standard Mapping for Other Brands (Esso, SPC, etc.)
-            else:
-                for target_brand in ["Esso", "Caltex", "SPC", "Sinopec", "Cnergy"]:
-                    if target_brand.lower() in brand:
-                        # Map based on column header names
-                        for grade, col_name in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
-                            val = str(row.get(col_name, '-')).replace('$', '').strip()
-                            if val != '-' and val != 'nan':
-                                data[grade][target_brand] = (float(val), 0.0)
-    except:
-        pass
-    return data
-
-# Initialize the feed
-fuel_data = get_live_fuel_sync()
-
-# --- UI START ---
+# --- 5. UI LAYOUT: TAB 1 ---
 st.title("🇸🇬 SG Info Monitor 10.9")
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG SERVICES", "🛠️ TOOLS", "🔮 COE", "✈️ FLIGHTS"])
 
-# UPDATED: We now have 3 tabs defined here
-tab1, tab2, tab3,tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 SG PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE Strategic Feasibility & Prediction", "✈️ Global Airfare Prediction Engine"])
-
-# ==========================================
-# TAB 1: LIVE MONITOR (Your EXACT Original)
-# ==========================================
 with tab1:
-    # 1. Clocks
+    # Clocks
     t_cols = st.columns(6)
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
@@ -266,116 +129,54 @@ with tab1:
 
     st.divider()
     
-    # 2. News & Holidays
-    holiday_info = get_upcoming_holiday()
-    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
-    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    nc1, nc2 = st.columns([2, 1])
-    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
-    with nc2: 
-        v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
-        do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
-    
-    news_list = []
+    # News & Holidays
+    st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{get_upcoming_holiday()}</span>', unsafe_allow_html=True)
+    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/"}
     for src, url in news_sources.items():
-        if "Unified" in v_mode or src in v_mode:
-            try:
-                resp = requests.get(url, headers=headers, timeout=5)
-                if resp.status_code == 200:
-                    feed = feedparser.parse(resp.content)
-                    for entry in feed.entries[:(1 if "Unified" in v_mode else 10)]:
-                        if not search_q or search_q.lower() in entry.title.lower():
-                            news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
-            except: pass
-
-    tr_dict = {}
-    if do_tr and news_list:
-        en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
-        if en_titles:
-            try:
-                translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
-                tr_dict = dict(zip(en_titles, translated))
-            except: pass
-
-    for item in news_list:
-        st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
-        if do_tr and item['title'] in tr_dict:
-            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
+        try:
+            feed = feedparser.parse(requests.get(url, timeout=5).content)
+            entry = feed.entries[0]
+            st.write(f"<span class='news-tag'>{src}</span> **[{entry.title}]({entry.link})**", unsafe_allow_html=True)
+        except: pass
 
     st.divider()
-    # 3. Markets & Commodities (DYNAMIC UPDATE)
+
+    # Markets
     m_live = fetch_live_market_data()
-    sentiment_icon, sentiment_text = get_market_sentiment(m_live)
-    sg_econ = fetch_sg_economy() # Pull the new live data
-    
-    with st.expander(f"📈 Market Indices | Sentiment: {sentiment_icon} {sentiment_text}", expanded=True):
-        m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
-        
-        # STI Logic: Shows Live if open, Last Close if closed
-        m1.metric("STI Index", 
-                  f"{m_live['STI'][0]:,.2f}", 
-                  f"{m_live['STI'][1]:+.2f}%")
-        
-        m2.metric("Gold (Spot)", 
-                  f"${m_live['Gold'][0]:,.2f}", 
-                  f"{m_live['Gold'][1]:+.2f}%")
-        
-        m3.metric("Silver (Spot)", 
-                  f"${m_live['Silver'][0]:,.2f}", 
-                  f"{m_live['Silver'][1]:+.2f}%")
-        
-        m4.metric("Brent Crude", 
-                  f"${m_live['Brent'][0]:,.2f}", 
-                  f"{m_live['Brent'][1]:+.2f}%")
-        
-        m5.metric("Natural Gas", 
-                  f"${m_live['NatGas'][0]:.3f}", 
-                  f"{m_live['NatGas'][1]:+.2f}%")
-    
-    # UPDATED LIVE DATA FOR M6 & M7
-    m6.metric("SG CPI (All)", 
-              f"{sg_econ['cpi_val']:.1f}", 
-              f"{sg_econ['cpi_delta']:+.2f}%")
-    
-    m7.metric("SG Inflation", 
-              f"{sg_econ['inf_val']:.2f}%", 
-              f"{sg_econ['inf_delta']:+.2f}%")
+    with st.expander("📈 Market Indices", expanded=True):
+        mc = st.columns(5)
+        for i, label in enumerate(["STI", "Gold", "Silver", "Brent", "NatGas"]):
+            mc[i].metric(label, f"{m_live[label][0]:,.2f}", f"{m_live[label][1]:+.2f}%")
 
-    #FX Expander
-    with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
-        f1, f2, f3, f4, f5 = st.columns(5)
-        # --- 2. UI IMPLEMENTATION ---
+    # Forex
     fx_data = fetch_live_forex()
-    
-    f1.metric("SGD/MYR", f"{fx_data['MYR'][0]:.2f}", f"{fx_data['MYR'][1]:+.2f}%")
-    f2.metric("SGD/JPY", f"{fx_data['JPY'][0]:.2f}", f"{fx_data['JPY'][1]:+.2f}%")
-    f3.metric("SGD/THB", f"{fx_data['THB'][0]:.2f}", f"{fx_data['THB'][1]:+.2f}%")
-    f4.metric("SGD/CNY", f"{fx_data['CNY'][0]:.2f}", f"{fx_data['CNY'][1]:+.2f}%")
-    f5.metric("SGD/USD", f"{fx_data['USD'][0]:.2f}", f"{fx_data['USD'][1]:+.2f}%")
+    with st.expander("💱 Forex (1 SGD)", expanded=True):
+        fc_fx = st.columns(5)
+        for i, label in enumerate(["MYR", "JPY", "THB", "CNY", "USD"]):
+            fc_fx[i].metric(f"SGD/{label}", f"{fx_data[label][0]:.2f}", f"{fx_data[label][1]:+.2f}%")
 
-    # 4. COE Bidding
-    with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
-        coe_data = [("Cat A", 111890, 3670, 1264, 1895), ("Cat B", 115568, 1566, 812, 1185), ("Cat C", 78000, 2000, 290, 438), ("Cat D", 9589, 987, 546, 726), ("Cat E", 118119, 3229, 246, 422)]
+    # COE Results
+    with st.expander("🚗 COE Bidding (Mar 2026)", expanded=True):
+        coe = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat D", 9589, 987), ("Cat E", 118119, 3229)]
         cc = st.columns(5)
-        for i, (cat, p, d, q, b) in enumerate(coe_data):
-            cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
+        for i, (cat, p, d) in enumerate(coe):
+            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>', unsafe_allow_html=True)
 
-    # 5. Fuel Prices
+    # 5. FUEL PRICES: DYNAMIC LOGIC (gold 10)
     with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
+        # Initial sync for the summary averages
+        current_summary = get_live_fuel_sync() 
         fc = st.columns(5)
         ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
 
         for i, ftype in enumerate(ftypes):
-            # 1. Calculate Average (Filters out 'N/A')
-            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
+            # Calculate Average (Ignoring 'N/A')
+            prices = [v[0] for v in current_summary[ftype].values() if isinstance(v[0], (int, float))]
             avg = sum(prices) / len(prices) if prices else 0
             
-            # 2. Display the Metric (Fixed Indentation)
             fc[i].metric(ftype, f"${avg:.2f}")
             
-            # 3. Brands Button
+            # View Brands Button triggers Dialog with a fresh DYNAMIC pull
             if fc[i].button("View Brands", key=f"vbtn_{ftype}_{i}"):
                 show_fuel_details(ftype)
 
