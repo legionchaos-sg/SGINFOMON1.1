@@ -37,33 +37,6 @@ def fetch_fuel_logic():
     }
     return averages, trends, brands
 
-def fetch_top_headlines():
-    # Dynamic headlines based on Mar 27, 2026 reports
-    return [
-        {"source": "CNA", "title": "MAS sets out plan to support gold trading and vault services in Singapore", "time": "3h ago"},
-        {"source": "ST", "title": "PM Wong: Healthy competition with HK benefits global trade; Hainan ties to grow", "time": "5h ago"},
-        {"source": "CNA", "title": "Singapore universities world's 'most improved' in latest QS global rankings", "time": "4h ago"}
-    ]
-
-def fetch_chinese_news():
-    # 8world Singapore RSS Feed
-    rss_8world = "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
-    feed = feedparser.parse(rss_8world)
-    
-    headlines = []
-    # Fetch top 2 from 8world
-    for entry in feed.entries[:2]:
-        headlines.append({"source": "8world", "title": entry.title, "link": entry.link})
-    
-    # Shin Min Daily News (Latest)
-    # Note: Shin Min is best pulled as a static "latest" link or curated headline
-    headlines.append({
-        "source": "Shin Min", 
-        "title": "孕妇护理睫毛突产子，美甲师慌乱中接生 (27/03/2026)", 
-        "link": "https://www.shinmin.sg/"
-    })
-    
-    return headlines
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
@@ -108,7 +81,7 @@ def get_latest_coe():
         {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
-#eND OF dATA eNGINE
+# eND OF dATA eNGINE
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -141,26 +114,41 @@ with tab1:
     holiday_info = get_upcoming_holiday()
     st.markdown('### 🗞️ Local News (Multi-Language)')
     
-    # Row 1: English News (CNA/ST)
-    en_cols = st.columns(3)
-    en_news = [
-        {"src": "CNA", "t": "MAS sets out plan to support gold trading and vault services", "time": "3h ago"},
-        {"src": "ST", "t": "PM Wong: Healthy competition with HK benefits global trade", "time": "5h ago"},
-        {"src": "CNA", "t": "Singapore universities 'most improved' in QS rankings", "time": "4h ago"}
-    ]
-    for i, n in enumerate(en_news):
-        en_cols[i].markdown(f'<div class="t-card" style="border-top:3px solid #007bff;"><small>{n["src"]} • {n["time"]}</small><br><div style="font-size:0.8rem;">{n["t"]}</div></div>', unsafe_allow_html=True)
+   st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
+    news_sources = {"CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", "Mothership": "https://mothership.sg/feed/", "8world": "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"}
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    nc1, nc2 = st.columns([2, 1])
+    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
+    with nc2: 
+        v_mode = st.selectbox("Source:", ["Unified (1 per source)", "CNA Only", "Straits Times Only", "Mothership Only", "8world Only"])
+        do_tr = st.checkbox("Translate (EN → CN)", key="do_tr_check")
+    
+    news_list = []
+    for src, url in news_sources.items():
+        if "Unified" in v_mode or src in v_mode:
+            try:
+                resp = requests.get(url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    feed = feedparser.parse(resp.content)
+                    for entry in feed.entries[:(1 if "Unified" in v_mode else 10)]:
+                        if not search_q or search_q.lower() in entry.title.lower():
+                            news_list.append({'src': src, 'title': entry.title, 'link': entry.link})
+            except: pass
 
-    # Row 2: Chinese News (8world / Shin Min)
-    cn_cols = st.columns(3)
-    cn_news = fetch_chinese_news()
-    for i, n in enumerate(cn_news):
-        cn_cols[i].markdown(f"""
-            <div class="t-card" style="border-top:3px solid #ff4b4b; background: #fff5f5;">
-                <small style="color:#d32f2f; font-weight:bold;">{n['source']}</small><br>
-                <div style="font-size:0.85rem; line-height:1.2;">{n['title']}</div>
-            </div>
-        """, unsafe_allow_html=True)
+    tr_dict = {}
+    if do_tr and news_list:
+        en_titles = [x['title'] for x in news_list if x['src'] != "8world"]
+        if en_titles:
+            try:
+                translated = GoogleTranslator(target='zh-CN').translate("\n".join(en_titles)).split("\n")
+                tr_dict = dict(zip(en_titles, translated))
+            except: pass
+
+    for item in news_list:
+        st.write(f"<span class='news-tag'>{item['src']}</span> **[{item['title']}]({item['link']})**", unsafe_allow_html=True)
+        if do_tr and item['title'] in tr_dict:
+            st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     
 
