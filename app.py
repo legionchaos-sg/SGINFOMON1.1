@@ -132,12 +132,30 @@ with tab1:
 
     # 5. COE Results
     #st.divider()
-    with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
-        coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat E", 118119, 3229)]
-        cc = st.columns(4)
-        for i, (cat, p, d) in enumerate(coe_data):
-            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>', unsafe_allow_html=True)
-
+    st.divider()
+with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
+    # Data structure: (Category, Price, Change, Quota, Bids)
+    coe_data = [
+        ("Cat A", 111890, 3670, 1264, 1895), 
+        ("Cat B", 115568, 1566, 812, 1185), 
+        ("Cat C", 78000, 2000, 290, 438), 
+        ("Cat E", 118119, 3229, 246, 422)
+    ]
+    
+    cc = st.columns(4)
+    for i, (cat, p, d, q, b) in enumerate(coe_data):
+        cc[i].markdown(f"""
+            <div class="c-card">
+                <b>{cat}</b><br>
+                <span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br>
+                <small class="up">▲ ${d:,}</small>
+                <hr style="margin: 5px 0; border: 0.5px solid #444;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; opacity: 0.8;">
+                    <span>Quota: <b>{q}</b></span>
+                    <span>Bids: <b>{b}</b></span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     # 6. FUEL MONITOR SECTION (Moved after COE)
     f_avg, f_trends, f_brands = fetch_fuel_logic()
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
