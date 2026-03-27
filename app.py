@@ -99,7 +99,7 @@ with tab1:
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
-    st.divider()
+    #st.divider()
     
     # 2. News & Holidays
     holiday_info = get_upcoming_holiday()
@@ -109,7 +109,7 @@ with tab1:
     with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
     with nc2: v_mode = st.selectbox("Source:", ["Unified", "CNA Only", "Straits Times Only"])
 
-    st.divider()
+    #st.divider()
 
     # 3. Markets & Commodities
     m_live = fetch_live_market_data()
@@ -131,7 +131,7 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    st.divider()
+    #st.divider()
     with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
         coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat E", 118119, 3229)]
         cc = st.columns(4)
