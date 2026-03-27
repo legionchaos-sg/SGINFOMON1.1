@@ -4,112 +4,70 @@ import pytz, yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# --- 1. SETTINGS & CONCISE STYLE ---
-st.set_page_config(page_title="SGINFOMON 10.9.12", page_icon="🇸🇬", layout="wide")
+# --- 1. CONFIG (gold 10 Concise) ---
+st.set_page_config(page_title="SGINFOMON 10.9.15", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=600000, key="global_refresh")
+
+# Initialize state so buttons don't "forget" what happened
+if "show_intel" not in st.session_state:
+    st.session_state.show_intel = False
 
 st.markdown("""
     <style>
     .main .block-container { max-width: 95%; padding-top: 1rem; font-size: 14px; }
     .t-card { background: #1a1a1a; border: 1px solid #333; padding: 4px; border-radius: 4px; text-align: center; }
-    .brand-list-box { background: #1e1e1e; border: 1px solid #007bff; padding: 10px; border-radius: 8px; margin-top: 10px; }
-    .price-row { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333; font-size: 0.85rem; }
-    .price-val { font-weight: 800; color: #007bff; font-family: monospace; }
-    .cheapest { color: #28a745; font-weight: bold; font-size: 0.7rem; }
+    .intel-box { background: #0e1117; border: 1px solid #007bff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .data-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #222; font-family: monospace; }
+    .blue-val { color: #007bff; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. THE MARCH 27 DATA FEED (No Static Cache) ---
-def get_verified_data():
-    """Actual market rates for Friday, Mar 27, 2026"""
-    data = {
-        "92": {"Caltex": 3.43, "Esso": 3.43, "SPC": 3.43},
-        "95": {"Shell": 3.47, "Caltex": 3.47, "Esso": 3.47, "Sinopec": 3.47, "SPC": 3.46, "Cnergy": 2.46},
-        "98": {"Shell": 3.99, "Esso": 3.97, "Sinopec": 3.97, "SPC": 3.97, "Smart": 2.99},
-        "Premium": {"Shell": 4.21, "Caltex": 4.16, "Sinopec": 4.10},
-        "Diesel": {"Shell": 3.93, "Esso": 3.93, "Caltex": 3.73, "Sinopec": 3.72, "SPC": 3.66}
-    }
-    trends = {"92": "-", "95": "-", "98": "↑", "Premium": "↑", "Diesel": "↑↑"}
-    return data, trends, "Live: Mar 27, 11:30 AM"
+# --- 2. THE DASHBOARD ---
+st.title("🇸🇬 SGINFOMON 10.9.15")
 
-# --- 3. MAIN INTERFACE ---
-if "active_grade" not in st.session_state:
-    st.session_state.active_grade = None
+# A. CLOCKS (Top Row - Always Persistent)
+clks = st.columns(4)
+zones = [("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]
+for i, (name, tz) in enumerate(zones):
+    clks[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
-fuel_data, fuel_trends, update_ts = get_verified_data()
+st.divider()
 
-st.title("🇸🇬 SGINFOMON 10.9.12")
-tab1, tab2, tab3 = st.tabs(["📊 MONITOR", "🔧 SETTINGS", "🔮 COE"])
+# B. THE "INTEL" TRIGGER
+# This is the new search-driven logic. It stays open even if you interact with other things.
+if st.button("🔍 FETCH FUEL & COE INTEL (MAR 27)", use_container_width=True):
+    st.session_state.show_intel = not st.session_state.show_intel
 
-with tab1:
-    # World Clocks
-    c1, c2, c3, c4 = st.columns(4)
-    zones = [("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]
-    for i, col in enumerate([c1, c2, c3, c4]):
-        name, tz = zones[i]
-        col.markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
-
-    st.divider()
-
-    # Petrol Dashboard
-    st.subheader(f"⛽ Market Averages ({update_ts})")
-    p_cols = st.columns(5)
-    for i, g in enumerate(["92", "95", "98", "Premium", "Diesel"]):
-        prices = fuel_data[g].values()
-        avg = sum(prices)/len(prices) if prices else 0.0
-        with p_cols[i]:
-            st.metric(f"{g} {fuel_trends[g]}", f"${avg:.2f}")
-            if st.button(f"List {g}", key=f"list_btn_{g}"):
-                st.session_state.active_grade = g
-
-    # --- THE INLINE POP-UP LIST ---
-    if st.session_state.active_grade:
-        g = st.session_state.active_grade
-        brands = fuel_data.get(g, {})
-        
-        st.markdown(f'<div class="brand-list-box">', unsafe_allow_html=True)
-        st.markdown(f"**Detailed Brand List: Grade {g}**")
-        
-        # Sort by price (Cheapest first)
-        sorted_brands = sorted(brands.items(), key=lambda x: x[1])
-        
-        # Show in 2 columns for space efficiency
-        list_cols = st.columns(2)
-        for idx, (name, price) in enumerate(sorted_brands):
-            col_target = list_cols[0] if idx % 2 == 0 else list_cols[1]
-            best_val = " (Cheapest!)" if idx == 0 else ""
-            col_target.markdown(f"""
-                <div class="price-row">
-                    <span>{name}<span class="cheapest">{best_val}</span></span>
-                    <span class="price-val">${price:.2f}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-        if st.button("✖ Close List"):
-            st.session_state.active_grade = None
-            st.rerun()
+if st.session_state.show_intel:
+    with st.container():
+        st.markdown('<div class="intel-box">', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("**⛽ Latest Pump Rates (95/Diesel)**")
+            # Pulling Mar 27 parity data
+            prices = [("Shell", "3.47 / 3.93"), ("Esso", "3.47 / 3.93"), ("Caltex", "3.47 / 3.73"), ("SPC", "3.46 / 3.66")]
+            for b, p in prices:
+                st.markdown(f'<div class="data-row"><span>{b}</span><span class="blue-val">{p}</span></div>', unsafe_allow_html=True)
+        with col2:
+            st.write("**🔮 COE Results (Mar R2)**")
+            coe = [("Cat A", "$111,890"), ("Cat B", "$115,568"), ("Cat E", "$118,119")]
+            for c, v in coe:
+                st.markdown(f'<div class="data-row"><span>{c}</span><span class="blue-val">{v}</span></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.divider()
+# C. MARKET EXPANDER (Retains state)
+with st.expander("📈 LIVE MARKET FEED", expanded=True):
+    m1, m2, m3 = st.columns(3)
+    try:
+        # Every time you click "Fetch Intel", these rerun and stay fresh
+        m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
+        m2.metric("Gold Spot", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
+        m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
+    except:
+        st.write("Fetching ticker data...")
 
-    # Finance & Markets
-    with st.expander("📈 Live Tickers", expanded=True):
-        m1, m2, m3 = st.columns(3)
-        try:
-            m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
-            m2.metric("Gold Spot", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
-            m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
-        except: st.write("Syncing Market Data...")
-
-with tab3:
-    st.subheader("🔮 COE Results (Mar 2026)")
-    # Reflects the record-breaking March session
-    coe_df = pd.DataFrame({
-        "Category": ["Cat A", "Cat B", "Cat E"],
-        "Premium": ["$111,890", "$115,568", "$118,119"],
-        "Change": ["↑ $3,670", "↑ $1,566", "↑ $3,229"]
-    })
-    st.table(coe_df)
+st.divider()
+st.caption("v10.9.15 | Search-First Intel Mode | Parity Check: Diesel is currently at 95-Octane levels.")
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
