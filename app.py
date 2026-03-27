@@ -173,7 +173,7 @@ with tab1:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     # 3. Markets & Commodities
-    st.divider()
+    #st.divider()
     m_live = fetch_live_market_data()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
         m_cols = st.columns(6)
