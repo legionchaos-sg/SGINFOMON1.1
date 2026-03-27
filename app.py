@@ -45,6 +45,26 @@ def fetch_top_headlines():
         {"source": "CNA", "title": "Singapore universities world's 'most improved' in latest QS global rankings", "time": "4h ago"}
     ]
 
+def fetch_chinese_news():
+    # 8world Singapore RSS Feed
+    rss_8world = "https://www.8world.com/api/v1/rss-outbound-feed?_format=xml&category=176"
+    feed = feedparser.parse(rss_8world)
+    
+    headlines = []
+    # Fetch top 2 from 8world
+    for entry in feed.entries[:2]:
+        headlines.append({"source": "8world", "title": entry.title, "link": entry.link})
+    
+    # Shin Min Daily News (Latest)
+    # Note: Shin Min is best pulled as a static "latest" link or curated headline
+    headlines.append({
+        "source": "Shin Min", 
+        "title": "孕妇护理睫毛突产子，美甲师慌乱中接生 (27/03/2026)", 
+        "link": "https://www.shinmin.sg/"
+    })
+    
+    return headlines
+
 @st.cache_data(ttl=300)
 def fetch_live_forex():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
@@ -119,23 +139,28 @@ with tab1:
     
     # 2. News & Holidays
     holiday_info = get_upcoming_holiday()
-    st.markdown(f'### 🗞️ Headlines <span style="color:#28a745; font-size:0.95rem; font-weight:bold; margin-left:10px;">{holiday_info}</span>', unsafe_allow_html=True)
+    st.markdown('### 🗞️ Local News (Multi-Language)')
+    
+    # Row 1: English News (CNA/ST)
+    en_cols = st.columns(3)
+    en_news = [
+        {"src": "CNA", "t": "MAS sets out plan to support gold trading and vault services", "time": "3h ago"},
+        {"src": "ST", "t": "PM Wong: Healthy competition with HK benefits global trade", "time": "5h ago"},
+        {"src": "CNA", "t": "Singapore universities 'most improved' in QS rankings", "time": "4h ago"}
+    ]
+    for i, n in enumerate(en_news):
+        en_cols[i].markdown(f'<div class="t-card" style="border-top:3px solid #007bff;"><small>{n["src"]} • {n["time"]}</small><br><div style="font-size:0.8rem;">{n["t"]}</div></div>', unsafe_allow_html=True)
 
-    h_cols = st.columns(3)
-    headlines = fetch_top_headlines()
-
-    for i, h in enumerate(headlines):
-        with h_cols[i]:
-            st.markdown(f"""
-                <div style="background: var(--secondary-background-color); padding: 12px; border-radius: 10px; border-top: 3px solid #ff4b4b; height: 110px;">
-                    <small style="opacity:0.6; text-transform:uppercase; font-weight:bold;">{h['source']} • {h['time']}</small><br>
-                    <div style="font-size: 0.85rem; line-height:1.2; font-weight:500; margin-top:5px;">{h['title']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-    nc1, nc2 = st.columns([2, 1])
-    with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
-    with nc2: v_mode = st.selectbox("Source:", ["Unified", "CNA Only", "Straits Times Only"])
+    # Row 2: Chinese News (8world / Shin Min)
+    cn_cols = st.columns(3)
+    cn_news = fetch_chinese_news()
+    for i, n in enumerate(cn_news):
+        cn_cols[i].markdown(f"""
+            <div class="t-card" style="border-top:3px solid #ff4b4b; background: #fff5f5;">
+                <small style="color:#d32f2f; font-weight:bold;">{n['source']}</small><br>
+                <div style="font-size:0.85rem; line-height:1.2;">{n['title']}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     
 
