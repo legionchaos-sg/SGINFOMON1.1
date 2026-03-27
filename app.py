@@ -131,9 +131,7 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    #st.divider()
-    st.divider()
-with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
+    with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
     # Data structure: (Category, Price, Change, Quota, Bids)
     coe_data = [
         ("Cat A", 111890, 3670, 1264, 1895), 
