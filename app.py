@@ -772,17 +772,20 @@ with tab5:
             st.rerun()
 
     # Triggering UI
-   st.subheader("🗓️ Purchase Strategy")
-   c1, c2 = st.columns([1, 1], gap="small")
+  st.subheader("🗓️ Purchase Strategy")
+  c1, c2 = st.columns([1, 1], gap="small")
 
-   with c1:
-       roadmap_airline = st.selectbox(
+    with c1:
+        # Ensure this block is indented exactly 4 spaces from 'with'
+        roadmap_airline = st.selectbox(
             "Select Airline to Forecast:",
             [c["name"] for c in final_sorted],
             key="g10_t5_roadmap_select"
         )
-
+    
     with c2:
+        # Use a spacer to push the button down so it aligns with the selectbox label
+        st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
         if st.button("🚀 Open Strategic Roadmap", use_container_width=True):
             show_strategy_roadmap(roadmap_airline)
 
