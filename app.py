@@ -72,6 +72,14 @@ def get_upcoming_holiday():
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
+def get_latest_coe():
+    # Dynamically pulling March 2026 Round 2 Results
+    return [
+        {"cat": "Cat A", "p": 111890, "ch": 3670, "q": 1264, "b": 1895},
+        {"cat": "Cat B", "p": 115568, "ch": 1566, "q": 812, "b": 1185},
+        {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
+        {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
+    ]
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -131,16 +139,7 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    def get_latest_coe():
-    # Dynamically pulling March 2026 Round 2 Results
-    return [
-        {"cat": "Cat A", "p": 111890, "ch": 3670, "q": 1264, "b": 1895},
-        {"cat": "Cat B", "p": 115568, "ch": 1566, "q": 812, "b": 1185},
-        {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
-        {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
-    ]
-
-with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
+    with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
     coe_list = get_latest_coe()
     cc = st.columns(4)
     
@@ -171,6 +170,7 @@ with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
                 </div>
             </div>
         """, unsafe_allow_html=True)
+            
     # 6. FUEL MONITOR SECTION (Moved after COE)
     f_avg, f_trends, f_brands = fetch_fuel_logic()
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
