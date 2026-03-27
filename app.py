@@ -180,6 +180,7 @@ with tab3:
 
 # --- FINAL FOOTER ---
 st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
+
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
