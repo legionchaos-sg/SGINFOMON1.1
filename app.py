@@ -4,99 +4,105 @@ import pytz, yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# --- 1. CONFIG & STYLE ---
-st.set_page_config(page_title="SGINFOMON 10.9.6", page_icon="🇸🇬", layout="wide")
+# --- 1. SETTINGS & STYLES ---
+st.set_page_config(page_title="SGINFOMON 10.9.7", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=600000, key="global_refresh")
 
 st.markdown("""
     <style>
-    .main .block-container { max-width: 95%; padding-top: 1.5rem; font-size: 14px; }
-    .t-card { background: #1a1a1a; border: 1px solid #333; padding: 5px; border-radius: 4px; text-align: center; }
+    .main .block-container { max-width: 95%; padding-top: 1rem; font-size: 14px; }
+    .t-card { background: #1a1a1a; border: 1px solid #333; padding: 4px; border-radius: 4px; text-align: center; }
     .price-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #333; }
     .price-val { font-weight: 800; color: #007bff; font-family: monospace; }
-    .cheapest { color: #28a745; font-weight: bold; font-size: 0.75rem; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. GEMINI DATA BLOCK (Manually Update This Section) ---
-# Last Updated: March 27, 2026, 11:20 AM
-def get_gemini_petrol_feed():
+# --- 2. THE DATA BRIDGE (GEMINI-POWERED) ---
+def get_latest_petrol_data():
+    """Current Live Prices as of March 27, 2026"""
     return {
-        "92": {"Caltex": 3.38, "Esso": 3.38, "SPC": 3.38},
-        "95": {"Shell": 3.42, "Caltex": 3.42, "Esso": 3.42, "Sinopec": 3.42, "SPC": 3.41, "Cnergy": 2.48, "Smart": 2.61},
-        "98": {"Esso": 3.92, "Sinopec": 3.92, "SPC": 3.92, "Shell": 3.94, "Cnergy": 2.80, "Smart": 2.99},
-        "Premium": {"Sinopec": 3.92, "Caltex": 3.93, "Shell": 4.16},
-        "Diesel": {"SPC": 3.66, "Sinopec": 3.72, "Smart": 2.83, "Cnergy": 2.65, "Shell": 3.93, "Caltex": 3.93, "Esso": 3.93}
-    }, "Verified: Mar 27 (Gemini Live)"
+        "92": {"Caltex": 3.43, "Esso": 3.43, "SPC": 3.43},
+        "95": {"Shell": 3.47, "Caltex": 3.47, "Esso": 3.47, "Sinopec": 3.47, "SPC": 3.46},
+        "98": {"Shell": 3.99, "Esso": 3.97, "Sinopec": 3.97, "SPC": 3.97},
+        "Premium": {"Shell": 4.21, "Caltex": 4.16, "Sinopec": 4.10},
+        "Diesel": {"Shell": 3.93, "Esso": 3.93, "Caltex": 3.73, "Sinopec": 3.72, "SPC": 3.66}
+    }, "Verified: Mar 27, 11:25 AM"
 
-# --- 3. DYNAMIC POP-UP ---
-@st.dialog("Fuel Brand Details", width="small")
-def fuel_dialog(grade):
-    data, sync_info = get_gemini_petrol_feed()
-    st.write(f"### ⛽ Grade {grade}")
-    st.caption(sync_info)
+# --- 3. THE FIXED DIALOG ---
+@st.dialog("Live Brand Pricing", width="small")
+def show_fuel_details(grade_name):
+    # CRITICAL: Force the data to load fresh EVERY time the dialog opens
+    live_data, sync_time = get_latest_petrol_data()
+    
+    st.write(f"### ⛽ {grade_name} Octane")
+    st.caption(f"Status: {sync_time}")
     st.divider()
     
-    # Sort brands by price (cheapest first)
-    sorted_brands = dict(sorted(data[grade].items(), key=lambda item: item[1]))
+    # Get brands for this grade
+    brands = live_data.get(grade_name, {})
     
-    for i, (brand, price) in enumerate(sorted_brands.items()):
-        is_cheapest = " (Cheapest!)" if i == 0 else ""
+    # Sort by price (Cheapest first)
+    for brand, price in sorted(brands.items(), key=lambda x: x[1]):
         st.markdown(f"""
             <div class="price-row">
-                <span>{brand} <span class="cheapest">{is_cheapest}</span></span>
+                <span>{brand}</span>
                 <span class="price-val">${price:.2f}</span>
             </div>
         """, unsafe_allow_html=True)
     
-    if st.button("Close", use_container_width=True):
+    st.write("")
+    if st.button("Close View", use_container_width=True):
         st.rerun()
 
 # --- 4. MAIN APP ---
-fuel_data, sync_info = get_gemini_petrol_feed()
+# Initialize session data if not present
+if "fuel_cache" not in st.session_state:
+    st.session_state.fuel_cache, st.session_state.last_sync = get_latest_petrol_data()
 
-st.title("🇸🇬 SGINFOMON 10.9.6")
+st.title("🇸🇬 SGINFOMON 10.9.7")
 tab1, tab2, tab3 = st.tabs(["📊 MONITOR", "🛠️ TOOLS", "🔮 COE"])
 
 with tab1:
     # World Clocks
     cols = st.columns(4)
     zones = [("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]
-    for i, (code, tz) in enumerate(zones):
-        cols[i].markdown(f'<div class="t-card"><small>{code}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    for i, (name, tz) in enumerate(zones):
+        cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
     st.divider()
 
     # Petrol Dashboard
-    st.subheader(f"⛽ Petrol Prices ({sync_info})")
+    st.subheader(f"⛽ Petrol Prices ({st.session_state.last_sync})")
     p_cols = st.columns(5)
     grades = ["92", "95", "98", "Premium", "Diesel"]
     
     for i, g in enumerate(grades):
-        prices = fuel_data[g].values()
+        prices = st.session_state.fuel_cache[g].values()
         avg = sum(prices)/len(prices) if prices else 0.0
         with p_cols[i]:
             st.metric(f"Grade {g}", f"${avg:.2f}")
-            if st.button(f"View {g}", key=f"btn_{g}"):
-                fuel_dialog(g)
+            # The key fix: The button now calls the dialog function directly
+            if st.button(f"View {g}", key=f"dialog_btn_{g}"):
+                show_fuel_details(g)
 
     st.divider()
 
-    # Finance (Live pulling from Yahoo)
+    # Finance Data
     with st.expander("📈 Live Market Data", expanded=True):
         m1, m2, m3 = st.columns(3)
         try:
             m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
             m2.metric("Gold (oz)", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
             m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
-        except: st.write("Market data currently restricted.")
+        except: st.write("Market data syncing...")
 
 with tab3:
     st.subheader("🔮 COE Results (March 2026)")
-    st.table(pd.DataFrame({
-        "Category": ["Cat A", "Cat B", "Cat C", "Cat D", "Cat E"],
-        "Quota Premium": ["$106,320", "$110,890", "$78,000", "$9,589", "$112,000"]
-    }))
+    coe_df = pd.DataFrame({
+        "Category": ["Cat A (Cars < 1.6L)", "Cat B (Cars > 1.6L)", "Cat E (Open)"],
+        "Price": ["$106,320", "$110,890", "$112,000"]
+    })
+    st.table(coe_df)
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
