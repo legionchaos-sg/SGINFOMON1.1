@@ -772,8 +772,8 @@ with tab5:
             st.rerun()
 
     # Triggering UI
-  st.subheader("🗓️ Purchase Strategy")
-  c1, c2 = st.columns([1, 1], gap="small")
+    st.subheader("🗓️ Purchase Strategy")
+    c1, c2 = st.columns([1, 1], gap="small")
 
     with c1:
         # Ensure this block is indented exactly 4 spaces from 'with'
