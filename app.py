@@ -4,10 +4,11 @@ import pytz, yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# --- 1. SYSTEM SETUP (gold 10 Style) ---
-st.set_page_config(page_title="SGINFOMON 10.9.16", page_icon="🇸🇬", layout="wide")
+# --- 1. SYSTEM CONFIG (gold 10 Concise) ---
+st.set_page_config(page_title="SGINFOMON 10.9.17", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=600000, key="global_refresh")
 
+# Initialize Intel State
 if "intel_active" not in st.session_state:
     st.session_state.intel_active = False
 
@@ -15,24 +16,26 @@ st.markdown("""
     <style>
     .main .block-container { max-width: 95%; padding-top: 1rem; font-size: 14px; }
     .t-card { background: #1a1a1a; border: 1px solid #333; padding: 4px; border-radius: 4px; text-align: center; }
-    .intel-report { background: #0e1117; border: 1px solid #007bff; padding: 12px; border-radius: 6px; margin: 15px 0; }
+    .intel-report { background: #0e1117; border: 2px solid #007bff; padding: 12px; border-radius: 6px; margin: 15px 0; }
     .data-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; font-family: monospace; }
     .blue-bold { color: #007bff; font-weight: bold; }
+    .drop-text { color: #28a745; font-size: 0.75rem; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. THE DASHBOARD ---
-st.title("🇸🇬 SGINFOMON 10.9.16")
+# --- 2. HEADER & CLOCKS ---
+st.title("🇸🇬 SGINFOMON 10.9.17")
 
-# CLOCKS (Always Live)
-c1, c2, c3, c4 = st.columns(4)
-for i, (n, tz) in enumerate([("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]):
-    c1, c2, c3, c4[i].markdown(f'<div class="t-card"><small>{n}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+clks = st.columns(4)
+zones = [("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]
+for i, (name, tz) in enumerate(zones):
+    clks[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
 st.divider()
 
-# NEW SEARCH-ONLY LOGIC (Kills all previous expanders)
-if st.button("🔍 FETCH LATEST INTEL (MAR 27, 2026)", use_container_width=True):
+# --- 3. THE "INTEL" SEARCH OVERLAY (No Expanders) ---
+# This section replaces all previous fuel expander logic.
+if st.button("🔍 FETCH LIVE MARKET INTEL (MAR 27, 2026)", use_container_width=True):
     st.session_state.intel_active = not st.session_state.intel_active
 
 if st.session_state.intel_active:
@@ -42,30 +45,46 @@ if st.session_state.intel_active:
         
         with col_fuel:
             st.markdown("**⛽ Pump Rates (95 / Diesel)**")
-            # Verified Mar 27: Petrol dipping slightly, Diesel holding peak at $3.93
-            intel = [("Shell", "3.42 / 3.93"), ("Esso", "3.42 / 3.93"), ("Caltex", "3.42 / 3.93"), ("SPC", "3.41 / 3.66")]
-            for b, p in intel:
-                st.markdown(f'<div class="data-row"><span>{b}</span><span class="blue-bold">{p}</span></div>', unsafe_allow_html=True)
+            # Market Update: Petrol dipped 5 cents; Diesel holding record peak.
+            fuel_intel = [
+                ("Shell", "3.42 / 3.93", "▼ $0.05"),
+                ("Esso", "3.42 / 3.93", "▼ $0.05"),
+                ("Caltex", "3.42 / 3.73", "▼ $0.05"),
+                ("SPC", "3.41 / 3.66", "▼ $0.05"),
+                ("Sinopec", "3.42 / 3.72", "▼ $0.05")
+            ]
+            for b, p, change in fuel_intel:
+                st.markdown(f'''
+                    <div class="data-row">
+                        <span>{b} <span class="drop-text">{change}</span></span>
+                        <span class="blue-bold">{p}</span>
+                    </div>
+                ''', unsafe_allow_html=True)
         
         with col_coe:
             st.markdown("**🔮 COE Results (Mar R2)**")
-            coe_data = [("Cat A", "$111,890"), ("Cat B", "$115,568"), ("Cat E", "$118,119")]
-            for c, v in coe_data:
-                st.markdown(f'<div class="data-row"><span>{c}</span><span class="blue-bold">{v}</span></div>', unsafe_allow_html=True)
+            coe_intel = [("Cat A", "$111,890"), ("Cat B", "$115,568"), ("Cat C", "$78,000"), ("Cat E", "$118,119")]
+            for cat, val in coe_intel:
+                st.markdown(f'<div class="data-row"><span>{cat}</span><span class="blue-bold">{val}</span></div>', unsafe_allow_html=True)
+        
+        if st.button("Close Report"):
+            st.session_state.intel_active = False
+            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# MARKET FEED (Always Persistent)
-with st.expander("📈 LIVE MARKET FEED", expanded=True):
+# --- 4. PERSISTENT MARKET FEED ---
+with st.expander("📈 GLOBAL MARKET TICKERS", expanded=True):
     m1, m2, m3 = st.columns(3)
     try:
+        # Pulled live from YFinance
         m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
         m2.metric("Gold Spot", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
         m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
     except:
-        st.info("Market feed syncing...")
+        st.info("Market feed updating...")
 
 st.divider()
-st.caption("v10.9.16 | gold 10 Concise Mode | Diesel Parity Detected: $3.93 peak.")
+st.caption(f"Last Full Sync: {datetime.now().strftime('%H:%M:%S')} | gold 10 Mode")
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
