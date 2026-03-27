@@ -16,25 +16,6 @@ if "active_tab" not in st.session_state:
 if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
 
-@st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
-                <b>{brand}</b>
-                <span>
-                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
-                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
-        
 def get_dynamic_flights(origin, dest):
     prompt = f"""
     Find 3 current flight options from {origin} to {dest} for June 2026.
@@ -188,54 +169,6 @@ def get_market_sentiment(m_data):
     if score > 0.8: return ":green[🚀 BULLISH]", "STRONG BUY"
     elif score < -0.8: return ":red[📉 BEARISH]", "RISK OFF"
     else: return ":orange[⚖️ CAUTIOUS]", "NEUTRAL"
-
-# [Logic Functions for Holidays and Fuel remain as per original code]
-
-@st.cache_data(ttl=3600)
-def get_live_fuel_sync():
-    # 1. TEMPLATE BASELINE (gold 10)
-    data = {
-        "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
-        "98 Octane": {"Esso": [3.97, 0.0], "Shell": [3.99, 0.0], "SPC": [3.97, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.97, 0.0], "Smart Energy": [2.99, 0.0]},
-        "Premium":   {"Caltex": [4.16, 0.0], "Shell": [4.21, 0.0], "Sinopec": [4.10, 0.0], "Cnergy": ["N/A", 0], "Smart Energy": ["N/A", 0]},
-        "Diesel":    {"Esso": [3.73, 0.0], "Caltex": [3.73, 0.0], "Shell": [3.73, 0.0], "SPC": [3.56, 0.0], "Cnergy": [2.80, 0.0], "Sinopec": [3.72, 0.0], "Smart Energy": [2.83, 0.0]}
-    }
-
-    try:
-        url = "https://www.motorist.sg/petrol-prices"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        # Pull the table and set the first row as headers for accuracy
-        tables = pd.read_html(url, storage_options=headers, header=0)
-        df = tables[0]
-
-        # 2. MATCHING LOGIC BY COLUMN NAME (Instead of Index Number)
-        # Shell usually populates: 95, 98, and V-Power (Premium)
-        for _, row in df.iterrows():
-            brand = str(row[0]).lower()
-            
-            if 'shell' in brand:
-                # Direct target mapping for Shell's unique columns
-                # We use .get() to avoid errors if the column name changes slightly
-                try:
-                    data["95 Octane"]["Shell"] = (float(str(row.get('95', 3.47)).replace('$', '')), 0.0)
-                    data["98 Octane"]["Shell"] = (float(str(row.get('98', 3.99)).replace('$', '')), 0.0)
-                    data["Premium"]["Shell"]   = (float(str(row.get('V-Power', 4.21)).replace('$', '')), 0.0)
-                    data["Diesel"]["Shell"]    = (float(str(row.get('Diesel', 3.73)).replace('$', '')), 0.0)
-                except: continue
-            
-            # 3. Standard Mapping for Other Brands (Esso, SPC, etc.)
-            else:
-                for target_brand in ["Esso", "Caltex", "SPC", "Sinopec", "Cnergy"]:
-                    if target_brand.lower() in brand:
-                        # Map based on column header names
-                        for grade, col_name in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
-                            val = str(row.get(col_name, '-')).replace('$', '').strip()
-                            if val != '-' and val != 'nan':
-                                data[grade][target_brand] = (float(val), 0.0)
-    except:
-        pass
-    return data
 
 # Initialize the feed
 fuel_data = get_live_fuel_sync()
