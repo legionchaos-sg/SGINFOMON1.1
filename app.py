@@ -170,9 +170,6 @@ def get_market_sentiment(m_data):
     elif score < -0.8: return ":red[📉 BEARISH]", "RISK OFF"
     else: return ":orange[⚖️ CAUTIOUS]", "NEUTRAL"
 
-# Initialize the feed
-fuel_data = get_live_fuel_sync()
-
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
 
@@ -229,7 +226,7 @@ with tab1:
         if do_tr and item['title'] in tr_dict:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
-    st.divider()
+    #st.divider()
     # 3. Markets & Commodities (DYNAMIC UPDATE)
     m_live = fetch_live_market_data()
     sentiment_icon, sentiment_text = get_market_sentiment(m_live)
@@ -286,23 +283,7 @@ with tab1:
         cc = st.columns(5)
         for i, (cat, p, d, q, b) in enumerate(coe_data):
             cc[i].markdown(f"""<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small><hr style="margin:5px 0; opacity:0.1;"><span class="stat-label">Quota:</span> <b>{q:,}</b><br><span class="stat-label">Bids:</span> <b>{b:,}</b></div>""", unsafe_allow_html=True)
-
-    # 5. Fuel Prices
-    with st.expander("⛽ Fuel Prices (Avg per Grade)", expanded=True):
-        fc = st.columns(5)
-        ftypes = ["92 Octane", "95 Octane", "98 Octane", "Premium", "Diesel"]
-
-        for i, ftype in enumerate(ftypes):
-            # 1. Calculate Average (Filters out 'N/A')
-            prices = [v[0] for v in fuel_data[ftype].values() if isinstance(v[0], (int, float))]
-            avg = sum(prices) / len(prices) if prices else 0
             
-            # 2. Display the Metric (Fixed Indentation)
-            fc[i].metric(ftype, f"${avg:.2f}")
-            
-            # 3. Brands Button
-            if fc[i].button("View Brands", key=f"vbtn_{ftype}_{i}"):
-                show_fuel_details(ftype)
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
