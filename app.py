@@ -2,10 +2,9 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
-from datetime import date, timedelta
 import yfinance as yf
 
 # --- THE ANCHOR ---
@@ -26,7 +25,6 @@ def fetch_fuel_logic():
     averages = {"92": 3.38, "95": 3.42, "98": 3.93, "Premium": 4.05, "Diesel": 3.82}
     
     # 2. Change Indicators (True = Increase, False = Decrease)
-    # Mar 26: Petrol ⬇️ | Diesel ⬆️
     trends = {"92": False, "95": False, "98": False, "Premium": False, "Diesel": True}
     
     # 3. Brand Specifics (Quotes accurate as of Mar 27, 2026)
@@ -41,8 +39,6 @@ def fetch_fuel_logic():
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
-    """Pulls live SGD to Target rates (Mar 27, 2026 status)"""
-    # Note: SGD/MYR is currently hitting a high of ~3.11 in Mar 2026
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
     for label, sym in fx_tickers.items():
@@ -89,7 +85,6 @@ st.markdown("""
     .up { color: #ff4b4b !important; font-weight: bold; } 
     .down { color: #28a745 !important; font-weight: bold; }
     .stat-label { font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; }
-    .svc-card { background: var(--secondary-background-color); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); height: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -125,7 +120,7 @@ with tab1:
         m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.2f}%")
         m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.2f}%")
 
-    # 4. RESTORED: Foreign Exchange (1 SGD Base)
+    # 4. Foreign Exchange
     fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f_cols = st.columns(5)
@@ -135,8 +130,15 @@ with tab1:
         f_cols[3].metric("SGD/CNY", f"{fx_data['CNY'][0]:.4f}", f"{fx_data['CNY'][1]:+.2f}%")
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
-    # 5. FUEL MONITOR SECTION
+    # 5. COE Results
     st.divider()
+    with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
+        coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat E", 118119, 3229)]
+        cc = st.columns(4)
+        for i, (cat, p, d) in enumerate(coe_data):
+            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>', unsafe_allow_html=True)
+
+    # 6. FUEL MONITOR SECTION (Moved after COE)
     f_avg, f_trends, f_brands = fetch_fuel_logic()
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         fuel_cols = st.columns(5)
@@ -156,28 +158,27 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Dynamic Pop-up
+                # Dynamic Pop-up with Brand Indicators
                 with st.popover(f"Quotes: {g}"):
                     st.caption(f"Quotes for {g} as of {datetime.now().strftime('%d %b %H:%M')}")
                     for brand, price in f_brands[g].items():
-                        p_str = f"${price:.2f}" if isinstance(price, (float, int)) else price
-                        st.write(f"**{brand}**: {p_str}")
+                        if price != "N/A":
+                            # Brand-specific indicator matches the grade trend for this logic
+                            b_arrow = "↑" if is_up else "↓"
+                            b_color = "#ff4b4b" if is_up else "#28a745"
+                            p_str = f"${price:.2f}"
+                            st.write(f"**{brand}**: {p_str} <span style='color:{b_color}; font-weight:bold;'>{b_arrow}</span>", unsafe_allow_html=True)
+                        else:
+                            st.write(f"**{brand}**: N/A")
                     st.divider()
                     st.info(f"Market: {'Price Hike' if is_up else 'Price Dip/Stable'}")
-
-    # 6. COE Results
-    with st.expander("🚗 COE Bidding Results (Mar 2026)", expanded=True):
-        coe_data = [("Cat A", 111890, 3670), ("Cat B", 115568, 1566), ("Cat C", 78000, 2000), ("Cat E", 118119, 3229)]
-        cc = st.columns(4)
-        for i, (cat, p, d) in enumerate(coe_data):
-            cc[i].markdown(f'<div class="c-card"><b>{cat}</b><br><span style="color:#ff4b4b; font-size:1.1rem; font-weight:bold;">${p:,}</span><br><small class="up">▲ ${d:,}</small></div>', unsafe_allow_html=True)
 
 with tab3:
     st.markdown("### 🛠️ Tactical Trade Scheduler (gold 10)")
     st.write(f"Adjustment ID: `{st.session_state.g10_target_fix}`")
     st.button("🔄 Full System Refresh")
 
-# --- FINAL FOOTER (FIXED SYNTAX) ---
+# --- FINAL FOOTER ---
 st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
 # ==========================================
 # TAB 2: PUBLIC SERVICES
