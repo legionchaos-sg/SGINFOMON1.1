@@ -4,8 +4,8 @@ import pytz, yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# --- 1. SYSTEM CONFIG (gold 10 Concise) ---
-st.set_page_config(page_title="SGINFOMON 10.9.17", page_icon="🇸🇬", layout="wide")
+# --- 1. SETTINGS & CONCISE STYLE ---
+st.set_page_config(page_title="SGINFOMON 10.9.18", page_icon="🇸🇬", layout="wide")
 st_autorefresh(interval=600000, key="global_refresh")
 
 # Initialize Intel State
@@ -24,7 +24,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 2. HEADER & CLOCKS ---
-st.title("🇸🇬 SGINFOMON 10.9.17")
+st.title("🇸🇬 SGINFOMON 10.9.18")
 
 clks = st.columns(4)
 zones = [("SGP", "Asia/Singapore"), ("BKK", "Asia/Bangkok"), ("TYO", "Asia/Tokyo"), ("SYD", "Australia/Sydney")]
@@ -33,58 +33,61 @@ for i, (name, tz) in enumerate(zones):
 
 st.divider()
 
-# --- 3. THE "INTEL" SEARCH OVERLAY (No Expanders) ---
-# This section replaces all previous fuel expander logic.
-if st.button("🔍 FETCH LIVE MARKET INTEL (MAR 27, 2026)", use_container_width=True):
-    st.session_state.intel_active = not st.session_state.intel_active
+# --- 3. TAB DEFINITIONS (Fixed NameError) ---
+tab1, tab2 = st.tabs(["📊 MONITOR", "🔮 COE & ANALYSIS"])
 
-if st.session_state.intel_active:
-    with st.container():
-        st.markdown('<div class="intel-report">', unsafe_allow_html=True)
-        col_fuel, col_coe = st.columns(2)
-        
-        with col_fuel:
-            st.markdown("**⛽ Pump Rates (95 / Diesel)**")
-            # Market Update: Petrol dipped 5 cents; Diesel holding record peak.
-            fuel_intel = [
-                ("Shell", "3.42 / 3.93", "▼ $0.05"),
-                ("Esso", "3.42 / 3.93", "▼ $0.05"),
-                ("Caltex", "3.42 / 3.73", "▼ $0.05"),
-                ("SPC", "3.41 / 3.66", "▼ $0.05"),
-                ("Sinopec", "3.42 / 3.72", "▼ $0.05")
-            ]
-            for b, p, change in fuel_intel:
-                st.markdown(f'''
-                    <div class="data-row">
-                        <span>{b} <span class="drop-text">{change}</span></span>
-                        <span class="blue-bold">{p}</span>
-                    </div>
-                ''', unsafe_allow_html=True)
-        
-        with col_coe:
-            st.markdown("**🔮 COE Results (Mar R2)**")
-            coe_intel = [("Cat A", "$111,890"), ("Cat B", "$115,568"), ("Cat C", "$78,000"), ("Cat E", "$118,119")]
-            for cat, val in coe_intel:
-                st.markdown(f'<div class="data-row"><span>{cat}</span><span class="blue-bold">{val}</span></div>', unsafe_allow_html=True)
-        
-        if st.button("Close Report"):
-            st.session_state.intel_active = False
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+with tab1:
+    # THE "INTEL" SEARCH OVERLAY
+    if st.button("🔍 FETCH LIVE MARKET INTEL (MAR 27, 2026)", use_container_width=True):
+        st.session_state.intel_active = not st.session_state.intel_active
 
-# --- 4. PERSISTENT MARKET FEED ---
-with st.expander("📈 GLOBAL MARKET TICKERS", expanded=True):
-    m1, m2, m3 = st.columns(3)
-    try:
-        # Pulled live from YFinance
-        m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
-        m2.metric("Gold Spot", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
-        m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
-    except:
-        st.info("Market feed updating...")
+    if st.session_state.intel_active:
+        with st.container():
+            st.markdown('<div class="intel-report">', unsafe_allow_html=True)
+            col_fuel, col_sub = st.columns(2)
+            
+            with col_fuel:
+                st.markdown("**⛽ Pump Rates (95 / Diesel)**")
+                # Updated Mar 27: Petrol dropped 5c; Diesel remains at peak.
+                fuel_intel = [
+                    ("Shell", "3.42 / 3.93", "▼ $0.05"),
+                    ("Esso", "3.42 / 3.93", "▼ $0.05"),
+                    ("Caltex", "3.42 / 3.73", "▼ $0.05"),
+                    ("SPC", "3.41 / 3.66", "▼ $0.05"),
+                    ("Sinopec", "3.42 / 3.72", "▼ $0.05")
+                ]
+                for b, p, change in fuel_intel:
+                    st.markdown(f'<div class="data-row"><span>{b} <span class="drop-text">{change}</span></span><span class="blue-bold">{p}</span></div>', unsafe_allow_html=True)
+            
+            with col_sub:
+                st.markdown("**💡 Quick Insights**")
+                st.info("95-Octane has stabilized at $3.42. Diesel parity continues to challenge logistics costs.")
+                if st.button("Close Report"):
+                    st.session_state.intel_active = False
+                    st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # PERSISTENT MARKET FEED
+    with st.expander("📈 GLOBAL MARKET TICKERS", expanded=True):
+        m1, m2, m3 = st.columns(3)
+        try:
+            m1.metric("STI Index", f"{yf.Ticker('^STI').fast_info['last_price']:,.2f}")
+            m2.metric("Gold Spot", f"${yf.Ticker('GC=F').fast_info['last_price']:,.2f}")
+            m3.metric("USD/SGD", f"{yf.Ticker('SGDSGD=X').fast_info['last_price']:.4f}")
+        except:
+            st.info("Market feed updating...")
+
+with tab2:
+    st.subheader("🔮 COE Results (Mar 2026 Round 2)")
+    coe_df = pd.DataFrame({
+        "Category": ["Cat A", "Cat B", "Cat C", "Cat E"],
+        "Premium": ["$111,890", "$115,568", "$78,000", "$118,119"],
+        "Status": ["Record High", "Rising", "Stable", "Peak"]
+    })
+    st.table(coe_df)
 
 st.divider()
-st.caption(f"Last Full Sync: {datetime.now().strftime('%H:%M:%S')} | gold 10 Mode")
+st.caption(f"Last Full Sync: {datetime.now().strftime('%H:%M:%S')} | gold 10 Concise")
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
