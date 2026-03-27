@@ -18,23 +18,30 @@ if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
 
 @st.dialog("Fuel Brand Details")
-def show_fuel_details(ftype):
-    st.write(f"### 📍 {ftype} Price List")
-    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
-    for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
-        price, change = data
-        if brand == "Shell" and ftype == "92 Octane": continue
-        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
-        st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
-                <b>{brand}</b>
-                <span>
-                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
-                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+# 1. Initialize Session State so numbers persist
+if "fuel_data" not in st.session_state:
+    st.session_state.fuel_data = get_live_fuel_sync()
+
+# 2. Add a Refresh Button to trigger the update
+if st.button("🔄 Sync Live Motorist.sg Prices"):
+    with st.spinner("Fetching March 2026 Pump Prices..."):
+        # Clear cache and pull fresh
+        st.session_state.fuel_data = get_live_fuel_sync()
+        st.success("Prices Updated!")
+
+# 3. The Pop-over now pulls from the 'live' session state
+with st.popover("⛽ View Latest Petrol Prices"):
+    st.write(f"### Live Singapore Pump Prices ({gold_10})")
+    
+    # Example: Pulling the 95 Octane Shell price dynamically
+    shell_95 = st.session_state.fuel_data["95 Octane"].get("Shell", [3.47])[0]
+    esso_95 = st.session_state.fuel_data["95 Octane"].get("Esso", [3.47])[0]
+    
+    col1, col2 = st.columns(2)
+    col1.metric("Shell 95", f"${shell_95}")
+    col2.metric("Esso 95", f"${esso_95}")
+    
+    st.caption("Last synchronized with Motorist.sg via live 2026 feed.")
         
 def get_dynamic_flights(origin, dest):
     prompt = f"""
