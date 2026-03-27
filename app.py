@@ -2,11 +2,12 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
+import yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
-import yfinance as yf
+from io import StringIO
 
 # --- THE ANCHOR (Lays Outside the Tabs) ---
 if "active_tab" not in st.session_state:
@@ -44,8 +45,7 @@ def get_dynamic_flights(origin, dest):
     response = model.generate_content(prompt)
     return response.text
 
-# SG INFO MONITOR - Weather & Traffic Update 10.9.3
-
+# SG INFO MONITOR 
 # 1. Page Configuration
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -192,8 +192,12 @@ def get_market_sentiment(m_data):
 # [Logic Functions for Holidays and Fuel remain as per original code]
 
 @st.cache_data(ttl=3600)
+import pandas as pd
+import requests
+from io import StringIO
+
 def get_live_fuel_sync():
-    # 1. TEMPLATE BASELINE (gold 10)
+    # 1. TEMPLATE BASELINE (Fall-back values if site is down)
     data = {
         "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
         "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
@@ -204,37 +208,52 @@ def get_live_fuel_sync():
 
     try:
         url = "https://www.motorist.sg/petrol-prices"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        # Pull the table and set the first row as headers for accuracy
-        tables = pd.read_html(url, storage_options=headers, header=0)
+        # 2026 CACHE BUSTING: Adding a random parameter to the URL forces a fresh pull
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Cache-Control": "no-cache"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        # Use StringIO to avoid the future deprecation warning in pandas
+        tables = pd.read_html(StringIO(response.text), header=0)
         df = tables[0]
 
-        # 2. MATCHING LOGIC BY COLUMN NAME (Instead of Index Number)
-        # Shell usually populates: 95, 98, and V-Power (Premium)
+        # Cleanup: Remove any fully empty rows or columns
+        df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
+
         for _, row in df.iterrows():
-            brand = str(row[0]).lower()
+            # Standardize the Brand name (The first column)
+            raw_brand = str(row.iloc[0]).strip().lower()
             
-            if 'shell' in brand:
-                # Direct target mapping for Shell's unique columns
-                # We use .get() to avoid errors if the column name changes slightly
-                try:
-                    data["95 Octane"]["Shell"] = (float(str(row.get('95', 3.47)).replace('$', '')), 0.0)
-                    data["98 Octane"]["Shell"] = (float(str(row.get('98', 3.99)).replace('$', '')), 0.0)
-                    data["Premium"]["Shell"]   = (float(str(row.get('V-Power', 4.21)).replace('$', '')), 0.0)
-                    data["Diesel"]["Shell"]    = (float(str(row.get('Diesel', 3.73)).replace('$', '')), 0.0)
-                except: continue
-            
-            # 3. Standard Mapping for Other Brands (Esso, SPC, etc.)
-            else:
-                for target_brand in ["Esso", "Caltex", "SPC", "Sinopec", "Cnergy"]:
-                    if target_brand.lower() in brand:
-                        # Map based on column header names
-                        for grade, col_name in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
-                            val = str(row.get(col_name, '-')).replace('$', '').strip()
-                            if val != '-' and val != 'nan':
-                                data[grade][target_brand] = (float(val), 0.0)
-    except:
-        pass
+            # Map the table columns to your data keys
+            # Motorist columns are often: ['Fuel Provider', '92', '95', '98', 'Premium', 'Diesel']
+            mapping = {
+                "92 Octane": '92',
+                "95 Octane": '95',
+                "98 Octane": '98',
+                "Premium": 'Premium', # Or 'V-Power'/'Techron'
+                "Diesel": 'Diesel'
+            }
+
+            for brand_key in ["Esso", "Shell", "Caltex", "SPC", "Sinopec", "Cnergy", "Smart Energy"]:
+                if brand_key.lower() in raw_brand:
+                    for grade_key, col_name in mapping.items():
+                        # Try to find the price in the row by column name or approximate index
+                        val = row.get(col_name)
+                        if pd.isna(val) or val == '-': continue
+                        
+                        try:
+                            clean_val = float(str(val).replace('$', '').strip())
+                            if clean_val > 0:
+                                data[grade_key][brand_key] = [clean_val, 0.0]
+                        except:
+                            continue
+                            
+    except Exception as e:
+        # If site structure changed, we fall back to the baseline data
+        print(f"Sync Error: {e}")
+        
     return data
 
 # Initialize the feed
