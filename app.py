@@ -175,6 +175,7 @@ with tab1:
     # 3. Markets & Commodities
     #st.divider()
     m_live = fetch_live_market_data()
+    sg_econ = fetch_sg_economy()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
         m_cols = st.columns(7)
         m_cols[0].metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
