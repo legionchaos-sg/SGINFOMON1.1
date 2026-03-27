@@ -2,12 +2,11 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 from datetime import date, timedelta
-from io import StringIO
+import yfinance as yf
 
 # --- THE ANCHOR (Lays Outside the Tabs) ---
 if "active_tab" not in st.session_state:
@@ -18,30 +17,23 @@ if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
 
 @st.dialog("Fuel Brand Details")
-# 1. Initialize Session State so numbers persist
-if "fuel_data" not in st.session_state:
-    st.session_state.fuel_data = get_live_fuel_sync()
-
-# 2. Add a Refresh Button to trigger the update
-if st.button("🔄 Sync Live Motorist.sg Prices"):
-    with st.spinner("Fetching March 2026 Pump Prices..."):
-        # Clear cache and pull fresh
-        st.session_state.fuel_data = get_live_fuel_sync()
-        st.success("Prices Updated!")
-
-# 3. The Pop-over now pulls from the 'live' session state
-with st.popover("⛽ View Latest Petrol Prices"):
-    st.write(f"### Live Singapore Pump Prices ({gold_10})")
-    
-    # Example: Pulling the 95 Octane Shell price dynamically
-    shell_95 = st.session_state.fuel_data["95 Octane"].get("Shell", [3.47])[0]
-    esso_95 = st.session_state.fuel_data["95 Octane"].get("Esso", [3.47])[0]
-    
-    col1, col2 = st.columns(2)
-    col1.metric("Shell 95", f"${shell_95}")
-    col2.metric("Esso 95", f"${esso_95}")
-    
-    st.caption("Last synchronized with Motorist.sg via live 2026 feed.")
+def show_fuel_details(ftype):
+    st.write(f"### 📍 {ftype} Price List")
+    brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
+    for brand in brand_order:
+        data = fuel_data[ftype].get(brand, ("N/A", 0))
+        price, change = data
+        if brand == "Shell" and ftype == "92 Octane": continue
+        display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
+                <b>{brand}</b>
+                <span>
+                    <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
+                    <span style='color:{"#ff4b4b" if change > 0 else "#09ab3b"}'>({change:+.2f})</span>
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
         
 def get_dynamic_flights(origin, dest):
     prompt = f"""
@@ -52,7 +44,8 @@ def get_dynamic_flights(origin, dest):
     response = model.generate_content(prompt)
     return response.text
 
-# SG INFO MONITOR 
+# SG INFO MONITOR - Weather & Traffic Update 10.9.3
+
 # 1. Page Configuration
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -199,12 +192,8 @@ def get_market_sentiment(m_data):
 # [Logic Functions for Holidays and Fuel remain as per original code]
 
 @st.cache_data(ttl=3600)
-import pandas as pd
-import requests
-from io import StringIO
-
 def get_live_fuel_sync():
-    # 1. TEMPLATE BASELINE (Fall-back values if site is down)
+    # 1. TEMPLATE BASELINE (gold 10)
     data = {
         "92 Octane": {"Esso": [3.43, 0.0], "Caltex": [3.43, 0.0], "SPC": [3.43, 0.0], "Cnergy": ["N/A", 0], "Sinopec": ["N/A", 0], "Smart Energy": ["N/A", 0]},
         "95 Octane": {"Esso": [3.47, 0.0], "Caltex": [3.47, 0.0], "Shell": [3.47, 0.0], "SPC": [3.46, 0.0], "Cnergy": [2.46, 0.0], "Sinopec": [3.47, 0.0], "Smart Energy": [2.61, 0.0]},
@@ -215,52 +204,37 @@ def get_live_fuel_sync():
 
     try:
         url = "https://www.motorist.sg/petrol-prices"
-        # 2026 CACHE BUSTING: Adding a random parameter to the URL forces a fresh pull
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Cache-Control": "no-cache"
-        }
-        
-        response = requests.get(url, headers=headers, timeout=10)
-        # Use StringIO to avoid the future deprecation warning in pandas
-        tables = pd.read_html(StringIO(response.text), header=0)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        # Pull the table and set the first row as headers for accuracy
+        tables = pd.read_html(url, storage_options=headers, header=0)
         df = tables[0]
 
-        # Cleanup: Remove any fully empty rows or columns
-        df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
-
+        # 2. MATCHING LOGIC BY COLUMN NAME (Instead of Index Number)
+        # Shell usually populates: 95, 98, and V-Power (Premium)
         for _, row in df.iterrows():
-            # Standardize the Brand name (The first column)
-            raw_brand = str(row.iloc[0]).strip().lower()
+            brand = str(row[0]).lower()
             
-            # Map the table columns to your data keys
-            # Motorist columns are often: ['Fuel Provider', '92', '95', '98', 'Premium', 'Diesel']
-            mapping = {
-                "92 Octane": '92',
-                "95 Octane": '95',
-                "98 Octane": '98',
-                "Premium": 'Premium', # Or 'V-Power'/'Techron'
-                "Diesel": 'Diesel'
-            }
-
-            for brand_key in ["Esso", "Shell", "Caltex", "SPC", "Sinopec", "Cnergy", "Smart Energy"]:
-                if brand_key.lower() in raw_brand:
-                    for grade_key, col_name in mapping.items():
-                        # Try to find the price in the row by column name or approximate index
-                        val = row.get(col_name)
-                        if pd.isna(val) or val == '-': continue
-                        
-                        try:
-                            clean_val = float(str(val).replace('$', '').strip())
-                            if clean_val > 0:
-                                data[grade_key][brand_key] = [clean_val, 0.0]
-                        except:
-                            continue
-                            
-    except Exception as e:
-        # If site structure changed, we fall back to the baseline data
-        print(f"Sync Error: {e}")
-        
+            if 'shell' in brand:
+                # Direct target mapping for Shell's unique columns
+                # We use .get() to avoid errors if the column name changes slightly
+                try:
+                    data["95 Octane"]["Shell"] = (float(str(row.get('95', 3.47)).replace('$', '')), 0.0)
+                    data["98 Octane"]["Shell"] = (float(str(row.get('98', 3.99)).replace('$', '')), 0.0)
+                    data["Premium"]["Shell"]   = (float(str(row.get('V-Power', 4.21)).replace('$', '')), 0.0)
+                    data["Diesel"]["Shell"]    = (float(str(row.get('Diesel', 3.73)).replace('$', '')), 0.0)
+                except: continue
+            
+            # 3. Standard Mapping for Other Brands (Esso, SPC, etc.)
+            else:
+                for target_brand in ["Esso", "Caltex", "SPC", "Sinopec", "Cnergy"]:
+                    if target_brand.lower() in brand:
+                        # Map based on column header names
+                        for grade, col_name in [("92 Octane", '92'), ("95 Octane", '95'), ("98 Octane", '98'), ("Premium", 'Premium'), ("Diesel", 'Diesel')]:
+                            val = str(row.get(col_name, '-')).replace('$', '').strip()
+                            if val != '-' and val != 'nan':
+                                data[grade][target_brand] = (float(val), 0.0)
+    except:
+        pass
     return data
 
 # Initialize the feed
@@ -803,20 +777,19 @@ with tab4:
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
-    # 1. SETUP (ORIGIN & NATIONALITY)
+    # 1. ORIGIN & NATIONALITY CONFIG
     col_a, col_b = st.columns(2)
     with col_a:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
-        # Airport lists
-        china_list = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)"]
-        thai_list = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
+        china_list = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"]
+        thailand_list =["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
         
         if "China" in u_origin_cat:
             v_origin_final = st.selectbox("Select China Origin:", china_list, key="g10_t5_china_orig")
         elif "Thailand" in u_origin_cat:
-            v_origin_final = st.selectbox("Select Thailand Origin:", thai_list, key="g10_t5_thai_orig")
+            v_origin_final = st.selectbox("Select Thailand Origin:", thailand_list, key="g10_t5_thai_orig")
         else:
             v_origin_final = u_origin_cat
 
@@ -824,88 +797,95 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DESTINATION & DATES
-    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore"], key="g10_t5_dest_country")
-    
+    # 2. DATES & DESTINATION
     d_col1, d_col2 = st.columns(2)
     with d_col1:
-        d_dep = st.date_input("Departure:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+        d_dep = st.date_input("Departure Date:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     with d_col2:
-        d_ret = st.date_input("Return:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
+        d_ret = st.date_input("Return Date:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
 
-    # 3. CARRIER MASTER DATA
+    dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Other"], key="g10_t5_dest_country")
+    
+    # 3. CARRIER PRIORITY GRID
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
-        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK"},
-        {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN"},
+        {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK/PKX"},
+        {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN/PKX"},
         {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"},
-        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND"}
+        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "NRT/HND"}
     ]
 
-    # Sort Priority: Destination Carriers First
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
-    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    # 4. PRICING TABLE & VISA (ALWAYS VISIBLE)
     base_price = 820 if "China" in u_origin_cat else 980
     multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
-    
-    grid_rows = []
+    final_unit = base_price * multiplier
+
+    grid_data = []
     for c in final_sorted:
-        p = base_price * multiplier * c["w"]
-        grid_rows.append({
+        price = final_unit * c["w"]
+        grid_data.append({
             "Carrier": c["name"],
-            "Adult ($)": f"{p:,.0f}",
-            "Hub": c["hub"] if c["home"] not in [u_origin_cat, dest_country] else "Direct"
+            "Adult Est. ($)": f"{price:,.0f}",
+            "Transit Hub": c["hub"] if c["home"] != u_origin_cat and c["home"] != dest_country else "Direct"
         })
 
-    st.subheader(f"📊 Live Pricing Table ({dest_country})")
-    # REMOVES COLUMN 1 (Index)
-    st.dataframe(grid_rows, hide_index=True, use_container_width=True)
+    st.subheader(f"📊 Carrier Pricing Table (Priority: {dest_country})")
+    st.table(grid_data)
 
-    visa_txt = "✅ Visa Free (30 Days)" if u_nationality == "Singaporean" and dest_country == "China" else "⚠️ Check 2026 Entry Requirements"
-    st.warning(f"**🛂 Visa Status:** {visa_txt}")
+    # 4. VISA ADVISORY
+    visa_alert = "✅ Visa Not Required (30-60 Days)." if u_nationality in ["Singaporean", "Thai"] and dest_country in ["China", "Thailand"] else "⚠️ Check 2026 Portal."
+    st.info(f"**🛂 2026 Entry Protocol:** {visa_alert}")
 
     st.divider()
 
-    # 5. STRATEGIC POP-UP (INTERACTIVE)
+    # 5. STRATEGIC 16-WEEK FORECAST (INTERACTIVE POP-UP)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
-    if st.button("🚀 Open Strategic Forecast", key="g10_t5_pop_btn"):
-        @st.dialog("16-Week Flight Strategy", width="large")
+    if st.button("🚀 View Weekly Price Forecast (Interactive)", key="g10_t5_forecast_btn"):
+        @st.dialog("16-Week Execution Roadmap")
         def show_forecast():
-            # Home Base Detection
-            origin_clean = u_origin_cat.split(" (")[0]
-            home_base = next((c for c in master_carriers if c["home"] == origin_clean), master_carriers[0])
+            # Home Base Logic (Origin)
+            origin_label = u_origin_cat.split(" (")[0]
+            home_airline = next((c for c in master_carriers if c["home"] == origin_label), master_carriers[0])
+            top_3_names = [c["name"] for c in final_sorted[:3]]
             
-            st.markdown("### ⚙️ Select Strategy Mode")
-            mode = st.radio("Predict based on:", ["Top 3 Best Buy", "My Home Base Airline", "Specific Airline Selection"], horizontal=True)
+            # --- NEW: AIRLINE SELECTOR INSIDE POP-UP ---
+            st.markdown("### 🛠️ Strategy Configuration")
+            col1, col2 = st.columns(2)
+            with col1:
+                use_home = st.toggle(f"Use Home Base ({home_airline['name']})", value=False, key="g10_t5_pop_home")
+            with col2:
+                selected_carrier_name = st.selectbox("Or Select Specific Airline:", [c["name"] for c in master_carriers], key="g10_t5_pop_select")
             
-            if mode == "Top 3 Best Buy":
-                active_c = final_sorted[0]
-            elif mode == "My Home Base Airline":
-                active_c = home_base
+            # Pricing Logic based on selection
+            if use_home:
+                active_carrier = home_airline
             else:
-                choice = st.selectbox("Pick Airline:", [c["name"] for c in master_carriers])
-                active_c = next(c for c in master_carriers if c["name"] == choice)
-
-            st.success(f"Showing prediction for: **{active_c['name']}**")
+                active_carrier = next(c for c in master_carriers if c["name"] == selected_carrier_name)
             
-            pop_data = []
+            active_unit = final_unit * active_carrier["w"]
+            
+            st.write(f"**Route:** {v_origin_final} ➔ {v_land_airport}")
+            st.success(f"📈 Showing Strategy for: **{active_carrier['name']}**")
+            
+            forecast_rows = []
             for w in range(16, -1, -1):
-                t_date = d_dep - timedelta(weeks=w)
-                advice = f"✅ BUY: {', '.join(top_3_list)}" if 7 <= w <= 9 else ("⏳ HOLD" if w > 9 else "🚨 PANIC")
-                price = (base_price * multiplier * active_c["w"]) * (1.0 if 7 <= w <= 9 else 1.25)
+                target_date = d_dep - timedelta(weeks=w)
+                # Advice includes the Top 3 regardless of which airline is selected for pricing
+                if w > 9: advice = "⏳ HOLD"
+                elif 7 <= w <= 9: advice = f"✅ BUY: {', '.join(top_3_names)}"
+                else: advice = "🚨 PANIC"
                 
-                pop_data.append({
-                    "Date": t_date.strftime('%d %b %Y'),
-                    "Est. Total ($)": f"{price:,.0f}",
-                    "Action": advice
+                p = active_unit * (1.0 if 7 <= w <= 9 else 1.25)
+                forecast_rows.append({
+                    "Date": target_date.strftime('%d %b %Y'),
+                    "Est. Total ($)": f"{p:,.0f}",
+                    "Strategic Advice": advice
                 })
             
-            st.dataframe(pop_data, hide_index=True, use_container_width=True)
-            if st.button("Exit"): st.rerun()
-
+            st.table(forecast_rows)
+            if st.button("Close"): st.rerun()
         show_forecast()
