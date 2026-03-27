@@ -177,7 +177,8 @@ with tab3:
     st.write(f"Adjustment ID: `{st.session_state.g10_target_fix}`")
     st.button("🔄 Full System Refresh")
 
-st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}
+# --- FINAL FOOTER (FIXED SYNTAX) ---
+st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
