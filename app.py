@@ -772,12 +772,18 @@ with tab5:
             st.rerun()
 
     # Triggering UI
-    st.subheader("🗓️ Purchase Strategy")
-    c1, c2 = st.columns([1, 1])
+   st.subheader("🗓️ Purchase Strategy")
+
+    c1, c2 = st.columns([1, 1], gap="small")
+
     with c1:
-        roadmap_airline = st.selectbox("Select Airline to Forecast:", [c["name"] for c in final_sorted], key="g10_t5_roadmap_select")
-    #with c2:
-        st.write("##") # Alignment
+        roadmap_airline = st.selectbox(
+            "Select Airline to Forecast:",
+            [c["name"] for c in final_sorted],
+            key="g10_t5_roadmap_select"
+        )
+
+    with c2:
         if st.button("🚀 Open Strategic Roadmap", use_container_width=True):
             show_strategy_roadmap(roadmap_airline)
 
