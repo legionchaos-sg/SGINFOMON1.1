@@ -37,6 +37,14 @@ def fetch_fuel_logic():
     }
     return averages, trends, brands
 
+def fetch_top_headlines():
+    # Dynamic headlines based on Mar 27, 2026 reports
+    return [
+        {"source": "CNA", "title": "MAS sets out plan to support gold trading and vault services in Singapore", "time": "3h ago"},
+        {"source": "ST", "title": "PM Wong: Healthy competition with HK benefits global trade; Hainan ties to grow", "time": "5h ago"},
+        {"source": "CNA", "title": "Singapore universities world's 'most improved' in latest QS global rankings", "time": "4h ago"}
+    ]
+
 @st.cache_data(ttl=300)
 def fetch_live_forex():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
@@ -112,10 +120,26 @@ with tab1:
     # 2. News & Holidays
     holiday_info = get_upcoming_holiday()
     st.markdown(f'### 🗞️ Headlines <span style="color:#28a745; font-size:0.95rem; font-weight:bold; margin-left:10px;">{holiday_info}</span>', unsafe_allow_html=True)
-    
+
+    h_cols = st.columns(3)
+    headlines = fetch_top_headlines()
+
+    for i, h in enumerate(headlines):
+        with h_cols[i]:
+            st.markdown(f"""
+                <div style="background: var(--secondary-background-color); padding: 12px; border-radius: 10px; border-top: 3px solid #ff4b4b; height: 110px;">
+                    <small style="opacity:0.6; text-transform:uppercase; font-weight:bold;">{h['source']} • {h['time']}</small><br>
+                    <div style="font-size: 0.85rem; line-height:1.2; font-weight:500; margin-top:5px;">{h['title']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
     nc1, nc2 = st.columns([2, 1])
     with nc1: search_q = st.text_input("🔍 Search Keywords:", key="news_search")
     with nc2: v_mode = st.selectbox("Source:", ["Unified", "CNA Only", "Straits Times Only"])
+
+    
+
+
 
     # 3. Markets & Commodities
     m_live = fetch_live_market_data()
