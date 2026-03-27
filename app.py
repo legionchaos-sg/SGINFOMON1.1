@@ -665,14 +665,24 @@ with tab4:
 with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
-    # ... (Keep your Origin and Nationality setup code here) ...
+    # 1. INITIALIZE VARIABLES (Prevents NameError)
+    grid_rows = [] 
+    final_sorted = []
+    
+    # 2. SETUP (ORIGIN & NATIONALITY)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
+        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
+        
+        # ... (Your Origin Logic here) ...
 
-    # 2. DESTINATION & AIRPORT
+    # 3. DESTINATION & AIRPORT
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
-    # ... (Keep your airport_master and selected_airport code here) ...
+    # ... (Your Airport Master logic here) ...
 
-    # 3. CARRIER MASTER DATA (MOVED TO TOP TO ENSURE GLOBAL ACCESS)
+    # 4. CARRIER MASTER DATA & SORTING
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
@@ -682,25 +692,31 @@ with tab5:
         {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND/NRT"}
     ]
 
-    # DEFINING THESE OUTSIDE ANY BUTTONS/LOGIC TO PREVENT NameError
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
     other_carriers = [c for c in master_carriers if c["home"] != dest_country]
     final_sorted = priority_carriers + other_carriers
-    top_3_list = [c["name"] for c in final_sorted[:3]]
 
-    # 4. PRICING TABLE
-    # ... (Your pricing loop code here) ...
-    st.dataframe(grid_rows, hide_index=True, use_container_width=True)
-
-    st.divider()
-
-    # 5. 16-WEEK ROADMAP (NOW HAS ACCESS TO final_sorted)
-    st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
+    # 5. GENERATE THE DATA (This is where grid_rows is built)
+    base_price = 820 if "China" in u_origin_cat else 980
+    # multiplier logic...
     
-    # This was failing because final_sorted wasn't guaranteed to exist
-    roadmap_airline = st.selectbox("Select Airline to Forecast:", 
-                                     [c["name"] for c in final_sorted], 
-                                     key="g10_t5_roadmap_select")
+    for c in final_sorted:
+        # Check for specific direct/transit logic (e.g., SIA to Xi'an)
+        is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
+        route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
+        
+        grid_rows.append({
+            "Carrier": c["name"],
+            "Adult ($)": f"{base_price * c['w']:,.0f}", # Example calc
+            "Route / Type": route_type
+        })
+
+    # 6. DISPLAY (This will no longer throw NameError)
+    st.subheader(f"📊 Live Results for {selected_airport}")
+    if grid_rows:
+        st.dataframe(grid_rows, hide_index=True, use_container_width=True)
+    else:
+        st.warning("No flight data available for the selected criteria.")
     
     # ... (Rest of your roadmap loop) ...
 
