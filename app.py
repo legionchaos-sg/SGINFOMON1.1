@@ -669,7 +669,6 @@ with tab4:
 # TAB 5: REFINED POP-UP (TOP 3 VISIBILITY)
 # ==========================================
 with tab5:
-    with tab5:
     st.header("✈️ Asia Airfare Prediction Engine")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
