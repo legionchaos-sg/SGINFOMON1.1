@@ -176,7 +176,7 @@ with tab1:
     #st.divider()
     m_live = fetch_live_market_data()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
-        m_cols = st.columns(6)
+        m_cols = st.columns(7)
         m_cols[0].metric("STI Index", f"{m_live['STI'][0]:,.2f}", f"{m_live['STI'][1]:+.2f}%")
         m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.2f}", f"{m_live['Gold'][1]:+.2f}%")
         m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.2f}%")
