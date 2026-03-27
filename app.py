@@ -671,13 +671,10 @@ with tab5:
         origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
         u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
         
+        # Origin Airport Logic
         china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)"]
-        thai_orig = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
-        
         if "China" in u_origin_cat:
             v_origin_final = st.selectbox("Select China Origin:", china_orig, key="g10_t5_china_orig")
-        elif "Thailand" in u_origin_cat:
-            v_origin_final = st.selectbox("Select Thailand Origin:", thai_orig, key="g10_t5_thai_orig")
         else:
             v_origin_final = u_origin_cat
 
@@ -685,29 +682,18 @@ with tab5:
         u_nationality = st.text_input("Enter Nationality:", value="Singaporean", key="g10_t5_nat").strip().title()
         v_trip_type = st.radio("Trip Type:", ["Round Trip", "Single Leg"], horizontal=True, key="g10_t5_trip")
 
-    # 2. DESTINATION
+    # 2. DESTINATION 
     dest_country = st.selectbox("Destination Country:", ["China", "Thailand", "Japan", "Singapore", "Hong Kong"], key="g10_t5_dest_country")
     
     airport_master = {
-        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Shenzhen (SZX)", "Chengdu (TFU)"],
-        "Thailand": ["Bangkok (BKK)", "Don Mueang (DMK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
-        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)", "Fukuoka (FUK)", "Sapporo (CTS)"]
+        "China": ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)", "Xi'an (XIY)", "Chengdu (TFU)"],
+        "Thailand": ["Bangkok (BKK)", "Phuket (HKT)", "Chiang Mai (CNX)"],
+        "Japan": ["Tokyo Narita (NRT)", "Tokyo Haneda (HND)", "Osaka (KIX)"]
     }
 
-    if dest_country in airport_master:
-        selected_airport = st.selectbox(f"Select Preferred Landing Airport in {dest_country}:", 
-                                       airport_master[dest_country], 
-                                       key="g10_t5_airport_dest")
-    else:
-        selected_airport = "SIN" if dest_country == "Singapore" else "HKG"
+    selected_airport = st.selectbox(f"Select Landing Airport:", airport_master.get(dest_country, ["SIN"]), key="g10_t5_airport_dest")
 
-    d_col1, d_col2 = st.columns(2)
-    with d_col1:
-        d_dep = st.date_input("Departure:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
-    with d_col2:
-        d_ret = st.date_input("Return:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
-
-    # 3. CARRIER MASTER DATA
+    # 3. UPDATED CARRIER DATA WITH TRANSIT LOGIC
     master_carriers = [
         {"name": "Singapore Airlines", "home": "Singapore", "w": 1.0, "hub": "SIN"},
         {"name": "Cathay Pacific", "home": "Hong Kong", "w": 0.85, "hub": "HKG"},
@@ -717,20 +703,28 @@ with tab5:
         {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND/NRT"}
     ]
 
-    priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
-    other_carriers = [c for c in master_carriers if c["home"] != dest_country]
-    final_sorted = priority_carriers + other_carriers
-    top_3_list = [c["name"] for c in final_sorted[:3]]
-
-    # 4. PRICING TABLE
-    base_price = 820 if "China" in u_origin_cat else 980
-    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
-    
+    # 4. PRICING TABLE WITH SEARCH-LIKE VALIDATION
     grid_rows = []
-    for c in final_sorted:
-        p = base_price * multiplier * c["w"]
-        is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
-        route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
+    for c in master_carriers:
+        # Base price calculation
+        p = (820 if "China" in u_origin_cat else 980) * c["w"]
+        
+        # DYNAMIC ROUTE VALIDATION
+        # Case A: Singapore Airlines to Xi'an (Must be Scoot/Transit)
+        if c["name"] == "Singapore Airlines" and "XIY" in selected_airport:
+            route_type = "🟠 Scoot Operated (Direct)"
+        
+        # Case B: Airline is the "Home" carrier for the destination (Direct)
+        elif c["home"] == dest_country:
+            route_type = f"✈️ Direct ({c['name']})"
+            
+        # Case C: Airline is the "Home" carrier for the origin (Direct)
+        elif c["home"] in u_origin_cat:
+            route_type = "✈️ Direct Service"
+            
+        # Case D: Everything else requires a transit via the carrier's hub
+        else:
+            route_type = f"🔄 Transit via {c['hub']}"
         
         grid_rows.append({
             "Carrier": c["name"],
@@ -738,10 +732,10 @@ with tab5:
             "Route / Type": route_type
         })
 
-    st.subheader(f"📊 Live Pricing Table to {selected_airport}")
+    st.subheader(f"📊 Live Results for {selected_airport}")
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
-    st.divider()
+    # 16-Week Table Logic remains below...
 
     # 5. THE 16-WEEK PREDICTION TABLE (ROADMAP)
     st.subheader("🗓️ 16-Week Strategic Purchase Roadmap")
