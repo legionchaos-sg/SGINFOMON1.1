@@ -139,46 +139,32 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    def get_latest_coe():
-    # Dynamically pulling March 2026 Round 2 Results
-    return [
-        {"cat": "Cat A", "p": 111890, "ch": 3670, "q": 1264, "b": 1895},
-        {"cat": "Cat B", "p": 115568, "ch": 1566, "q": 812, "b": 1185},
-        {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
-        {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
-    ]
-
-with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
-    coe_list = get_latest_coe()
-    cc = st.columns(4)
-    
-    for i, data in enumerate(coe_list):
-        # Calculate Oversubscription
-        ratio = data['b'] / data['q']
-        over_label = f'<span class="over-badge">OVER {ratio:.1f}x</span>' if data['b'] > data['q'] else ""
-        
-        cc[i].markdown(f"""
-            <div class="c-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <b style="font-size: 0.9rem;">{data['cat']}</b>
-                        {over_label}
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span style="color:#ff4b4b; font-size:1.2rem; font-weight:bold;">${data['p']:,}</span><br>
+   # 3. Dynamic COE Results
+    st.divider()
+    with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
+        coe_list = get_latest_coe()
+        cc = st.columns(4)
+        for i, data in enumerate(coe_list):
+            ratio = data['b'] / data['q']
+            over_html = f'<span class="over-badge">OVER {ratio:.1f}x</span>' if data['b'] > data['q'] else ""
+            cc[i].markdown(f"""
+                <div class="c-card">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <b>{data['cat']}</b> {over_html}
+                        </div>
+                        <span style="color:#ff4b4b; font-size:1.15rem; font-weight:bold;">${data['p']:,}</span><br>
                         <small class="up">▲ ${data['ch']:,}</small>
                     </div>
-                </div>
-                
-                <div style="margin-top: 10px;">
-                    <hr style="margin: 5px 0; border: 0.5px solid #444; opacity: 0.3;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; opacity: 0.8;">
-                        <span>Quota: <b>{data['q']}</b></span>
-                        <span>Bids: <b>{data['b']}</b></span>
+                    <div>
+                        <hr style="margin: 8px 0; border: 0.1px solid #555; opacity:0.3;">
+                        <div style="font-size: 0.75rem; line-height:1.4;">
+                            <div style="display:flex; justify-content:space-between;"><span>Quota:</span><b>{data['q']}</b></div>
+                            <div style="display:flex; justify-content:space-between;"><span>Bids:</span><b>{data['b']}</b></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)    
+            """, unsafe_allow_html=True)    
     # 6. FUEL MONITOR SECTION (Moved after COE)
     f_avg, f_trends, f_brands = fetch_fuel_logic()
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
