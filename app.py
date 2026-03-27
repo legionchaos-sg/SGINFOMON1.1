@@ -8,18 +8,6 @@ from deep_translator import GoogleTranslator
 from datetime import date, timedelta
 import yfinance as yf
 
-I have restored the Foreign Exchange section and integrated the live March 2026 data. I've also updated the fuel logic to reflect the specific price drops from March 26, 2026, where major brands (Esso, Sinopec, SPC) lowered petrol prices while Caltex raised diesel.
-
-Python
-import streamlit as st
-import feedparser, requests, pytz
-import pandas as pd
-import numpy as np
-from datetime import datetime, date
-from streamlit_autorefresh import st_autorefresh
-from deep_translator import GoogleTranslator
-import yfinance as yf
-
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0 
