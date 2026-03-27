@@ -18,15 +18,23 @@ if "g10_target_fix" not in st.session_state:
 
 @st.dialog("Fuel Brand Details")
 def show_fuel_details(ftype):
+    # Fetch fresh data the moment this is called
+    live_data = get_live_fuel_sync()
+    
     st.write(f"### 📍 {ftype} Price List")
+    st.caption(f"Last Updated: {pd.Timestamp.now().strftime('%H:%M:%S')}")
+    
     brand_order = ["Esso", "Caltex", "Shell", "SPC", "Cnergy", "Sinopec", "Smart Energy"]
     for brand in brand_order:
-        data = fuel_data[ftype].get(brand, ("N/A", 0))
+        data = live_data[ftype].get(brand, ("N/A", 0))
         price, change = data
         if brand == "Shell" and ftype == "92 Octane": continue
+        
         display_price = f"${price:.2f}" if isinstance(price, (int, float)) else price
+        
+        # gold 10 Concise Style
         st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #333;'>
+            <div style='display:flex; justify-content:space-between; padding:4px; border-bottom:1px solid #333; font-size:14px;'>
                 <b>{brand}</b>
                 <span>
                     <b style='color:#007bff; margin-right:8px;'>{display_price}</b>
