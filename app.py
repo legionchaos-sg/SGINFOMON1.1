@@ -392,7 +392,7 @@ with tab5:
         hide_index=True, 
         use_container_width=True
     )
-    """           
+    
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
