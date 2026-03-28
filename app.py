@@ -366,7 +366,7 @@ with tab5:
         else: 
             base = 500
             """  
-        """"
+        """
         # Get inflation adjustment from your SG Economy Engine
         inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
         
