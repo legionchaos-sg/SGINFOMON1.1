@@ -7,6 +7,8 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
+d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
+
 
 
 # --- THE ANCHOR ---
@@ -288,6 +290,7 @@ with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     #st.write("Projected Fares for June 2026 (SIN Hub)")
     #st.table(pd.DataFrame({"Route": ["SIN-LHR", "SIN-NRT", "SIN-SYD"], "Est. Price (SGD)": ["$1,240", "$680", "$890"], "Trend": ["Stable", "Rising", "Rising"]}))
+    
    
     # 1. THE SELECTION SYNTAX (Place this above the table)
 
