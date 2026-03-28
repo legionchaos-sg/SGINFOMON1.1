@@ -355,7 +355,7 @@ with tab5:
 
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
-    """"
+    """
     # 3. THE ENGINE (Everything below is perfectly indented)
     for route in user_top_routes:
         # --- Step A: Base Price Logic ---
@@ -384,7 +384,7 @@ with tab5:
             "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
             "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
         })
-    """"
+    """
     # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
     st.write(f"### ✈️ Projected Fares for Selected {v_period} (SIN Hub)")
     
