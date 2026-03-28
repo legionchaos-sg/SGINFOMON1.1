@@ -303,7 +303,7 @@ with tab5:
     # 2. THE TABLE BUILDING SYNTAX
     # Instead of AI choosing, the loop now follows 'user_top_routes'
     # 1. Define the specific 5 airlines for the Average calculation
-    target_airlines = ["Singapore Airlines", "Thai Airways", "Air China", "Cathay Pacific", "China Southern"]
+    master_airlines = ["Singapore Airlines", "Thai Airways", "Air China", "Cathay Pacific", "China Southern"]
     #hero_grid = []
     #for route in user_top_routes:
         # Logic to fetch price based on the 'route' string
