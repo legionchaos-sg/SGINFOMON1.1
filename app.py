@@ -330,7 +330,7 @@ with tab5:
     # 2. GENERATE COMPETING PRICES (AI-Weighted by Carrier)
     # We pull weights from your master_carriers to simulate market reality
     airline_prices = []
-    for c_name in target_airlines:
+    for c_name in master_airlines:
         # Find the carrier's specific weight 'w' (e.g., SIA=1.0, AirChina=0.65)
         carrier_meta = next((item for item in master_carriers if item["name"] == c_name), {"w": 0.8})
         c_price = base * carrier_meta["w"] * inf_adj
