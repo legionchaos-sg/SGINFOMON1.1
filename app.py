@@ -9,7 +9,6 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
-
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0 
@@ -253,8 +252,6 @@ with tab1:
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
     
-    
-
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
@@ -287,9 +284,23 @@ with tab4:
 
 with tab5:
     # This allows the user to 'Top' their own routes
-        # 1. USER INPUTS
+    # 1. USER INPUTS
     d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
     v_period = d_dep.strftime('%B %Y')
+
+    # 1. THE 2026 SEASONAL SURCHARGE MAP *NEW NEW NEW
+    # Logic: Feb (CNY), June (Sch Hol), Dec (Year-end) are the high-burn months.
+    seasonal_peaks = {
+        2: 1.20,  # Feb: Chinese New Year (Peak)
+        6: 1.25,  # Jun: Mid-year Holidays (High Peak)
+        12: 1.35  # Dec: Year-end / Christmas (Ultra Peak)
+    }
+    
+    # 2. THE MASTER PRICE MAP (Base Economy Fare)
+    base_price_map = {
+        "LHR": 1200, "NRT": 850, "SYD": 850, "PVG": 600,
+        "CAN": 550, "SZX": 500, "HK": 550, "BKK": 450
+    }
     
     user_top_routes = st.multiselect(
         "Select Top 4 Routes to Monitor:",
@@ -311,7 +322,40 @@ with tab5:
     ]
     
     hero_grid = []
+
+    for route in user_top_routes:
+    # A. Destination Detection
+    dest_code = route.split('-')[-1]
+    base = base_price_map.get(dest_code, 500)
     
+    # B. 2026 Variables (Inflation + Seasonality)
+    inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+    peak_mult = seasonal_peaks.get(d_dep.month, 1.0)
+    
+    # C. Carrier Average Calculation
+    # Weights: SIA(1.0), Cathay(0.85), China Southern(0.68), etc.
+    airline_prices = [base * c["w"] * inf_adj * peak_mult for c in master_carriers]
+    avg_price = sum(airline_prices) / len(airline_prices)
+    
+    # D. Trend Logic
+    is_peak = peak_mult > 1.0
+    
+    hero_grid.append({
+        "Route": route,
+        "Est. Price (SGD)": f"${avg_price:,.0f}",
+        "Season": "🔥 Peak" if is_peak else "🍃 Off-Peak",
+        "Month": d_dep.strftime('%b %y'),
+        "Trend": "📈 Rising" if is_peak else "🟢 Stable"
+    })
+
+    # 4. COMPACT DISPLAY (Optimized for 10.9-inch / 10pt)
+    st.write(f"### ✈️ Projected Fares: {d_dep.strftime('%B %Y')} (SIN Hub)")
+    if d_dep.month in [2, 6, 12]:
+    st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Prices include seasonal surcharges.")
+
+    st.dataframe(hero_grid, hide_index=True, use_container_width=True)
+
+    """"
     # 3. THE ENGINE (Everything below is perfectly indented)
     for route in user_top_routes:
         # --- Step A: Base Price Logic ---
@@ -321,7 +365,7 @@ with tab5:
             base = 850
         else: 
             base = 500
-            
+      """"      
         # Get inflation adjustment from your SG Economy Engine
         inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
         
@@ -349,7 +393,7 @@ with tab5:
         hide_index=True, 
         use_container_width=True
     )
-              
+   """"           
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
