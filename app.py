@@ -324,28 +324,28 @@ with tab5:
     hero_grid = []
 
     for route in user_top_routes:
-    # A. Destination Detection
-    dest_code = route.split('-')[-1]
-    base = base_price_map.get(dest_code, 500)
+        # A. Destination Detection
+        dest_code = route.split('-')[-1]
+        base = base_price_map.get(dest_code, 500)
     
-    # B. 2026 Variables (Inflation + Seasonality)
-    inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
-    peak_mult = seasonal_peaks.get(d_dep.month, 1.0)
+        # B. 2026 Variables (Inflation + Seasonality)
+        inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+        peak_mult = seasonal_peaks.get(d_dep.month, 1.0)
     
-    # C. Carrier Average Calculation
-    # Weights: SIA(1.0), Cathay(0.85), China Southern(0.68), etc.
-    airline_prices = [base * c["w"] * inf_adj * peak_mult for c in master_carriers]
-    avg_price = sum(airline_prices) / len(airline_prices)
+        # C. Carrier Average Calculation
+        # Weights: SIA(1.0), Cathay(0.85), China Southern(0.68), etc.
+        airline_prices = [base * c["w"] * inf_adj * peak_mult for c in master_carriers]
+        avg_price = sum(airline_prices) / len(airline_prices)
     
-    # D. Trend Logic
-    is_peak = peak_mult > 1.0
+        # D. Trend Logic
+        is_peak = peak_mult > 1.0
     
-    hero_grid.append({
-        "Route": route,
-        "Est. Price (SGD)": f"${avg_price:,.0f}",
-        "Season": "🔥 Peak" if is_peak else "🍃 Off-Peak",
-        "Month": d_dep.strftime('%b %y'),
-        "Trend": "📈 Rising" if is_peak else "🟢 Stable"
+        hero_grid.append({
+            "Route": route,
+            "Est. Price (SGD)": f"${avg_price:,.0f}",
+            "Season": "🔥 Peak" if is_peak else "🍃 Off-Peak",
+            "Month": d_dep.strftime('%b %y'),
+            "Trend": "📈 Rising" if is_peak else "🟢 Stable"
     })
 
     # 4. COMPACT DISPLAY (Optimized for 10.9-inch / 10pt)
