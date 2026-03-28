@@ -321,40 +321,36 @@ with tab5:
     #        "Trend": "Rising" if price > 800 else "Stable"
     #    })
 
-    #### TESTING ONLY
-    for route in user_top_routes:
-        # BASE PRICE LOGIC: AI sets a baseline based on distance/region
-        # (LHR = Long Haul, NRT/SYD = Mid Haul, Others = Regional)
-        if "LHR" in route: base = 1200 
-        elif any(x in route for x in ["NRT", "SYD"]): base = 850
-        else: base = 500
-        
-        # Apply March 2026 Inflation from your SG Economy Engine (Tab 1)
-        inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+   #### TESTING ONLY
+for route in user_top_routes:
+    # 1. BASE PRICE LOGIC (Indented = Runs for every route)
+    if "LHR" in route: base = 1200 
+    elif any(x in route for x in ["NRT", "SYD"]): base = 850
+    else: base = 500
     
-    # 2. GENERATE COMPETING PRICES (AI-Weighted by Carrier)
-    # We pull weights from your master_carriers to simulate market reality
+    inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+
+    # 2. GENERATE COMPETING PRICES (Now Indented!)
     airline_prices = []
-    for c_name in master_carriers:
-        # Find the carrier's specific weight 'w' (e.g., SIA=1.0, AirChina=0.65)
-        carrier_meta = next((item for item in master_carriers if item["name"] == c_name), {"w": 0.8})
-        c_price = base * carrier_meta["w"] * inf_adj
+    # Use target_airlines here if you only want the specific 5
+    for c_dict in master_carriers: 
+        c_price = base * c_dict.get("w", 0.8) * inf_adj
         airline_prices.append(c_price)
     
-    # 3. CALCULATE THE "AVG PRICE" (The Mean of the 5 specific airlines)
+    # 3. CALCULATE AVG (Now Indented!)
     avg_price = sum(airline_prices) / len(airline_prices)
     
-    # 4. APPEND TO GRID (Retaining your specific Output Format)
+    # 4. APPEND TO GRID (Now Indented!)
     hero_grid.append({
         "Route": route,
         "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
         "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
     })
 
-    # --- DISPLAY OUTPUT ---
-    st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-    st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-    
+# --- DISPLAY OUTPUT (Outside/Left of the loop) ---
+# This part stays at the margin so it only draws the table ONCE
+st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+st.dataframe(hero_grid, hide_index=True, use_container_width=True)
         
     # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
     st.write("Projected Fares for June 2026 (SIN Hub)")
