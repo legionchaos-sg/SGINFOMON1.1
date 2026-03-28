@@ -798,6 +798,33 @@ with tab5:
 
     # 3. Visual Confirmation (Small 10pt Caption)
     st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
+
+    # --- STEP 2: INSERT THE DYNAMIC RISK ANALYSIS HERE ---
+    risk_level = "NORMAL"
+    risk_msg = "Market conditions are within 2026 baseline projections."
+    
+    # Priority 1: Fuel (The biggest threat in March 2026)
+    if v_fuel > 150:
+        risk_level = "CRITICAL"
+        risk_msg = f"Fuel Volatility: Prices at ${v_fuel:.0f}/bbl. Expect immediate surcharge spikes."
+    # Priority 2: Seasonality
+    elif v_peak > 1.0:
+        risk_level = "HIGH"
+        risk_msg = f"Seasonal Peak Active: High demand for {date.today().strftime('%B')}. Inventory is low."
+    # Priority 3: Inflation
+    elif v_inf > 1.5:
+        risk_level = "STABLE"
+        risk_msg = f"Inflationary Pressure: Local CPI is {v_inf}%. Ground fees are rising."
+
+    # Render the box based on level
+    if risk_level == "CRITICAL":
+        st.error(f"🚨 **{risk_level} ALERT:** {risk_msg}")
+    elif risk_level == "HIGH":
+        st.warning(f"⚠️ **{risk_level} ALERT:** {risk_msg}")
+    else:
+        st.info(f"ℹ️ **{risk_level} STATUS:** {risk_msg}")
+
+    st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
