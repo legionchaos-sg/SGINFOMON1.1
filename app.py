@@ -285,7 +285,7 @@ with tab4:
 with tab5:
     # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
-    d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1)
+    d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
 
     # 3. (Optional) Display for the user to confirm
     st.caption(f"Analysis Period: {d_dep.strftime('%B, %Y')}")
