@@ -102,6 +102,8 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -294,7 +296,7 @@ with tab5:
 
 # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
-d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
+#d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
 user_top_routes = st.multiselect(
     "Select Top 4 Routes to Monitor:",
@@ -345,7 +347,9 @@ for route in user_top_routes:
     })
 
 # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
-st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+#st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+
+
 st.dataframe(
     hero_grid, 
     hide_index=True, 
