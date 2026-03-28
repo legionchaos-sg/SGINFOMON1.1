@@ -8,7 +8,7 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
-d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
+d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
