@@ -292,8 +292,8 @@ with tab5:
 # This allows the user to 'Top' their own routes
     user_top_routes = st.multiselect(
         "Select Top 3 Routes to Monitor:",
-        options=["SIN-LHR", "SIN-NRT", "SIN-SYD", "SIN-MEL", "SIN-HKG", "SIN-FRA"],
-        default=["SIN-LHR", "SIN-NRT", "SIN-SYD"], # These match your screenshot
+        options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT"],
+        default=["SIN-BKK", "SIN-CAN", "SIN-SZX"], # These match your screenshot
         max_selections=3,
         key="g10_hero_routes"
     )
