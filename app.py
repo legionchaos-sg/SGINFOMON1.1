@@ -354,8 +354,9 @@ with tab5:
             st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Prices include seasonal surcharges.")
 
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-    """
+    
     # 3. THE ENGINE (Everything below is perfectly indented)
+    """
     for route in user_top_routes:
         # --- Step A: Base Price Logic ---
         if "LHR" in route: 
