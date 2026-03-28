@@ -774,6 +774,7 @@ with tab4:
 # ==========================================
 with tab5:
     st.header("✈️ Your Target Asia Airfare Prediction -> Select from below routes only")
+    avg_orince = 0.0 #base
 
     # 1. The Dynamic Trigger: This only runs when the user views Tab 5
     # We use session_state to ensure it only updates ONCE per tab visit
@@ -833,7 +834,7 @@ with tab5:
         price_diff = ((avg_price - 310) / 310) * 100
         
         col1.metric("Current vs Sept 2025", f"${avg_price:.0f}", f"{price_diff:.1f}%")
-        col2.metric("Fuel Risk Weight", f"{v_fuel_factor}x", "+110% vs 6m ago")
+        col2.metric("Fuel Risk Weight", f"{v_fuel}x", "+110% vs 6m ago")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
