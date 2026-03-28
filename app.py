@@ -351,9 +351,9 @@ st.dataframe(
 )
         
 # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
-st.write("Projected Fares for June 2026 (SIN Hub)")
-st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")   
+#st.write("Projected Fares for June 2026 (SIN Hub)")
+#st.dataframe(hero_grid, hide_index=True, use_container_width=True)
+#st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")   
 
 
 # ==========================================
