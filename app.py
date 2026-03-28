@@ -7,16 +7,14 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
-d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
-
-
-
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0 
 
 if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
+
+d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
 
 # --- DATA ENGINES ---
 
