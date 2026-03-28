@@ -309,7 +309,7 @@ with tab5:
     {"name": "Air China", "w": 0.65},
     {"name": "Cathay Pacific", "w": 0.85},
     {"name": "China Southern", "w": 0.68}
-    ]
+]
     #hero_grid = []
     #for route in user_top_routes:
         # Logic to fetch price based on the 'route' string
