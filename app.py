@@ -354,7 +354,7 @@ with tab5:
     st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Prices include seasonal surcharges.")
 
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-
+    
     """"
     # 3. THE ENGINE (Everything below is perfectly indented)
     for route in user_top_routes:
@@ -365,7 +365,7 @@ with tab5:
             base = 850
         else: 
             base = 500
-      """"      
+    """"      
         # Get inflation adjustment from your SG Economy Engine
         inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
         
@@ -384,7 +384,7 @@ with tab5:
             "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
             "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
         })
-    
+    """"
     # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
     st.write(f"### ✈️ Projected Fares for Selected {v_period} (SIN Hub)")
     
@@ -393,7 +393,7 @@ with tab5:
         hide_index=True, 
         use_container_width=True
     )
-   """"           
+    """           
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
