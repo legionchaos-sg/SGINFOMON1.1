@@ -102,8 +102,6 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
-
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 st_autorefresh(interval=180000, key="sync_109_stable")
@@ -348,7 +346,7 @@ for route in user_top_routes:
 
 # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
 #st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-
+d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
 st.dataframe(
     hero_grid, 
