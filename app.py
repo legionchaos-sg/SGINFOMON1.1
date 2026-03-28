@@ -286,6 +286,14 @@ with tab5:
     # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
     d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
+    
+    # 2. Force the day to the 1st (Normalization)
+    # This ensures all your "Average" math uses the start of the month
+    d_dep = d_input.replace(day=1)
+
+    # 3. (Optional) Display for the user to confirm
+    st.caption(f"Analysis Period: {d_dep.strftime('%B 01, %Y')}")
+    
     v_period = d_dep.strftime('%B %Y')
 
     # 1. THE 2026 SEASONAL SURCHARGE MAP *NEW NEW NEW
