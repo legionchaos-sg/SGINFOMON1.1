@@ -187,6 +187,7 @@ with tab1:
         # These will now be perfectly aligned with the market data
         m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.5f}%")
+        
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
@@ -283,10 +284,36 @@ with tab4:
 
 with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
-    st.write("Projected Fares for June 2026 (SIN Hub)")
-    st.table(pd.DataFrame({"Route": ["SIN-LHR", "SIN-NRT", "SIN-SYD"], "Est. Price (SGD)": ["$1,240", "$680", "$890"], "Trend": ["Stable", "Rising", "Rising"]}))
+    #st.write("Projected Fares for June 2026 (SIN Hub)")
+    #st.table(pd.DataFrame({"Route": ["SIN-LHR", "SIN-NRT", "SIN-SYD"], "Est. Price (SGD)": ["$1,240", "$680", "$890"], "Trend": ["Stable", "Rising", "Rising"]}))
+   
+    # 1. THE SELECTION SYNTAX (Place this above the table)
 
-st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
+# This allows the user to 'Top' their own routes
+    user_top_routes = st.multiselect(
+        "Select Top 3 Routes to Monitor:",
+        options=["SIN-LHR", "SIN-NRT", "SIN-SYD", "SIN-MEL", "SIN-HKG", "SIN-FRA"],
+        default=["SIN-LHR", "SIN-NRT", "SIN-SYD"], # These match your screenshot
+        max_selections=3,
+        key="g10_hero_routes"
+    )
+    
+    # 2. THE TABLE BUILDING SYNTAX
+    # Instead of AI choosing, the loop now follows 'user_top_routes'
+    hero_grid = []
+    for route in user_top_routes:
+        # Logic to fetch price based on the 'route' string
+        price = 1240 if "LHR" in route else 680 # Example logic
+        hero_grid.append({
+            "Route": route,
+            "Est. Price (SGD)": f"${price:,.0f}",
+            "Trend": "Rising" if price > 1000 else "Stable"
+        })
+    
+    # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
+    st.write("Projected Fares for June 2026 (SIN Hub)")
+    st.dataframe(hero_grid, hide_index=True, use_container_width=True)
+    st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
 
 # --- THE POP-UP DIALOG (Kept exactly as you like it) ---
 # ==========================================
