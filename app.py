@@ -292,7 +292,8 @@ with tab5:
 
     # This allows the user to 'Top' their own routes
         # 1. USER INPUTS
-    d_dep = st.date_input("Select Departure Month", value=date(2026, 6))
+    d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
+    v_period = d_dep.strftime('%B %Y')
     
     user_top_routes = st.multiselect(
         "Select Top 4 Routes to Monitor:",
@@ -343,8 +344,7 @@ with tab5:
         })
     
     # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
-    st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-   
+    st.write(f"### ✈️ Projected Fares for {v_period} (SIN Hub)")
     
     st.dataframe(
         hero_grid, 
