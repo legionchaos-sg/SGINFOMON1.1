@@ -2,6 +2,7 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
+import datatime 
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -286,8 +287,6 @@ with tab5:
     st.header("✈️ Global Airfare Prediction Engine")
     #st.write("Projected Fares for June 2026 (SIN Hub)")
     #st.table(pd.DataFrame({"Route": ["SIN-LHR", "SIN-NRT", "SIN-SYD"], "Est. Price (SGD)": ["$1,240", "$680", "$890"], "Trend": ["Stable", "Rising", "Rising"]}))
-
-    d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
    
     # 1. THE SELECTION SYNTAX (Place this above the table)
 
@@ -353,7 +352,8 @@ with tab5:
     # --- DISPLAY OUTPUT ---
     st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-        
+    
+    d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))    
     # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
     st.write("Projected Fares for June 2026 (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
