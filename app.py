@@ -351,7 +351,7 @@ with tab5:
     # 4. COMPACT DISPLAY (Optimized for 10.9-inch / 10pt)
     st.write(f"### ✈️ Projected Fares: {d_dep.strftime('%B %Y')} (SIN Hub)")
     if d_dep.month in [2, 6, 12]:
-    st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Prices include seasonal surcharges.")
+            st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Prices include seasonal surcharges.")
 
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
