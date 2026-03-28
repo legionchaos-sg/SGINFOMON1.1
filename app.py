@@ -286,7 +286,7 @@ with tab4:
     st.info("AI Analysis: Bidding pressure remains high due to fleet renewals. Expected +1.2% variance in next window.")
 
 with tab5:
-    #st.header("✈️ Global Airfare Prediction Engine")
+    #st.header("✈️ Popular Asia Routes Airfare Prediction")
     #st.write("Projected Fares for June 2026 (SIN Hub)")
     #st.table(pd.DataFrame({"Route": ["SIN-LHR", "SIN-NRT", "SIN-SYD"], "Est. Price (SGD)": ["$1,240", "$680", "$890"], "Trend": ["Stable", "Rising", "Rising"]}))
 
