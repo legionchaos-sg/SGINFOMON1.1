@@ -322,31 +322,31 @@ with tab5:
     #    })
 
    #### TESTING ONLY
-for route in user_top_routes:
-    # 1. BASE PRICE LOGIC (Indented = Runs for every route)
-    if "LHR" in route: base = 1200 
-    elif any(x in route for x in ["NRT", "SYD"]): base = 850
-    else: base = 500
+   for route in user_top_routes:
+       # 1. BASE PRICE LOGIC (Indented = Runs for every route)
+       if "LHR" in route: base = 1200 
+       elif any(x in route for x in ["NRT", "SYD"]): base = 850
+       else: base = 500
+        
+       inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
     
-    inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
-
-    # 2. GENERATE COMPETING PRICES (Now Indented!)
-    airline_prices = []
-    # Use target_airlines here if you only want the specific 5
-    for c_dict in master_carriers: 
-        c_price = base * c_dict.get("w", 0.8) * inf_adj
-        airline_prices.append(c_price)
+       # 2. GENERATE COMPETING PRICES (Now Indented!)
+       airline_prices = []
+       # Use target_airlines here if you only want the specific 5
+       for c_dict in master_carriers: 
+           c_price = base * c_dict.get("w", 0.8) * inf_adj
+           airline_prices.append(c_price)
+        
+       # 3. CALCULATE AVG (Now Indented!)
+       avg_price = sum(airline_prices) / len(airline_prices)
+        
+       # 4. APPEND TO GRID (Now Indented!)
+       hero_grid.append({
+           "Route": route,
+           "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
+           "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
+       })
     
-    # 3. CALCULATE AVG (Now Indented!)
-    avg_price = sum(airline_prices) / len(airline_prices)
-    
-    # 4. APPEND TO GRID (Now Indented!)
-    hero_grid.append({
-        "Route": route,
-        "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
-        "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
-    })
-
 # --- DISPLAY OUTPUT (Outside/Left of the loop) ---
 # This part stays at the margin so it only draws the table ONCE
 st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
