@@ -305,8 +305,8 @@ with tab5:
         {"name": "Thai Airways", "w": 0.75},
         {"name": "Air China", "w": 0.65},
         {"name": "Cathay Pacific", "w": 0.85},
-        {"name": "China Southern", "w": 0.68}
-        {"name": "Japan Airlines", "w": 0.68}
+        {"name": "China Southern", "w": 0.68},
+        {"name": "Japan Airlines", "w": 0.68},
         {"name": "All Nippon Airlines", "w": 0.68}
     ]
     
