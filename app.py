@@ -293,64 +293,62 @@ with tab5:
     # 1. THE SELECTION SYNTAX (Place this above the table)
 
 # This allows the user to 'Top' their own routes
-    user_top_routes = st.multiselect(
-        "Select Top 4 Routes to Monitor:",
-        options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT"],
-        default=["SIN-BKK", "SIN-CAN", "SIN-SZX", "SIN-HK"], # These match your screenshot
-        max_selections=4,
-        key="g10_hero_routes"
-    )
-    
-    # 2. THE TABLE BUILDING SYNTAX
-    # Instead of AI choosing, the loop now follows 'user_top_routes'
-    # 1. Define the specific 5 airlines for the Average calculation
-    master_carriers = [
+    # 1. USER INPUTS
+user_top_routes = st.multiselect(
+    "Select Top 4 Routes to Monitor:",
+    options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT", "SIN-LHR", "SIN-SYD"],
+    default=["SIN-BKK", "SIN-CAN", "SIN-SZX", "SIN-HK"],
+    max_selections=4,
+    key="g10_hero_routes"
+)
+
+# 2. MASTER DATA (Defined once before the loop)
+master_carriers = [
     {"name": "Singapore Airlines", "w": 1.0},
     {"name": "Thai Airways", "w": 0.75},
     {"name": "Air China", "w": 0.65},
     {"name": "Cathay Pacific", "w": 0.85},
     {"name": "China Southern", "w": 0.68}
 ]
-    hero_grid = []
-    #for route in user_top_routes:
-        # Logic to fetch price based on the 'route' string
-    #    price = 1240 if "LHR" in route else 680 # Example logic
-    #    hero_grid.append({
-    #        "Route": route,
-    #        "Est. Price (SGD) Across Airlines": f"${price:,.0f}",
-    #        "Trend": "Rising" if price > 800 else "Stable"
-    #    })
 
-   #### TESTING ONLY
-   for route in user_top_routes:
-       # 1. BASE PRICE LOGIC (Indented = Runs for every route)
-       if "LHR" in route: base = 1200 
-       elif any(x in route for x in ["NRT", "SYD"]): base = 850
-       else: base = 500
+hero_grid = []
+
+# 3. THE ENGINE (Everything below is perfectly indented)
+for route in user_top_routes:
+    # --- Step A: Base Price Logic ---
+    if "LHR" in route: 
+        base = 1200 
+    elif any(x in route for x in ["NRT", "SYD"]): 
+        base = 850
+    else: 
+        base = 500
         
-       inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+    # Get inflation adjustment from your SG Economy Engine
+    inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
     
-       # 2. GENERATE COMPETING PRICES (Now Indented!)
-       airline_prices = []
-       # Use target_airlines here if you only want the specific 5
-       for c_dict in master_carriers: 
-           c_price = base * c_dict.get("w", 0.8) * inf_adj
-           airline_prices.append(c_price)
+    # --- Step B: Generate Competing Prices ---
+    airline_prices = []
+    for c_dict in master_carriers: 
+        c_price = base * c_dict.get("w", 0.8) * inf_adj
+        airline_prices.append(c_price)
         
-       # 3. CALCULATE AVG (Now Indented!)
-       avg_price = sum(airline_prices) / len(airline_prices)
-        
-       # 4. APPEND TO GRID (Now Indented!)
-       hero_grid.append({
-           "Route": route,
-           "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
-           "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
-       })
+    # --- Step C: Calculate Average ---
+    avg_price = sum(airline_prices) / len(airline_prices)
     
-# --- DISPLAY OUTPUT (Outside/Left of the loop) ---
-# This part stays at the margin so it only draws the table ONCE
+    # --- Step D: Append to Grid (CRITICAL: Stay inside the loop) ---
+    hero_grid.append({
+        "Route": route,
+        "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
+        "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
+    })
+
+# 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
 st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-st.dataframe(hero_grid, hide_index=True, use_container_width=True)
+st.dataframe(
+    hero_grid, 
+    hide_index=True, 
+    use_container_width=True
+)
         
     # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
     st.write("Projected Fares for June 2026 (SIN Hub)")
