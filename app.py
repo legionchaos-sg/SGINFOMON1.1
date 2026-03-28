@@ -282,8 +282,6 @@ with tab5:
     # 1. USER INPUTS
     d_dep = st.date_input("Query Estimate Departure Month and Date for Monitor Route(s)", value=date(2026, 6, 1))
 
-    # --- INSERT AFTER d_dep DEFINITION (approx line 295) ---
-
     #Urgenc Alert
     # 1. Calculate Lead Time (Weeks)
     today = date.today()
@@ -798,7 +796,7 @@ with tab5:
         st.session_state.tab5_last_update = datetime.now().strftime("%H:%M:%S")
 
     # 3. Visual Confirmation (Small 10pt Caption)
-    st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
+    st.caption(f"✅ Market Data verified at {st.session_state.tab5_last_update}")
 
     # --- STEP 2: INSERT THE DYNAMIC RISK ANALYSIS HERE ---
     risk_level = "NORMAL"
@@ -828,7 +826,7 @@ with tab5:
     #st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
 
     #Delta for Risk ANALYSIS aLERT
-    with st.expander("🔍 View 6-Month Price Variance"):
+    with st.expander("🔍 View 6-Month Price Variance as of query"):
         col1, col2 = st.columns(2)
         # Based on our data: Sept 2025 avg was ~$310
         price_diff = ((avg_price - 310) / 310) * 100
