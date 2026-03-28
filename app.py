@@ -300,15 +300,52 @@ with tab5:
     
     # 2. THE TABLE BUILDING SYNTAX
     # Instead of AI choosing, the loop now follows 'user_top_routes'
-    hero_grid = []
-    for route in user_top_routes:
+    #hero_grid = []
+    #for route in user_top_routes:
         # Logic to fetch price based on the 'route' string
-        price = 1240 if "LHR" in route else 680 # Example logic
-        hero_grid.append({
-            "Route": route,
-            "Est. Price (SGD)": f"${price:,.0f}",
-            "Trend": "Rising" if price > 1000 else "Stable"
-        })
+    #    price = 1240 if "LHR" in route else 680 # Example logic
+    #    hero_grid.append({
+    #        "Route": route,
+    #        "Est. Price (SGD) Across Airlines": f"${price:,.0f}",
+    #        "Trend": "Rising" if price > 800 else "Stable"
+    #    })
+
+    #### TESTING ONLY
+    # 1. Define the specific 5 airlines for the Average calculation
+    target_airlines = ["Singapore Airlines", "Thai Airways", "Air China", "Cathay Pacific", "China Southern"]
+
+    for route in user_top_routes:
+        # BASE PRICE LOGIC: AI sets a baseline based on distance/region
+        # (LHR = Long Haul, NRT/SYD = Mid Haul, Others = Regional)
+        if "LHR" in route: base = 1200 
+        elif any(x in route for x in ["NRT", "SYD"]): base = 850
+        else: base = 500
+        
+        # Apply March 2026 Inflation from your SG Economy Engine (Tab 1)
+        inf_adj = 1 + (sg_econ.get('inf_val', 1.2) / 100)
+    
+    # 2. GENERATE COMPETING PRICES (AI-Weighted by Carrier)
+    # We pull weights from your master_carriers to simulate market reality
+    airline_prices = []
+    for c_name in target_airlines:
+        # Find the carrier's specific weight 'w' (e.g., SIA=1.0, AirChina=0.65)
+        carrier_meta = next((item for item in master_carriers if item["name"] == c_name), {"w": 0.8})
+        c_price = base * carrier_meta["w"] * inf_adj
+        airline_prices.append(c_price)
+    
+    # 3. CALCULATE THE "AVG PRICE" (The Mean of the 5 specific airlines)
+    avg_price = sum(airline_prices) / len(airline_prices)
+    
+    # 4. APPEND TO GRID (Retaining your specific Output Format)
+    hero_grid.append({
+        "Route": route,
+        "Est. Price (SGD) Across Airlines": f"${avg_price:,.0f}",
+        "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
+    })
+
+# --- DISPLAY OUTPUT ---
+st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
     # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
     st.write("Projected Fares for June 2026 (SIN Hub)")
