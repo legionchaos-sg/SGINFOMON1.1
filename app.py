@@ -343,14 +343,14 @@ with tab5:
         "Trend": "Rising" if avg_price > (base * 0.95) else "Stable"
     })
 
-# --- DISPLAY OUTPUT ---
-st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-    
-    # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
-    st.write("Projected Fares for June 2026 (SIN Hub)")
+    # --- DISPLAY OUTPUT ---
+    st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-    st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
+        
+        # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
+        st.write("Projected Fares for June 2026 (SIN Hub)")
+        st.dataframe(hero_grid, hide_index=True, use_container_width=True)
+        st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
 
 
 # ==========================================
