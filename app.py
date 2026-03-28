@@ -9,7 +9,7 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
-t.markdown("""
+st.markdown("""
     <style>
         /* This kills the invisible top bar */
         [data-testid="stHeader"] {display: none;}
