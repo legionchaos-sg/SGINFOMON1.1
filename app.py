@@ -9,6 +9,29 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
+t.markdown("""
+    <style>
+        /* This kills the invisible top bar */
+        [data-testid="stHeader"] {display: none;}
+        
+        /* This pulls the content to the top */
+        .block-container {
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+
+        /* This shrinks the gap between title and tabs */
+        .stVerticalBlock {
+            gap: 0.5rem !important;
+        }
+        
+        /* Forces the title to ignore standard margins */
+        h1 {
+            margin-top: -1.5rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0 
