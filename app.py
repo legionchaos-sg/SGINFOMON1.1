@@ -255,12 +255,12 @@ with tab1:
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
-with tab2:
-    st.header("🏢 Government & Public Services")
-    ps_c1, ps_c2, ps_c3 = st.columns(3)
-    with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li>Singpass<li>CPF Board<li>IRAS (Tax)</ul></div>', unsafe_allow_html=True)
-    with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li>HDB InfoWEB<li>HealthHub<li>ICA</ul></div>', unsafe_allow_html=True)
-    with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport</h4><ul><li>OneMotoring<li>NEA Weather<li>SPF e-Services</ul></div>', unsafe_allow_html=True)
+#with tab2:
+    #st.header("🏢 Government & Public Services")
+    #ps_c1, ps_c2, ps_c3 = st.columns(3)
+    #with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li>Singpass<li>CPF Board<li>IRAS (Tax)</ul></div>', unsafe_allow_html=True)
+    #with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li>HDB InfoWEB<li>HealthHub<li>ICA</ul></div>', unsafe_allow_html=True)
+    #with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport</h4><ul><li>OneMotoring<li>NEA Weather<li>SPF e-Services</ul></div>', unsafe_allow_html=True)
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS
