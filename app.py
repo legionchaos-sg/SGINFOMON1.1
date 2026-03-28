@@ -352,7 +352,7 @@ with tab5:
     })
 
     # --- DISPLAY OUTPUT ---
-st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+  st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
         
