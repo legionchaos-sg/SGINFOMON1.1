@@ -311,7 +311,7 @@ with tab5:
     {"name": "Cathay Pacific", "w": 0.85},
     {"name": "China Southern", "w": 0.68}
 ]
-    #hero_grid = []
+    hero_grid = []
     #for route in user_top_routes:
         # Logic to fetch price based on the 'route' string
     #    price = 1240 if "LHR" in route else 680 # Example logic
@@ -352,7 +352,7 @@ with tab5:
     })
 
     # --- DISPLAY OUTPUT ---
-    st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
+st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
         
