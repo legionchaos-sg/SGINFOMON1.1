@@ -7,7 +7,7 @@ from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
-
+d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
 
 # --- THE ANCHOR ---
@@ -346,7 +346,7 @@ with tab5:
     
     # 4. THE SCREEN PORTION (Un-indent to the far left to render only once)
     st.write(f"### ✈️ Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
-    d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
+   
     
     st.dataframe(
         hero_grid, 
