@@ -282,6 +282,28 @@ with tab5:
     # 1. USER INPUTS
     d_dep = st.date_input("Query Estimate Departure Month and Date for Monitor Route(s)", value=date(2026, 6, 1))
 
+    # --- INSERT AFTER d_dep DEFINITION (approx line 295) ---
+
+    #Urgenc Alert
+    # 1. Calculate Lead Time (Weeks)
+    today = date.today()
+    days_to_trip = (d_dep - today).days
+    weeks_to_trip = days_to_trip / 7
+    
+    # 2. Trigger the Strategic Alert
+    if 7 <= weeks_to_trip <= 9:
+        st.success(f"🎯 **STRATEGIC BUY ZONE:** You are {weeks_to_trip:.1f} weeks away. Prices are currently at the 2026 Statistical Minimum.")
+    elif weeks_to_trip < 4:
+        st.error(f"⚠️ **LAST MINUTE ZONE:** Trip is in {weeks_to_trip:.1f} weeks. Expect 'Corporate Premium' pricing (1.5x Base).")
+    elif weeks_to_trip > 12:
+        st.info(f"⏳ **MONITORING MODE:** {weeks_to_trip:.1f} weeks out. Prices are stable but 'Early Bird' discounts haven't triggered yet.")
+    else:
+        st.warning(f"🔔 **TRANSITION ZONE:** {weeks_to_trip:.1f} weeks remaining. The market is shifting toward the Week 8 dip.")
+
+# --- THE REST OF YOUR ENGINE FOLLOWS BELOW ---
+# for route in user_top_routes:
+#    ...
+
     # 3. (Optional) Display for the user to confirm
     st.caption(f"Analysis Period: {d_dep.strftime('%B, %Y')}")
     
