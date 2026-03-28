@@ -8,6 +8,8 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
+d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))
+
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0 
@@ -353,7 +355,7 @@ with tab5:
     st.write(f"Projected Fares for {d_dep.strftime('%B %Y')} (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     
-    d_dep = st.date_input("Select Departure Date", value=datetime.date(2026, 6, 1))    
+        
     # 3. THE DISPLAY SYNTAX (The 'Screen Portion' from your image)
     st.write("Projected Fares for June 2026 (SIN Hub)")
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
