@@ -8,7 +8,7 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
-d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
+
 
 # --- THE ANCHOR ---
 if "active_tab" not in st.session_state:
@@ -294,6 +294,8 @@ with tab5:
 
 # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
+d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
+
 user_top_routes = st.multiselect(
     "Select Top 4 Routes to Monitor:",
     options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT", "SIN-LHR", "SIN-SYD"],
