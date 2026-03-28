@@ -285,7 +285,7 @@ with tab4:
 with tab5:
     # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
-    d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
+    d_input = st.date_input("Select Departure Month", value=date(2026, 6, 1))
     
     # 2. Force the day to the 1st (Normalization)
     # This ensures all your "Average" math uses the start of the month
