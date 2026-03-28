@@ -297,13 +297,13 @@ with tab5:
     
     # 2. THE MASTER PRICE MAP (Base Economy Fare)
     base_price_map = {
-        "LHR": 1200, "NRT": 850, "SYD": 850, "PVG": 600,
+        "HND" : 900, "NRT": 850, "SYD": 850, "PVG": 600,
         "CAN": 550, "SZX": 500, "HK": 550, "BKK": 450
     }
     
     user_top_routes = st.multiselect(
         "Select Top 4 Routes to Monitor:",
-        options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT", "SIN-LHR", "SIN-SYD"],
+        options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT", "SIN-HND", "SIN-LHR", "SIN-SYD"],
         default=["SIN-BKK", "SIN-CAN", "SIN-SZX", "SIN-HK"],
         max_selections=4,
         key="g10_hero_routes"
@@ -751,7 +751,7 @@ with tab4:
 # TAB 5: AIRFARE & DYNAMIC VISA ENGINE
 # ==========================================
 with tab5:
-    st.header("✈️ Your Target Asia Airfare Prediction -> Based out from Singapore")
+    st.header("✈️ Your Target Asia Airfare Prediction -> Select from below routes only")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
@@ -802,7 +802,8 @@ with tab5:
         {"name": "Air China", "home": "China", "w": 0.65, "hub": "PEK"},
         {"name": "China Southern", "home": "China", "w": 0.68, "hub": "CAN"},
         {"name": "Thai Airways", "home": "Thailand", "w": 0.75, "hub": "BKK"},
-        {"name": "ANA / JAL", "home": "Japan", "w": 0.95, "hub": "HND/NRT"}
+        {"name": "ANA", "home": "Japan", "w": 0.95, "hub": "NRT"},
+        {"name": "Japan Airline", "home": "Japan", "w": 0.95, "hub": "HND"},
     ]
 
     priority_carriers = [c for c in master_carriers if c["home"] == dest_country]
