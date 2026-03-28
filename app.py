@@ -103,6 +103,21 @@ def get_latest_coe():
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
+
+# --- CSS TO REMOVE TOP MARGIN ---
+st.markdown("""
+    <style>
+           .block-container {
+                padding-top: 1rem;
+                padding-bottom: 0rem;
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+            #MainMenu {visibility: hidden;}
+            header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
 st_autorefresh(interval=180000, key="sync_109_stable")
 
 st.markdown("""
