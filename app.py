@@ -291,10 +291,10 @@ with tab5:
 
 # This allows the user to 'Top' their own routes
     user_top_routes = st.multiselect(
-        "Select Top 3 Routes to Monitor:",
+        "Select Top 4 Routes to Monitor:",
         options=["SIN-BKK", "SIN-HK", "SIN-CAN", "SIN-PVG", "SIN-SZX", "SIN-NRT"],
-        default=["SIN-BKK", "SIN-CAN", "SIN-SZX"], # These match your screenshot
-        max_selections=3,
+        default=["SIN-BKK", "SIN-CAN", "SIN-SZX", "SIN-HK"], # These match your screenshot
+        max_selections=4,
         key="g10_hero_routes"
     )
     
@@ -315,7 +315,7 @@ with tab5:
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
     st.caption(f"gold 10 Monitor | Last Global Sync: {datetime.now().strftime('%H:%M:%S')}")
 
-# --- THE POP-UP DIALOG (Kept exactly as you like it) ---
+
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
