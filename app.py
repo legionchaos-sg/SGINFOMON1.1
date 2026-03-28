@@ -825,6 +825,15 @@ with tab5:
         st.info(f"ℹ️ **{risk_level} STATUS:** {risk_msg}")
 
     st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
+
+    #Delta for Risk ANALYSIS aLERT
+    with st.expander("🔍 View 6-Month Price Variance"):
+    col1, col2 = st.columns(2)
+    # Based on our data: Sept 2025 avg was ~$310
+    price_diff = ((avg_price - 310) / 310) * 100
+    
+    col1.metric("Current vs Sept 2025", f"${avg_price:.0f}", f"{price_diff:.1f}%")
+    col2.metric("Fuel Risk Weight", f"{v_fuel_factor}x", "+110% vs 6m ago")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
