@@ -825,7 +825,7 @@ with tab5:
     else:
         st.info(f"ℹ️ **{risk_level} STATUS:** {risk_msg}")
 
-    st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
+    #st.caption(f"✅ Data verified at {st.session_state.tab5_last_update}")
 
     #Delta for Risk ANALYSIS aLERT
     with st.expander("🔍 View 6-Month Price Variance"):
