@@ -256,11 +256,6 @@ with tab1:
 # TAB 2: PUBLIC SERVICES
 # ==========================================
 #with tab2:
-    #st.header("🏢 Government & Public Services")
-    #ps_c1, ps_c2, ps_c3 = st.columns(3)
-    #with ps_c1: st.markdown('<div class="svc-card"><h4>🔐 Identity & Finance</h4><ul><li>Singpass<li>CPF Board<li>IRAS (Tax)</ul></div>', unsafe_allow_html=True)
-    #with ps_c2: st.markdown('<div class="svc-card"><h4>🏠 Housing & Health</h4><ul><li>HDB InfoWEB<li>HealthHub<li>ICA</ul></div>', unsafe_allow_html=True)
-    #with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport</h4><ul><li>OneMotoring<li>NEA Weather<li>SPF e-Services</ul></div>', unsafe_allow_html=True)
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS
@@ -285,7 +280,7 @@ with tab4:
 with tab5:
     # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
-    d_dep = st.date_input("Select Departure Month", value=date(2026, 6, 1))
+    d_dep = st.date_input("Query Estimate Departure Month and Date for Monitor Route(s)", value=date(2026, 6, 1))
 
     # 3. (Optional) Display for the user to confirm
     st.caption(f"Analysis Period: {d_dep.strftime('%B, %Y')}")
@@ -358,9 +353,7 @@ with tab5:
             st.warning(f"Note: {d_dep.strftime('%B')} is a high-demand period in Singapore. Estimated $ include seasonal surcharges.")
 
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
-    
-   
-    
+     
 # ==========================================
 # TAB 2: PUBLIC SERVICES (Your EXACT Original)
 # ==========================================
@@ -758,7 +751,7 @@ with tab4:
 # TAB 5: AIRFARE & DYNAMIC VISA ENGINE
 # ==========================================
 with tab5:
-    st.header("✈️ Asia Airfare Prediction Engine")
+    st.header("✈️ Your Target Asia Airfare Prediction -> Based out from Singapore")
     
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
@@ -798,9 +791,9 @@ with tab5:
 
     d_col1, d_col2 = st.columns(2)
     with d_col1:
-        d_dep = st.date_input("Departure:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
+        d_dep = st.date_input("Esti Departure:", value=date(2026, 6, 17), format="DD/MM/YYYY", key="g10_t5_dep")
     with d_col2:
-        d_ret = st.date_input("Return:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
+        d_ret = st.date_input("Esti Return:", value=date(2026, 6, 24), format="DD/MM/YYYY", key="g10_t5_ret") if v_trip_type == "Round Trip" else None
 
     # 3. CARRIER MASTER DATA & INITIALIZATION
     master_carriers = [
@@ -833,7 +826,7 @@ with tab5:
             "Route / Type": route_type
         })
 
-    st.subheader(f"📊 Live Pricing Table to {selected_airport}")
+    st.subheader(f"📊 Live Avg Pricing non class specific to {selected_airport}")
     st.dataframe(grid_rows, hide_index=True, use_container_width=True)
 
     # 5. STRATEGIC POP-UP LOGIC
