@@ -823,7 +823,7 @@ with tab5:
         
         grid_rows.append({
             "Carrier": c["name"],
-            "Adult Avg ($)": f"{p:,.0f}",
+            "Adult Avg ($) ≈": f"{p:,.0f}",
             "Route / Type": route_type
         })
 
