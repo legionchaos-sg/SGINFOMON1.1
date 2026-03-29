@@ -563,7 +563,7 @@ with tab2:
         # --- 1. DYNAMIC INPUTS ---
         col_in1, col_in2 = st.columns(2)
         with col_in1:
-            query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
+            query = st.text_input("🔍 Search Estate:", value="Enter Estate Name").strip().title()
         with col_in2:
             u_weight = st.number_input("⚖️ Your Weight (kg):", value=70)
         
@@ -636,7 +636,7 @@ with tab2:
             """, unsafe_allow_html=True)
         
         # ROW 3: RESALE ANALYSIS (National vs Estate)
-        st.write("---")
+        #st.write("---")
         st.markdown("**🏠 2026 Resale Benchmarks**")
         r1, r2, r3 = st.columns(3)
         r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=f"Nat: ${nat['3R']/1000:.0f}k", delta_color="off")
