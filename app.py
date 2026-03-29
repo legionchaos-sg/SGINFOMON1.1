@@ -528,8 +528,6 @@ with tab2:
             c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
     
-        st.divider()
-    
         # --- PART 2: MRT SERVICE STATUS ---
         st.markdown("#### 🚆 Train Service Status")
         rail_data = [
@@ -547,8 +545,8 @@ with tab2:
             st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
     
         # --- PART 3: FIFO INCIDENT LOG (COMBINED) ---
-        st.divider()
-        st.markdown("#### ⚠️ Recent Incidents (FIFO)")
+        #st.divider()
+        st.markdown("#### ⚠️ Recent Train or Trffic Incidents (FIFO)")
         incidents = [
             ("17:05", "Event", "MetaSprint Triathlon: Full closure East Coast Park Svc Rd."),
             ("16:30", "Event", "Chingay @ Punggol: Punggol Field Walk closed (LP 13-24)."),
