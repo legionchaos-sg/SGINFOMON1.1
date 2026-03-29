@@ -405,6 +405,43 @@ with tab5:
             "Trend": "📈 Rising" if is_peak else "🟢 Stable"
     })
 
+    #try tf here
+    # Gemini Market Sync: March 29, 2026
+    fx_master = {
+        "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "mult": 1.00},
+        "Bangkok (BKK)":    {"sym": "฿",   "rate": 25.37, "mult": 0.85},
+        "Hong Kong (HKG)": {"sym": "HK$", "rate": 6.05,  "mult": 0.90},
+        "China (CN)":      {"sym": "¥",   "rate": 5.35,  "mult": 0.88},
+        "Japan (JP)":      {"sym": "¥",   "rate": 124.49,"mult": 0.92}
+    }
+
+    # Get FX data based on u_origin_cat from your selectbox
+    active_fx = fx_master.get(u_origin_cat, fx_master["Singapore (SIN)"])
+    c_sym = active_fx["sym"]
+    c_rate = active_fx["rate"]
+    c_origin_adj = active_fx["mult"] # Strips SIN-specific levies if outbound
+
+    # --- END OF INSERTION ---
+
+    # [UPDATE YOUR SECTION 4 PRICING TABLE TO USE THESE NEW VARIABLES]
+    base_price = 820 if "China" in u_origin_cat else 980
+    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
+    
+    grid_rows = []
+    for c in final_sorted:
+        # Calculate local price using the engine above
+        p_local = (base_price * multiplier * c["w"] * c_origin_adj) * c_rate
+        
+        is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
+        route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
+        
+        grid_rows.append({
+            "Carrier": c["name"],
+            "Adult Avg Price ≈": f"{c_sym}{p_local:,.0f}", # Now reflects local currency
+            "Route / Type": route_type
+        })
+        #try fx 
+
     # 4. COMPACT DISPLAY (Optimized for 10.9-inch / 10pt)
     st.write(f"### ✈️ Projected Fares: {d_dep.strftime('%B %Y')} (SIN Hub)")
     if d_dep.month in [2, 6, 12]:
@@ -811,50 +848,6 @@ with tab4:
 with tab5:
     st.header("✈️ Your Target Asia Airfare Prediction -> Select from below routes only")
     avg_orince = 0.0 #base
-
-    
-    #start of fx exchange
-    # --- SECTION 1: DYNAMIC ORIGIN & EXCHANGE MAPPING (MARCH 2026) ---
-    # Gemini Update: Rates reflect the March 29, 2026, market close
-    fx_market = {
-        "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "mult": 1.00},
-        "Hong Kong (HKG)": {"sym": "HK$", "rate": 5.82,  "mult": 0.92},
-        "Tokyo (HND)":     {"sym": "¥",   "rate": 112.4, "mult": 0.93},
-        "Sydney (SYD)":    {"sym": "A$",  "rate": 1.14,  "mult": 0.96}
-    }
-
-    # Use your existing selectbox variable 'origin'
-    # Fallback to Singapore if not yet selected
-    active_origin = origin if 'origin' in locals() else "Singapore (SIN)"
-    data = fx_market.get(active_origin, fx_market["Singapore (SIN)"])
-    
-    curr_sym = data["sym"]
-    curr_rate = data["rate"]
-    origin_adj = data["mult"] # Adjusts for lower local surcharges vs SIN
-
-    # --- SECTION 2: THE CONVERSION LOGIC ---
-    # Ensure avg_price_sgd exists from your main engine first
-    if 'avg_price_sgd' not in locals():
-        avg_price_sgd = 310.0 # Standard 2026 Baseline
-        
-    # Apply Origin Adjustment then Currency Conversion
-    local_display_price = (avg_price_sgd * origin_adj) * curr_rate
-
-    # --- SECTION 3: DISPLAY EXECUTION ---
-    # No layout change; simply use these variables in your existing metrics
-    st.metric(
-        label=f"Market Fare ({active_origin})",
-        value=f"{curr_sym}{local_display_price:,.0f}",
-        delta=f"{curr_sym}{local_display_price * 0.05:,.0f} (Tax Incl.)"
-    )
-
-    # NEW CODE (Reflects Origin & Currency)
-    st.metric(
-        label=f"Live Avg Pricing ({active_origin})", 
-        value=f"{curr_sym}{local_display_price:,.0f}",
-        delta=f"{origin_adj}x Origin Factor"
-)
-    #end of fx exchg
 
     # 1. The Dynamic Trigger: This only runs when the user views Tab 5
     # We use session_state to ensure it only updates ONCE per tab visit
