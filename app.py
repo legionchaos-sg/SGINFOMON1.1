@@ -563,10 +563,8 @@ with tab2:
         # --- 1. DYNAMIC INPUTS ---
         col_in1, col_in2 = st.columns(2)
         with col_in1:
-            # Passed to Gemini-Logic for 2026 Estate Analysis
             query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
         with col_in2:
-            # Used for Personal Hydration Logic
             u_weight = st.number_input("⚖️ Your Weight (kg):", value=70)
         
         # --- 2. THE 2026 PREDICTIVE ENGINE ---
@@ -574,7 +572,7 @@ with tab2:
             # NATIONAL BENCHMARKS (Actual Mar 2026)
             nat = {"3R": 469370, "4R": 672110, "5R": 781812}
             
-            # ESTATE CLASSIFICATION (Gemini Reasoning)
+            # ESTATE CLASSIFICATION
             mature = ["Queenstown", "Ang Mo Kio", "Bukit Merah", "Bishan", "Clementi"]
             is_mature = estate in mature
             is_north = any(x in estate for x in ["Woodlands", "Yishun", "Sembawang"])
@@ -589,12 +587,11 @@ with tab2:
             elif is_north:
                 dec, reason = "STRATEGIC BUY", "RTS Link 2026 completion catalyst; entry price below national average."
             else:
-                dec, reason = "HOLD", "Strong rental yield (4.1%); low volatility in non-mature buffer zones."
+                dec, reason = "HOLD", "Strong rental yield (4.1%); low volatility in non-mature zones."
         
             # ENVIRONMENT & HYDRATION LOGIC (Mar 29, 2026)
-            # Today's High Heat: 34.1°C with WBGT of 33°C in North vs 31°C elsewhere
             wbgt = 33 if is_north else 31
-            base_water = (weight * 35) / 1000 # 35ml per kg
+            base_water = (weight * 35) / 1000 
             heat_add = 0.75 if wbgt >= 33 else 0.45
             water_goal = round(base_water + heat_add, 1)
         
@@ -605,6 +602,7 @@ with tab2:
             
             return nat, est_prices, dec, reason, env
         
+        # Execute Data Fetch
         nat, est, dec, reason, env = get_gold10_intel(query, u_weight)
         
         # --- 3. UI DISPLAY (gold 10 Optimized) ---
@@ -613,7 +611,7 @@ with tab2:
         # HYDRATION & HEAT (Priority 1)
         h1, h2 = st.columns([1, 2])
         with h1:
-            st.metric("Daily Water", f"{env['water']}L", delta=f"+{int(env['wbgt']-29)*200}ml Heat")
+            st.metric("Daily Water", f"{env['water']}L", delta=f"Heat +{int(env['wbgt']-29)*200}ml")
         with h2:
             st.markdown(f"""
                 <div style="background:#1e1e1e; padding:10px; border-radius:8px; border-left:5px solid {'#dc3545' if env['wbgt']>=33 else '#ffc107'};">
@@ -626,10 +624,12 @@ with tab2:
         st.write("---")
         st.markdown("**🏠 2026 Resale Benchmarks**")
         r1, r2, r3 = st.columns(3)
-        r1.metric("3-Room", f"${est['3R']/1000:.0f}k", f"Nat: ${nat['3R']/1
-        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", f"Nat: ${nat['4R']/1000:.0f}k")
-        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", f"Nat: ${nat['5R']/1000:.0f}k")
-
+        
+        # FIXING THE SYNTAX ERROR HERE:
+        r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=f"Nat: ${nat['3R']/1000:.0f}k", delta_color="off")
+        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=f"Nat: ${nat['4R']/1000:.0f}k", delta_color="off")
+        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", delta=f"Nat: ${nat['5R']/1000:.0f}k", delta_color="off")
+        
         # STRATEGY BOX
         color = "#28a745" if "BUY" in dec else "#dc3545" if "SELL" in dec else "#ffc107"
         st.markdown(f"""
