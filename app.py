@@ -873,8 +873,8 @@ with tab5:
     # 1. SETUP (ORIGIN & NATIONALITY)
     col_a, col_b = st.columns(2)
     with col_a:
-        origin_options = ["Singapore (SIN)", "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
-        u_origin_cat = st.selectbox("Select Origin:", origin_options, index=0, key="g10_t5_orig")
+        origin_options = ["Singapore (SIN)"] #, "Bangkok (BKK)", "Hong Kong (HKG)", "China (CN)", "Japan (JP)"]
+        u_origin_cat = st.selectbox("Origin:", origin_options, index=0, key="g10_t5_orig")
         
         china_orig = ["Beijing (PEK)", "Shanghai (PVG)", "Guangzhou (CAN)"]
         thai_orig = ["Suvarnabhumi (BKK)", "Don Mueang (DMK)", "Phuket (HKT)"]
