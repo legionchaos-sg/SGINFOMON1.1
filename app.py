@@ -610,13 +610,12 @@ with tab2:
 
     # --- 5. HDB Resale Average ---
     with st.expander("🏘️ Integrated Estate & Housing Intelligence", expanded=True):
-    
         # --- 1. USER INPUT ---
         query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
-
-         # --- 2. DYNAMIC CALCULATION ENGINE (Q1 2026 BENCHMARKS) ---
-            # These constants reflect the actual Mar 2026 National Medians
-            NAT_AVG = {"3R": 488250, "4R": 672110, "5R": 781812, "EXEC": 925175}
+        
+        # --- 2. DYNAMIC CALCULATION ENGINE (Q1 2026 BENCHMARKS) ---
+        # These constants reflect the actual Mar 2026 National Medians
+        NAT_AVG = {"3R": 488250, "4R": 672110, "5R": 781812, "EXEC": 925175}
             
             def get_dynamic_estate_data(estate):
                 """Calculates values based on 2026 regional multipliers."""
@@ -668,6 +667,9 @@ with tab2:
                         <b>STRATEGY: {advice}</b> | {reason}
                     </div>
                 """, unsafe_allow_html=True)
+        
+
+         
     
 
 # ==========================================
