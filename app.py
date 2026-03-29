@@ -635,7 +635,7 @@ with tab2:
             else:
                 advice, reason = "HOLD", "Market stabilizing (+1.2% QoQ); rental yield is currently superior."
                     
-             return resale_data, advice, reason
+            return resale_data, advice, reason
             
         # Execute Logic
         prices, advice, reason = get_dynamic_estate_data(query)
