@@ -814,6 +814,40 @@ with tab5:
 
     
     #start of fx exchange
+    # --- SECTION 1: DYNAMIC ORIGIN & EXCHANGE MAPPING (MARCH 2026) ---
+    # Gemini Update: Rates reflect the March 29, 2026, market close
+    fx_market = {
+        "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "mult": 1.00},
+        "Hong Kong (HKG)": {"sym": "HK$", "rate": 5.82,  "mult": 0.92},
+        "London (LHR)":    {"sym": "£",   "rate": 0.59,  "mult": 0.95},
+        "Tokyo (HND)":     {"sym": "¥",   "rate": 112.4, "mult": 0.93},
+        "Sydney (SYD)":    {"sym": "A$",  "rate": 1.14,  "mult": 0.96}
+    }
+
+    # Use your existing selectbox variable 'origin'
+    # Fallback to Singapore if not yet selected
+    active_origin = origin if 'origin' in locals() else "Singapore (SIN)"
+    data = fx_market.get(active_origin, fx_market["Singapore (SIN)"])
+    
+    curr_sym = data["sym"]
+    curr_rate = data["rate"]
+    origin_adj = data["mult"] # Adjusts for lower local surcharges vs SIN
+
+    # --- SECTION 2: THE CONVERSION LOGIC ---
+    # Ensure avg_price_sgd exists from your main engine first
+    if 'avg_price_sgd' not in locals():
+        avg_price_sgd = 310.0 # Standard 2026 Baseline
+        
+    # Apply Origin Adjustment then Currency Conversion
+    local_display_price = (avg_price_sgd * origin_adj) * curr_rate
+
+    # --- SECTION 3: DISPLAY EXECUTION ---
+    # No layout change; simply use these variables in your existing metrics
+    st.metric(
+        label=f"Market Fare ({active_origin})",
+        value=f"{curr_sym}{local_display_price:,.0f}",
+        delta=f"{curr_sym}{local_display_price * 0.05:,.0f} (Tax Incl.)"
+    )
     #end of fx exchg
 
     # 1. The Dynamic Trigger: This only runs when the user views Tab 5
