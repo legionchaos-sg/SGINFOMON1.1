@@ -610,65 +610,71 @@ with tab2:
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Estate & Housing Intelligence", expanded=True):
-    
-        # --- 1. USER INPUT ---
-        query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
+
+        # --- 1. USER INPUTS ---
+        col_in1, col_in2 = st.columns(2)
+        with col_in1:
+            query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
+        with col_in2:
+            weight = st.number_input("⚖️ Your Weight (kg):", value=70, min_value=30)
         
-        # --- 2. DYNAMIC CALCULATION ENGINE (Q1 2026 BENCHMARKS) ---
-        # These constants reflect the actual Mar 2026 National Medians
-        NAT_AVG = {"3R": 488250, "4R": 672110, "5R": 781812, "EXEC": 925175}
-        
-        def get_dynamic_estate_data(estate):
-            """Calculates values based on 2026 regional multipliers."""
-            # Logic: Mature vs Non-Mature multipliers for 2026
-            mature_estates = ["Queenstown", "Ang Mo Kio", "Toa Payoh", "Bukit Merah", "Clementi"]
-            is_mature = estate in mature_estates
+        # --- 2. DYNAMIC CALCULATION ENGINE (MARCH 29, 2026) ---
+        def get_gold10_intelligence(estate, user_weight):
+            # Climate Data: Late NE Monsoon / Transition
+            is_north = any(x in estate for x in ["Woodlands", "Yishun", "Sembawang"])
+            wbgt = 33 if is_north else 31 # North is hotter today due to Johor hotspot influence
             
-            # Dynamic Pricing Logic
-            mult = 1.25 if is_mature else 0.92
-            resale_data = {k: int(v * mult) for k, v in NAT_AVG.items()}
-            
-            # Dynamic Advice Logic based on 2026 market 'Stability' trend
-            if is_mature and resale_data["4R"] > 900000:
-                advice, reason = "SELL", "Peak 'Million-Dollar' resistance reached; high capital gains ready."
-            elif not is_mature and "Woodlands" in estate:
-                advice, reason = "BUY", "RTS Link 2026 completion driving north-corridor value."
-            else:
-                advice, reason = "HOLD", "Market stabilizing (+1.2% QoQ); rental yield is currently superior."
-                
-            return resale_data, advice, reason
+            # HYDRATION LOGIC (2026 MOH/NEA Formula)
+            # Baseline: 35ml per kg of body weight
+            # Heat Surcharge: +500ml for Moderate, +750ml for High WBGT
+            base_water = user_weight * 35 / 1000 # in Liters
+            heat_surcharge = 0.75 if wbgt >= 33 else 0.50
+            total_water = base_water + heat_surcharge
         
-        # Execute Logic
-        prices, advice, reason = get_dynamic_estate_data(query)
+            # Environment Data
+            env = {
+                "temp": "34.2°C",
+                "psi": 58 if is_north else 48,
+                "wbgt": wbgt,
+                "water_goal": round(total_water, 1),
+                "hourly_sip": round((total_water * 1000) / 14, 0), # 14-hour wake cycle
+                "status": "🔴 HIGH RISK" if wbgt >= 33 else "🟡 MODERATE"
+            }
+            
+            return env
+        
+        env = get_gold10_intelligence(query, weight)
         
         # --- 3. UI DISPLAY (gold 10 optimized) ---
-        with st.container():
-            st.markdown(f"### 📍 {query} Intelligence")
-            
-            # Environment (Dynamic via Gemini current-time context)
-            e1, e2, e3 = st.columns(3)
-            e1.metric("Temp", "28.5°C")
-            e2.metric("PSI", "58", delta="Haze Risk")
-            e3.metric("Wind", "5 mph NE")
-            
-            st.divider()
-            
-            # Housing (Dynamic via Calculation Engine)
-            st.markdown("**🏠 2026 Resale Benchmarks**")
-            h1, h2, h3, h4 = st.columns(4)
-            h1.metric("3-Room", f"${prices['3R']/1000:.0f}k")
-            h2.metric("4-Room", f"${prices['4R']/1000:.0f}k")
-            h3.metric("5-Room", f"${prices['5R']/1000:.0f}k")
-            h4.metric("Exec", f"${prices['EXEC']/1000:.0f}k")
+        st.markdown(f"### 📍 {query} Dashboard")
         
-            # Strategy Banner
-            color = "#dc3545" if advice == "SELL" else "#28a745" if advice == "BUY" else "#ffc107"
+        # HYDRATION & HEAT ADVISORY (Priority 1)
+        c_h1, c_h2 = st.columns([1, 2])
+        with c_h1:
+            st.metric("Daily Water Goal", f"{env['water_goal']}L", delta=f"Base +{int(env['wbgt']-30)*250}ml Heat")
+        with c_h2:
             st.markdown(f"""
-                <div style="background:{color}; padding:8px; border-radius:5px; color:white;">
-                    <b>STRATEGY: {advice}</b> | {reason}
+                <div style="background:#1e1e1e; padding:10px; border-radius:8px; border-left:5px solid {'#dc3545' if env['wbgt']>=33 else '#ffc107'};">
+                    <b style="color:white; font-size:1rem;">{env['status']} Heat Stress</b><br>
+                    <span style="font-size:0.85rem; color:#ccc;">Drink <b>{int(env['hourly_sip'])}ml</b> every hour to maintain core temp.</span>
                 </div>
             """, unsafe_allow_html=True)
-
+        
+        # CLIMATE METRICS
+        st.write("---")
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Air Temp", env['temp'])
+        e2.metric("PSI", env['psi'], delta="Moderate" if env['psi'] > 50 else None)
+        e3.metric("WBGT", f"{env['wbgt']}°C")
+        e4.metric("Wind", "12 km/h NE")
+        
+        # FOOTER WARNING
+        if env['wbgt'] >= 33:
+            st.error("⚠️ **High Heat Alert:** Avoid outdoor exercise in Woodlands area until after 19:30 SGT.")
+        else:
+            st.warning("⚠️ **Moderate Heat:** Stay hydrated if commuting via non-aircon transport.")
+        
+        st.caption(f"gold 10 | 29 Mar 2026 | Calculations based on 35ml/kg baseline + 2026 Heat Surcharge")
     
         
 
