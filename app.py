@@ -499,7 +499,7 @@ with tab2:
 
         
     # --- 3. Rail and Road Service---
-     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
+    with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
     # --- PART 1: MRT STATUS ---
     st.markdown("#### 🚆 Train Service Status")
             rail_data = [
