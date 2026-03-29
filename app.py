@@ -596,8 +596,13 @@ with tab2:
             water_goal = round(base_water + heat_add, 1)
         
             env = {
-                "temp": "34.1°C", "psi": 58 if is_north else 46, "wbgt": wbgt,
-                "water": water_goal, "sip": int((water_goal * 1000) / 14)
+                "temp": "34.1°C", 
+                "psi": 58 if is_north else 46, 
+                "wbgt": wbgt,
+                "rain": "15%",
+                "wind": "14 km/h NE",
+                "water": water_goal, 
+                "sip": int((water_goal * 1000) / 14)
             }
             
             return nat, est_prices, dec, reason, env
@@ -608,7 +613,17 @@ with tab2:
         # --- 3. UI DISPLAY (gold 10 Optimized) ---
         st.markdown(f"### 📍 {query} Dashboard")
         
-        # HYDRATION & HEAT (Priority 1)
+        # ROW 1: WEATHER & ENVIRONMENT (Full Suite)
+        st.markdown("**🌤️ Environmental Pulse**")
+        w1, w2, w3, w4, w5 = st.columns(5)
+        w1.metric("Temp", env['temp'])
+        w2.metric("PSI", env['psi'], delta="Moderate" if env['psi'] > 50 else None)
+        w3.metric("Rain %", env['rain'])
+        w4.metric("Wind", env['wind'])
+        w5.metric("WBGT", f"{env['wbgt']}°C")
+        
+        # ROW 2: HYDRATION & HEAT (Priority Strategy)
+        st.write("---")
         h1, h2 = st.columns([1, 2])
         with h1:
             st.metric("Daily Water", f"{env['water']}L", delta=f"Heat +{int(env['wbgt']-29)*200}ml")
@@ -616,16 +631,14 @@ with tab2:
             st.markdown(f"""
                 <div style="background:#1e1e1e; padding:10px; border-radius:8px; border-left:5px solid {'#dc3545' if env['wbgt']>=33 else '#ffc107'};">
                     <b style="color:white; font-size:1rem;">{'🔴 HIGH' if env['wbgt']>=33 else '🟡 MOD'} Heat Stress</b><br>
-                    <span style="font-size:0.85rem; color:#ccc;">Target <b>{env['sip']}ml/hour</b>. WBGT is {env['wbgt']}°C today.</span>
+                    <span style="font-size:0.85rem; color:#ccc;">Target <b>{env['sip']}ml/hour</b>. Hydrate based on weight + 2026 heat surcharge.</span>
                 </div>
             """, unsafe_allow_html=True)
         
-        # RESALE ANALYSIS (National vs Estate)
+        # ROW 3: RESALE ANALYSIS (National vs Estate)
         st.write("---")
         st.markdown("**🏠 2026 Resale Benchmarks**")
         r1, r2, r3 = st.columns(3)
-        
-        # FIXING THE SYNTAX ERROR HERE:
         r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=f"Nat: ${nat['3R']/1000:.0f}k", delta_color="off")
         r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=f"Nat: ${nat['4R']/1000:.0f}k", delta_color="off")
         r3.metric("5-Room", f"${est['5R']/1000:.0f}k", delta=f"Nat: ${nat['5R']/1000:.0f}k", delta_color="off")
@@ -639,7 +652,7 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
         
-        st.caption(f"gold 10 | 29 Mar 2026 | LTV: 75% | Interest: 1.6% Bank / 2.6% HDB")
+        st.caption(f"gold 10 | 29 Mar 2026 | Season: NE Monsoon | LTV: 75% | Bank: 1.6% / HDB: 2.6%")
     
 
 # ==========================================
