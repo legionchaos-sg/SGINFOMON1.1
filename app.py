@@ -525,18 +525,18 @@ with tab2:
             linkStyle 4 stroke:#28a745,stroke-width:3px;
         """
 
-# 3. Render in Streamlit
-st.write("### 🗺️ Global Subsea Nerve Map (Live)")
-html_code = f"""
-    <div class="mermaid">
-        {mermaid_code}
-    </div>
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
-    </script>
-"""
-components.html(html_code, height=450)
+        # 3. Render in Streamlit
+        st.write("### 🗺️ Global Subsea Nerve Map (Live)")
+        html_code = f"""
+            <div class="mermaid">
+                {mermaid_code}
+            </div>
+            <script type="module">
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
+            </script>
+        """
+        components.html(html_code, height=450)
 
 
         
