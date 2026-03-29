@@ -498,62 +498,39 @@ with tab2:
 
 
         
-    # --- 3. Rail Service & Engineering Advisory ---
-    with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
-        line_cols = st.columns(6)
-        lines = [
-            {"name": "EWL", "status": "Normal", "color": "#009530"},
-            {"name": "NSL", "status": "Normal", "color": "#d42e12"},
-            {"name": "NEL", "status": "Normal", "color": "#744199"},
-            {"name": "CCL", "status": "Advisory", "color": "#ff9a00"}, 
-            {"name": "DTL", "status": "Normal", "color": "#005ec4"},
-            {"name": "TEL", "status": "Normal", "color": "#9d5b25"}
+    # --- 3. Rail and Road Service---
+    wwith st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
+        # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
+        st.write("---")
+        st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
+        
+        # Mock Data based on Mar 29, 2026 LTA TrafficScan findings
+        expressways = [
+            {"name": "PIE (Tuas)", "avg_speed": "45-55 km/h", "band": "🟡 Moderate", "risk": 7, "reason": "Heavy congestion + Clementi Exit Closure."},
+            {"name": "AYE (MCE)", "avg_speed": "75-85 km/h", "band": "🟢 Optimal", "risk": 2, "reason": "Free flowing; no incidents reported."},
+            {"name": "CTE (SLE)", "avg_speed": "30-40 km/h", "band": "🟠 Slow", "risk": 5, "reason": "Typical Sunday afternoon buildup near Braddell."},
+            {"name": "KPE (TPE)", "avg_speed": "70-80 km/h", "band": "🟢 Optimal", "risk": 3, "reason": "Tunnel flow is stable; watch for KPE/TPE merge merge."}
         ]
-        for i, line in enumerate(lines):
-            with line_cols[i]:
-                status_icon = "✅" if line['status'] == "Normal" else "⚠️"
-                st.markdown(f"""<div style="background-color: {line['color']}; padding: 8px; border-radius: 5px; text-align: center; color: white; border: 1px solid #ddd;"><div style="font-size: 0.7rem; font-weight: bold;">{line['name']}</div><div style="font-size: 1.2rem; margin: 2px 0;">{status_icon}</div><div style="font-size: 0.6rem; text-transform: uppercase;">{line['status']}</div></div>""", unsafe_allow_html=True)
 
-        st.markdown("#### 🛠️ Weekly Maintenance & Engineering Works")
-        advisories = [
-            {"line": "Circle Line (CCL)", "impact": "Single Platform Service", "details": "Ongoing tunnel strengthening between <b>Mountbatten and Paya Lebar</b>.", "status": "In Progress"},
-            {"line": "Sengkang West LRT", "impact": "Advance Notice: Loop Closure", "details": "Inner Loop closure starting <b>19 April 2026</b>.", "status": "Upcoming"}
-        ]
-        for adv in advisories:
-            st.markdown(f"""<div style="background-color: var(--secondary-background-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: bold; color: var(--primary-color);">{adv['line']} - {adv['impact']}</span><span style="font-size: 0.65rem; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">{adv['status']}</span></div><div style="font-size: 0.85rem; margin-top: 8px; color: var(--text-color); line-height: 1.4;">{adv['details']}</div></div>""", unsafe_allow_html=True)
+        # Layout for Tablet Display
+        col_name, col_speed, col_risk = st.columns([2, 2, 2])
+        
+        with col_name: st.caption("Expressway")
+        with col_speed: st.caption("Avg Speed")
+        with col_risk: st.caption("Risk Score")
 
-    # --- 4. Traffic Info ---
-    with st.expander("🚦 Traffic Info", expanded=False):
-        st.markdown("#### 🛣️ Expressway Traffic Condition")
-        tr_cols = st.columns(6)
-        expr_stats = [
-            {"name": "CTE", "cond": "Optimal", "speed": "58km/h", "color": "#28a745"},
-            {"name": "PIE", "cond": "Heavy", "speed": "32km/h", "color": "#ffc107"},
-            {"name": "AYE", "cond": "Congested", "speed": "24km/h", "color": "#dc3545"},
-            {"name": "ECP", "cond": "Optimal", "speed": "62km/h", "color": "#28a745"},
-            {"name": "KJE", "cond": "Moderate", "speed": "48km/h", "color": "#ffc107"},
-            {"name": "MCE", "cond": "Optimal", "speed": "60km/h", "color": "#28a745"}
-        ]
-        for i, ex in enumerate(expr_stats):
-            with tr_cols[i]:
-                st.markdown(f"""<div style="text-align: center; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px;">
-                    <div style="font-size: 0.75rem; font-weight: bold;">{ex['name']}</div>
-                    <div class="traffic-pill" style="background-color: {ex['color']};">{ex['cond']}</div>
-                    <div style="font-size: 0.8rem;">{ex['speed']}</div>
-                </div>""", unsafe_allow_html=True)
+        for ex in expressways:
+            # Color logic for Risk Score
+            r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
+            
+            c1, c2, c3 = st.columns([2, 2, 2])
+            c1.markdown(f"**{ex['name']}**")
+            c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
+            c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
+            
+            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
 
-        st.markdown("<br>#### ⚠️ Traffic Incidents (Last 60 Mins - FIFO)", unsafe_allow_html=True)
-        traffic_incidents = [
-            {"time": "14:21", "expressway": "ECP", "msg": "Road Works on ECP (towards City) after Marine Parade. Avoid lane 1."},
-            {"time": "14:48", "expressway": "CTE", "msg": "Road Works on CTE (towards AYE) at PIE(Tuas) Exit."},
-            {"time": "14:53", "expressway": "KPE", "msg": "Vehicle Breakdown on KPE (towards ECP) before Buangkok Drive."},
-            {"time": "15:19", "expressway": "PIE", "msg": "Vehicle Breakdown on PIE (towards Tuas) after Stevens Rd."},
-            {"time": "15:22", "expressway": "MCE", "msg": "Obstacle on MCE (towards AYE) after Central Boulevard."}
-        ]
-        for inc in traffic_incidents:
-            st.markdown(f"""<div style="font-size:0.85rem; border-left: 4px solid #007bff; padding: 8px; margin-bottom: 8px; background: var(--secondary-background-color); border-radius: 0 6px 6px 0;">
-                <span style="font-weight: bold; color: #007bff;">[{inc['time']}] {inc['expressway']}</span> — {inc['msg']}
-            </div>""", unsafe_allow_html=True)
+        st.info("💡 **Risk Suggestion:** PIE (Tuas) is currently **High Risk (7/10)** due to the Clementi Exit closure. For Tuas-bound travel, divert to AYE to save ~12 mins.")
 
     # --- 5. LIVE Island Weather ---
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
