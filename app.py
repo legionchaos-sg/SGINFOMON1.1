@@ -500,6 +500,7 @@ with tab2:
         
     # --- 3. Rail and Road Service---
     with st.expander("🚆 Rail Service & Engineering Advisory", expanded=False):
+    
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
         st.write("---")
         st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
@@ -532,6 +533,40 @@ with tab2:
 
         st.info("💡 **Risk Suggestion:** PIE (Tuas) is currently **High Risk (7/10)** due to the Clementi Exit closure. For Tuas-bound travel, divert to AYE to save ~12 mins.")
 
+        # --- SECTION: LIVE MRT STATUS & RAIL RISK ---
+        st.write("---")
+        st.write("**🚆 Live MRT/LRT Service Monitor**")
+
+        # 2026 Findings: Circle Line tunnel works and Sengkang LRT expansion
+        rail_data = [
+            {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel strengthening (Paya Lebar - Mountbatten). Normal service resumes Apr 10."},
+            {"line": "Sengkang LRT", "status": "🔴 Partial", "delay": "N/A", "msg": "Cheng Lim (SW1) CLOSED for depot expansion until Oct 2026."},
+            {"line": "North East Line", "status": "🟡 Minor", "delay": "5-10m", "msg": "Recent crowdsourced reports of slow movement (Serangoon-Punggol)."},
+            {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "All main lines running smoothly with R151 7th-gen trains."}
+        ]
+
+        for r in rail_data:
+            r_color = "#28a745" if "Normal" in r['status'] else "#ffc107" if "Advisory" in r['status'] or "Minor" in r['status'] else "#dc3545"
+            
+            with st.container():
+                c1, c2, c3 = st.columns([2, 1, 1])
+                c1.markdown(f"**{r['line']}**")
+                c2.markdown(f"<span style='color:{r_color};'>● {r['status']}</span>", unsafe_allow_html=True)
+                c3.write(f"`{r['delay']}`")
+                st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+
+        # FIFO Log for Rail Incidents (Last 24h)
+        st.write("**⚠️ Recent Rail Incidents (FIFO)**")
+        rail_incidents = [
+            ("13:52", "NEL", "Delays reported between Serangoon and Punggol Coast."),
+            ("09:00", "CCL", "Sunday morning service adjustment active until 19 Apr."),
+            ("Yesterday", "NSL", "Platform screen door renewal works (Braddell/Toa Payoh).")
+        ]
+        
+        for t, l, m in rail_incidents:
+            st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {l}: {m}</div>", unsafe_allow_html=True)
+
+        st.info("📅 **Commuter Note:** Train and selected bus services will be **EXTENDED** on the Eve of Good Friday (April 2, 2026). Plan your late-night travel accordingly.")
     # --- 5. LIVE Island Weather ---
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
         def get_nea_data(path):
