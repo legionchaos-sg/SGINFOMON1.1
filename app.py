@@ -623,7 +623,7 @@ with tab2:
         w5.metric("WBGT", f"{env['wbgt']}°C")
         
         # ROW 2: HYDRATION & HEAT (Priority Strategy)
-        st.write("---")
+        #st.write("---")
         h1, h2 = st.columns([1, 2])
         with h1:
             st.metric("Daily Water", f"{env['water']}L", delta=f"Heat +{int(env['wbgt']-29)*200}ml")
