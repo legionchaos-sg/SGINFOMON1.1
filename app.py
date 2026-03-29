@@ -316,6 +316,7 @@ with tab4:
     st.info("AI Analysis: Bidding pressure remains high due to fleet renewals. Expected +1.2% variance in next window.")
 
 with tab5:
+    st.header("Outbound from Singapore Only")
     # This allows the user to 'Top' their own routes
     # 1. USER INPUTS
     d_dep = st.date_input("Query Estimate Departure Month and Date for Monitor Route(s)", value=date(2026, 6, 1))
