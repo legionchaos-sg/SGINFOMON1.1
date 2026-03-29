@@ -336,6 +336,20 @@ with tab5:
     else:
         st.warning(f"🔔 **TRANSITION ZONE:** {weeks_to_trip:.1f} weeks remaining. The market is shifting toward the Week 8 dip.")
 
+# --- 🟢 INSERT FLY-IN LOGIC HERE (The "Sweet Spot") ---
+    fly_in_logic = {
+        "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "adj": 1.00}, 
+        "Bangkok (BKK)":    {"sym": "฿",   "rate": 25.37, "adj": 0.85}, 
+        "Hong Kong (HKG)": {"sym": "HK$", "rate": 6.05,  "adj": 0.88}, 
+        "China (CN)":      {"sym": "¥",   "rate": 5.35,  "adj": 0.88}, 
+        "Japan (JP)":      {"sym": "¥",   "rate": 124.49,"adj": 0.90}
+    }
+
+    # Connect to the selectbox variable
+    mode = fly_in_logic.get(u_origin_cat, fly_in_logic["Singapore (SIN)"])
+    c_sym, c_rate, c_adj = mode["sym"], mode["rate"], mode["adj"]
+    # ---------------------------------------------------- end of fly in logic?
+
 # --- THE REST OF YOUR ENGINE FOLLOWS BELOW ---
 # for route in user_top_routes:
 #    ...
