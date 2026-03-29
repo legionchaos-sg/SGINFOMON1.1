@@ -502,11 +502,11 @@ with tab2:
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
     # --- PART 1: MRT STATUS ---
         st.markdown("#### 🚆 Train Service Status")
-                rail_data = [
-                    {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar). Alternative: Shuttle 37."},
+            rail_data = [
+                {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar). Alternative: Shuttle 37."},
                 {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19. Currently stable."},
                 {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "7th-gen R151 trains in service. No issues reported."}
-        ]
+                ]
     
         for r in rail_data:
             r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
