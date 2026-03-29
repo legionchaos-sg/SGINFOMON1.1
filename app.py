@@ -637,7 +637,7 @@ with tab2:
         
         # ROW 3: RESALE ANALYSIS
         st.write("---")
-        st.markdown("**🏠 2026 Resale Benchmarks**")
+        st.markdown("**🏠 2026 Resale Benchmarks Average**")
         r1, r2, r3 = st.columns(3)
         r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=f"Nat: ${nat['3R']/1000:.0f}k", delta_color="off")
         r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=f"Nat: ${nat['4R']/1000:.0f}k", delta_color="off")
