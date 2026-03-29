@@ -3,6 +3,7 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import datetime 
+import streamlit.components.v1 as components
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -495,6 +496,47 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
+
+        # 1. Define your dynamic data (These could be updated by your search results)
+        west_status = "🔴 SeaMeWe-5 (Legacy)"
+        west_label = "🔴 Red Sea Detour"
+        west_color = "stroke:#dc3545" # Red
+        
+        # 2. Build the Mermaid string dynamically
+        mermaid_code = f"""
+        graph LR
+            subgraph SG_LANDING_STATIONS [Singapore Landing Hubs]
+                C[Changi Landing Point]
+                T[Tuas Landing Point]
+                TM[Tanah Merah]
+            end
+        
+            C -- "{west_status}" --- EU_B["{west_label}"]
+            T -- "Bifrost (2025/26)" --- US_A["🟢 California (Direct)"]
+            C -- "SJC2 / ADC" --- AS_A["🟡 HK / Japan / Korea"]
+            T -- "Indigo-West" --- AU_A["🟡 Perth (Repairs)"]
+            TM -- "SEA-H2X" --- RI_B["🟢 ASEAN Regional"]
+        
+            style SG_LANDING_STATIONS fill:#333,stroke:#f9f,stroke-width:2px,color:#fff
+            linkStyle 0 {west_color},stroke-width:3px;
+            linkStyle 1 stroke:#28a745,stroke-width:3px;
+            linkStyle 2 stroke:#ffc107,stroke-width:3px;
+            linkStyle 3 stroke:#ffc107,stroke-width:3px;
+            linkStyle 4 stroke:#28a745,stroke-width:3px;
+        """
+
+# 3. Render in Streamlit
+st.write("### 🗺️ Global Subsea Nerve Map (Live)")
+html_code = f"""
+    <div class="mermaid">
+        {mermaid_code}
+    </div>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
+    </script>
+"""
+components.html(html_code, height=450)
 
 
         
