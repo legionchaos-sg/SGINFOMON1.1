@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import datetime 
 import streamlit.components.v1 as components
+import streamlit as st
+import base64
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -124,6 +126,12 @@ def get_latest_coe():
         {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
+
+def render_mermaid_as_image(mermaid_code):
+    # Encode the code for the Mermaid.ink API
+    graphbytes = mermaid_code.encode("ascii")
+    base64_bytes = base64.b64encode(graphbytes)
+    base64_string = base64_bytes.decode("ascii")
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -497,46 +505,25 @@ with tab2:
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
 
-        # 1. Define your dynamic data (These could be updated by your search results)
-        west_status = "🔴 SeaMeWe-5 (Legacy)"
-        west_label = "🔴 Red Sea Detour"
-        west_color = "stroke:#dc3545" # Red
-        
-        # 2. Build the Mermaid string dynamically
-        mermaid_code = f"""
-        graph LR
-            subgraph SG_LANDING_STATIONS [Singapore Landing Hubs]
-                C[Changi Landing Point]
-                T[Tuas Landing Point]
-                TM[Tanah Merah]
-            end
-        
-            C -- "{west_status}" --- EU_B["{west_label}"]
-            T -- "Bifrost (2025/26)" --- US_A["🟢 California (Direct)"]
-            C -- "SJC2 / ADC" --- AS_A["🟡 HK / Japan / Korea"]
-            T -- "Indigo-West" --- AU_A["🟡 Perth (Repairs)"]
-            TM -- "SEA-H2X" --- RI_B["🟢 ASEAN Regional"]
-        
-            style SG_LANDING_STATIONS fill:#333,stroke:#f9f,stroke-width:2px,color:#fff
-            linkStyle 0 {west_color},stroke-width:3px;
-            linkStyle 1 stroke:#28a745,stroke-width:3px;
-            linkStyle 2 stroke:#ffc107,stroke-width:3px;
-            linkStyle 3 stroke:#ffc107,stroke-width:3px;
-            linkStyle 4 stroke:#28a745,stroke-width:3px;
-        """
+        # Generate the live image URL
+    image_url = f"https://mermaid.ink/img/{base64_string}?bgcolor=333"
+    return image_url
 
-        # 3. Render in Streamlit
-        st.write("### 🗺️ Global Subsea Nerve Map (Live)")
-        html_code = f"""
-            <div class="mermaid">
-                {mermaid_code}
-            </div>
-            <script type="module">
-                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
-            </script>
-        """
-        components.html(html_code, height=450)
+# Your 2026 Connectivity Code
+mermaid_syntax = """
+graph LR
+    subgraph SG[Singapore Hubs]
+        C[Changi]
+        T[Tuas]
+    end
+    C -- "🔴 SMW-5 (255ms)" --> EU[Europe]
+    T -- "🟢 Bifrost (162ms)" --> US[USA]
+    C -- "🟡 SJC2 (88ms)" --> AS[Asia]
+    style SG fill:#222,stroke:#f9f
+"""
+
+# Render it
+st.image(render_mermaid_as_image(mermaid_syntax), caption="Live Global Link Status")
 
 
         
