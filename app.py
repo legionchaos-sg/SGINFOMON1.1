@@ -840,7 +840,7 @@ with tab5:
     risk_level = "NORMAL"
     risk_msg = "Market conditions are within 2026 baseline projections."
 
-    *to enable fx currentcy in local dollars
+    #to enable fx currentcy in local dollars
     # 1. DEFINE YOUR 2026 EXCHANGE RATES (March 29th Baseline)
     # These are the S$1.00 equivalents
     fx_rates = {
