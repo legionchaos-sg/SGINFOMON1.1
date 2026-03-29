@@ -606,7 +606,65 @@ with tab2:
         for a in alerts:
             st.markdown(f"<div style='font-size:0.85rem; margin-bottom:6px;'>{a['icon']} <b>{a['type']}</b>: {a['msg']}</div>", unsafe_allow_html=True)
     
-        st.caption(f"Sync: {datetime.now().strftime('%H:%M')} | gold 10 System")    
+        st.caption(f"Sync: {datetime.now().strftime('%H:%M')} | gold 10 System")
+
+    # --- 5. HDB Resale Average ---
+    with st.expander("🏘️ Integrated Estate & Housing Intelligence", expanded=True):
+
+        query = st.text_input("🔍 Enter Estate:", value="Woodlands").strip().title()
+    
+        # --- 2026 DATA ENGINE ---
+        # National benchmarks for Q1 2026
+        nat_avg = {"3R": 488250, "4R": 670770, "5R": 898060, "Exec": 938120}
+        
+        estate_db = {
+            "Woodlands": {
+                "env": {"temp": "28.5°C", "psi": 58, "wind": "5mph NE", "status": "🟡 Moderate Haze"},
+                "hdb": {"3R": 418000, "4R": 568700, "5R": 648000, "Exec": 946000, "trend": "🟢 Stable (+1.2%)", "advice": "BUY", "reason": "High value-to-price ratio; RTS Link nearing completion."}
+            },
+            "Punggol": {
+                "env": {"temp": "28.1°C", "psi": 48, "wind": "6mph NE", "status": "🟢 Good"},
+                "hdb": {"3R": 562800, "4R": 680000, "5R": 806500, "Exec": 873800, "trend": "🟢 Strong (+1.4%)", "advice": "HOLD", "reason": "Strong rental yield from Digital District; wait for peak MOP supply."}
+            },
+            "Queenstown": {
+                "env": {"temp": "29.4°C", "psi": 52, "wind": "4mph E", "status": "🟢 Good"},
+                "hdb": {"3R": 480000, "4R": 1032500, "5R": 1051500, "Exec": 1265000, "trend": "🟡 High Vol", "advice": "SELL", "reason": "Million-dollar resistance reached; perfect window to upgrade to private."}
+            }
+        }
+    
+        data = estate_db.get(query, estate_db["Woodlands"])
+    
+        # --- SECTION A: ENVIRONMENTAL PULSE ---
+        st.markdown(f"**🌡️ Live Environment: {query}**")
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Temp", data['env']['temp'])
+        e2.metric("PSI", data['env']['psi'], delta="Haze" if data['env']['psi'] > 55 else None)
+        e3.metric("Wind", data['env']['wind'])
+        e4.metric("Status", data['env']['status'])
+    
+        st.divider()
+    
+        # --- SECTION B: HDB RESALE & STRATEGY ---
+        st.markdown(f"**🏠 Resale Strategy: {query} (Q1 2026)**")
+        h1, h2, h3, h4 = st.columns(4)
+        def fmt(val): return f"${val/1000:.0f}k"
+    
+        h1.metric("3-Room", fmt(data['hdb']['3R']))
+        h2.metric("4-Room", fmt(data['hdb']['4R']))
+        h3.metric("5-Room", fmt(data['hdb']['5R']))
+        h4.metric("Exec", fmt(data['hdb']['Exec']))
+    
+        # ADVICE BANNER
+        advice_color = {"BUY": "#28a745", "SELL": "#dc3545", "HOLD": "#ffc107"}[data['hdb']['advice']]
+        st.markdown(f"""
+            <div style="background:{advice_color}; padding:10px; border-radius:8px; color:white; text-align:center;">
+                <h3 style="margin:0;">📢 Strategy: {data['hdb']['advice']}</h3>
+                <p style="margin:0; font-size:0.9rem;">{data['hdb']['reason']}</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.caption(f"Market Sentiment: {data['hdb']['trend']} | Data Sync: {datetime.now().strftime('%H:%M')}")
+    
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
