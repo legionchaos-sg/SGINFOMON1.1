@@ -503,7 +503,7 @@ with tab2:
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
         st.write("---")
         st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
-        with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
+        
         # --- PART 1: EXPRESSWAY FLOW & COMMUTE RISK ---
         st.markdown("#### 🛣️ Expressway Speed & Risk (Live SGT)")
         
