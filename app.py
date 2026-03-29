@@ -469,10 +469,10 @@ with tab2:
         # Link mapping for March 29, 2026 findings
         # Key: Path | Cables | Latency | Status
         links = [
-            ("🇺🇸 East (USA)", "Bifrost / Echo", "165ms", "🟢 Optimal", "Direct SG-US link fully operational."),
-            ("🇪🇺 West (Europe)", "SMW-6 / AAE-1", "240ms+", "🔴 High Lag", "Red Sea security risks; routing via detour."),
-            ("🇯🇵 North (Asia)", "SJC2 / ADC", "85ms", "🟡 Congested", "High load due to regional traffic rerouting."),
-            ("🇦🇺 South (AU)", "Indigo-West / ASC", "60ms", "🟡 Maint", "Indigo-West shallow water repairs (Est. Apr 6)."),
+            ("🇺🇸 East (USA) - Essential for US-hosted Cloud APIs (Google/AWS).", "Bifrost / Echo", "165ms", "🟢 Optimal", "Direct SG-US link fully operational."),
+            ("🇪🇺 West (Europe) - Essential for pricing from London/Paris/Frankfurt", "SMW-6 / AAE-1", "240ms+", "🔴 High Lag", "Red Sea security risks; routing via detour."),
+            ("🇯🇵 North (Asia) - Essential for China/Japan flight monitoring", "SJC2 / ADC", "85ms", "🟡 Congested", "High load due to regional traffic rerouting."),
+            ("🇦🇺 South (AU) - Essential for Southern Hemisphere data", "Indigo-West / ASC", "60ms", "🟡 Maint", "Indigo-West shallow water repairs (Est. Apr 6)."),
             ("🌏 Regional", "ALC / SEA-H2X", "25ms", "🟢 Healthy", "ASEAN links stable; ALC ready-for-service 2026.")
         ]
 
