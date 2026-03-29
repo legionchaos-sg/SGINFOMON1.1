@@ -320,19 +320,6 @@ with tab5:
     # 1. USER INPUTS
     d_dep = st.date_input("Query Estimate Departure Month and Date for Monitor Route(s)", value=date(2026, 6, 1))
 
-    #Title heading
-    st.markdown("""
-        <h2 style='margin-bottom: 0rem; font-size: 20px;'>
-            ✈️ Asia Flight outbound from Singapore
-        </h2>
-        <p style='font-size: 10px; color: gray; margin-top: 0rem;'>
-            gold 10 System | March 2026 Live Monitoring
-        </p>
-    """, unsafe_allow_html=True)
-    st.header("✈️ Your Target Asia Airfare Prediction -> Select from below routes only")
-    avg_orince = 0.0 #base
-    #Title heading ends
-
     #Urgenc Alert
     # 1. Calculate Lead Time (Weeks)
     today = date.today()
