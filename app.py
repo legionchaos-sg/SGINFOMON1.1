@@ -627,6 +627,19 @@ with tab2:
         st.markdown("**🏠 2026 Resale Benchmarks**")
         r1, r2, r3 = st.columns(3)
         r1.metric("3-Room", f"${est['3R']/1000:.0f}k", f"Nat: ${nat['3R']/1
+        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", f"Nat: ${nat['4R']/1000:.0f}k")
+        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", f"Nat: ${nat['5R']/1000:.0f}k")
+
+        # STRATEGY BOX
+        color = "#28a745" if "BUY" in dec else "#dc3545" if "SELL" in dec else "#ffc107"
+        st.markdown(f"""
+            <div style="background:{color}; padding:10px; border-radius:8px; color:white; margin-top:10px;">
+                <b style="font-size:1.1rem;">DECISION: {dec}</b><br>
+                <span style="font-size:0.9rem;">{reason}</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.caption(f"gold 10 | 29 Mar 2026 | LTV: 75% | Interest: 1.6% Bank / 2.6% HDB")
     
 
 # ==========================================
