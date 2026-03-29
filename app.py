@@ -614,7 +614,7 @@ with tab2:
         # --- 1. USER INPUT ---
         query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
 
-            # --- 2. DYNAMIC CALCULATION ENGINE (Q1 2026 BENCHMARKS) ---
+         # --- 2. DYNAMIC CALCULATION ENGINE (Q1 2026 BENCHMARKS) ---
             # These constants reflect the actual Mar 2026 National Medians
             NAT_AVG = {"3R": 488250, "4R": 672110, "5R": 781812, "EXEC": 925175}
             
