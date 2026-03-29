@@ -503,70 +503,62 @@ with tab2:
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
         st.write("---")
         st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
-        
-        # Mock Data based on Mar 29, 2026 LTA TrafficScan findings
-        expressways = [
-            {"name": "PIE (Tuas)", "avg_speed": "45-55 km/h", "band": "🟡 Moderate", "risk": 7, "reason": "Heavy congestion + Clementi Exit Closure."},
-            {"name": "AYE (MCE)", "avg_speed": "75-85 km/h", "band": "🟢 Optimal", "risk": 2, "reason": "Free flowing; no incidents reported."},
-            {"name": "CTE (SLE)", "avg_speed": "30-40 km/h", "band": "🟠 Slow", "risk": 5, "reason": "Typical Sunday afternoon buildup near Braddell."},
-            {"name": "KPE (TPE)", "avg_speed": "70-80 km/h", "band": "🟢 Optimal", "risk": 3, "reason": "Tunnel flow is stable; watch for KPE/TPE merge merge."}
-        ]
-
-        # Layout for Tablet Display
-        col_name, col_speed, col_risk = st.columns([2, 2, 2])
-        
-        with col_name: st.caption("Expressway")
-        with col_speed: st.caption("Avg Speed")
-        with col_risk: st.caption("Risk Score")
-
-        for ex in expressways:
-            # Color logic for Risk Score
-            r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
-            
-            c1, c2, c3 = st.columns([2, 2, 2])
-            c1.markdown(f"**{ex['name']}**")
-            c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
-            
-            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
-
-        st.info("💡 **Risk Suggestion:** PIE (Tuas) is currently **High Risk (7/10)** due to the Clementi Exit closure. For Tuas-bound travel, divert to AYE to save ~12 mins.")
-
-        # --- SECTION: LIVE MRT STATUS & RAIL RISK ---
-        st.write("---")
-        st.write("**🚆 Live MRT/LRT Service Monitor**")
-
-        # 2026 Findings: Circle Line tunnel works and Sengkang LRT expansion
-        rail_data = [
-            {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel strengthening (Paya Lebar - Mountbatten). Normal service resumes Apr 10."},
-            {"line": "Sengkang LRT", "status": "🔴 Partial", "delay": "N/A", "msg": "Cheng Lim (SW1) CLOSED for depot expansion until Oct 2026."},
-            {"line": "North East Line", "status": "🟡 Minor", "delay": "5-10m", "msg": "Recent crowdsourced reports of slow movement (Serangoon-Punggol)."},
-            {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "All main lines running smoothly with R151 7th-gen trains."}
-        ]
-
-        for r in rail_data:
-            r_color = "#28a745" if "Normal" in r['status'] else "#ffc107" if "Advisory" in r['status'] or "Minor" in r['status'] else "#dc3545"
-            
-            with st.container():
-                c1, c2, c3 = st.columns([2, 1, 1])
-                c1.markdown(f"**{r['line']}**")
-                c2.markdown(f"<span style='color:{r_color};'>● {r['status']}</span>", unsafe_allow_html=True)
-                c3.write(f"`{r['delay']}`")
-                st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
-
-        # FIFO Log for Rail Incidents (Last 24h)
-        st.write("**⚠️ Recent Rail Incidents (FIFO)**")
-        rail_incidents = [
-            ("13:52", "NEL", "Delays reported between Serangoon and Punggol Coast."),
-            ("09:00", "CCL", "Sunday morning service adjustment active until 19 Apr."),
-            ("Yesterday", "NSL", "Platform screen door renewal works (Braddell/Toa Payoh).")
-        ]
-        
-        for t, l, m in rail_incidents:
-            st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {l}: {m}</div>", unsafe_allow_html=True)
-
-        st.info("📅 **Commuter Note:** Train and selected bus services will be **EXTENDED** on the Eve of Good Friday (April 2, 2026). Plan your late-night travel accordingly.")
+        with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
+    # --- PART 1: EXPRESSWAY FLOW & COMMUTE RISK ---
+    st.markdown("#### 🛣️ Expressway Speed & Risk (Live SGT)")
     
+    # 2026 Findings: LTA TrafficScan Band Data
+    expressways = [
+        {"name": "PIE (Tuas)", "avg_speed": "45-55 km/h", "band": "🟡 Moderate", "risk": 7, "reason": "Clementi Rd Exit CLOSED (Works)."},
+        {"name": "AYE (MCE)", "avg_speed": "75-85 km/h", "band": "🟢 Optimal", "risk": 2, "reason": "Free flowing; no incidents."},
+        {"name": "CTE (SLE)", "avg_speed": "30-40 km/h", "band": "🟠 Slow", "risk": 5, "reason": "Build-up at Havelock Exit (Lane 3 closed)."},
+        {"name": "KPE (TPE)", "avg_speed": "70-80 km/h", "band": "🟢 Optimal", "risk": 3, "reason": "Stable; Nicoll Hwy entrance works active."}
+    ]
+
+    col1, col2, col3 = st.columns([2, 2, 2])
+    col1.caption("Expressway")
+    col2.caption("Avg Speed")
+    col3.caption("Risk Score")
+
+    for ex in expressways:
+        r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
+        c1, c2, c3 = st.columns([2, 2, 2])
+        c1.markdown(f"**{ex['name']}**")
+        c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
+        c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
+
+    st.divider()
+
+    # --- PART 2: MRT SERVICE STATUS ---
+    st.markdown("#### 🚆 Train Service Status")
+    rail_data = [
+        {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar)."},
+        {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19."},
+        {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "R151 7th-gen trains in operation."}
+    ]
+
+    for r in rail_data:
+        r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
+        c1, c2, c3 = st.columns([2, 1, 1])
+        c1.markdown(f"**{r['line']}**")
+        c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
+        c3.write(f"`{r['delay']}`")
+        st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+
+    # --- PART 3: FIFO INCIDENT LOG (COMBINED) ---
+    st.divider()
+    st.markdown("#### ⚠️ Recent Incidents (FIFO)")
+    incidents = [
+        ("17:05", "Event", "MetaSprint Triathlon: Full closure East Coast Park Svc Rd."),
+        ("16:30", "Event", "Chingay @ Punggol: Punggol Field Walk closed (LP 13-24)."),
+        ("00:33", "Road", "PIE (Tuas) at Clementi Rd Exit: EXIT CLOSED (Road Works)."),
+        ("00:08", "Road", "CTE Tunnel (AYE) at Havelock: EXIT CLOSED (Road Works).")
+    ]
+    for t, cat, msg in incidents:
+        st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
+
+    st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
     # --- 5. LIVE Island Weather ---
     with st.expander("🌤️ Island Weather Forecast", expanded=True):
         def get_nea_data(path):
