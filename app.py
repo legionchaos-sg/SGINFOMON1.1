@@ -819,7 +819,6 @@ with tab5:
     fx_market = {
         "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "mult": 1.00},
         "Hong Kong (HKG)": {"sym": "HK$", "rate": 5.82,  "mult": 0.92},
-        "London (LHR)":    {"sym": "£",   "rate": 0.59,  "mult": 0.95},
         "Tokyo (HND)":     {"sym": "¥",   "rate": 112.4, "mult": 0.93},
         "Sydney (SYD)":    {"sym": "A$",  "rate": 1.14,  "mult": 0.96}
     }
@@ -848,6 +847,13 @@ with tab5:
         value=f"{curr_sym}{local_display_price:,.0f}",
         delta=f"{curr_sym}{local_display_price * 0.05:,.0f} (Tax Incl.)"
     )
+
+    # NEW CODE (Reflects Origin & Currency)
+    st.metric(
+        label=f"Live Avg Pricing ({active_origin})", 
+        value=f"{curr_sym}{local_display_price:,.0f}",
+        delta=f"{origin_adj}x Origin Factor"
+)
     #end of fx exchg
 
     # 1. The Dynamic Trigger: This only runs when the user views Tab 5
