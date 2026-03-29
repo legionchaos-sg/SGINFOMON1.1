@@ -646,7 +646,7 @@ with tab2:
         # STRATEGY BOX
         color = "#28a745" if "BUY" in dec else "#dc3545" if "SELL" in dec else "#ffc107"
         st.markdown(f"""
-            <div style="background:{color}; padding:10px; border-radius:8px; color:white; margin-top:10px;">
+            <div style="background:{color}; padding:6px; border-radius:5px; color:white; margin-top:10px;">
                 <b style="font-size:1.1rem;">DECISION: {dec}</b><br>
                 <span style="font-size:0.9rem;">{reason}</span>
             </div>
