@@ -559,66 +559,57 @@ with tab2:
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
-    
+
         # --- 1. DYNAMIC INPUTS ---
         col_in1, col_in2 = st.columns(2)
         with col_in1:
             query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
         with col_in2:
-            u_weight = st.number_input("⚖️ Your Weight (kg):", value=70)
+            u_weight = st.number_input("⚖️ Weight (kg):", value=70)
         
-        # --- 2. THE 2026 PREDICTIVE ENGINE (Updated Mar 29 Data) ---
-        def get_gold10_intel(estate, weight):
-            # NATIONAL BENCHMARKS (Actual Mar 2026)
+        # --- 2. THE 2026 UNIFIED ENGINE ---
+        def get_gold10_master(estate, weight):
+            # National Average (S'pore Avg) Mar 29, 2026
             nat = {"3R": 469370, "4R": 672110, "5R": 781812}
             
-            # ESTATE CLASSIFICATION
-            mature = ["Queenstown", "Ang Mo Kio", "Bukit Merah", "Bishan", "Clementi"]
+            # Estate Classification
+            mature = ["Queenstown", "Ang Mo Kio", "Bukit Merah", "Bishan", "Clementi", "Toa Payoh"]
             is_mature = estate in mature
             is_north = any(x in estate for x in ["Woodlands", "Yishun", "Sembawang"])
             
-            # PRICE LOGIC (2026 Local Multipliers)
+            # Housing Calculation
             mult = 1.42 if is_mature else 0.95
             est_prices = {k: int(v * mult) for k, v in nat.items()}
             
-            # STRATEGY (2026 Context)
-            if is_mature:
-                dec, reason = "SELL / UPGRADE", "Price resistance peaking; 13.4k MOP units in 2026 increasing supply."
-            elif is_north:
-                dec, reason = "STRATEGIC BUY", "RTS Link 2026 completion catalyst; entry price below national average."
-            else:
-                dec, reason = "HOLD", "Strong rental yield (4.1%); low volatility in non-mature zones."
+            # Strategic Logic
+            dec = "SELL / UPGRADE" if is_mature else "STRATEGIC BUY" if is_north else "HOLD"
+            reason = "Capitalize on high premium." if is_mature else "RTS Link 2026 upside; Low entry vs Nat Avg."
         
-            # CORRECTED WEATHER DATA (Sun, 29 Mar 2026, Evening Update)
-            # Afternoon thundery showers have cooled the island.
-            wbgt = 31 if is_north else 29
-            base_water = (weight * 35) / 1000 
-            # Surcharge reduced as peak heat has passed due to rain cooling.
-            heat_add = 0.45 if wbgt >= 31 else 0.25
-            water_goal = round(base_water + heat_add, 1)
-        
+            # Environment Data (Sun, 29 Mar 2026 - Evening Update)
             env = {
-                "temp": "29.0°C",      # Actual cooled temp after afternoon showers
-                "psi": 52 if is_north else 41, # Moderate in North due to regional hotspots
-                "wbgt": wbgt,
-                "rain": "70%",         # Thundery showers currently active in North/West
-                "wind": "8 km/h NE",   # Light Northeast breeze
-                "water": water_goal, 
-                "sip": int((water_goal * 1000) / 14)
+                "temp": "29.0°C", 
+                "psi": 52 if is_north else 41, 
+                "rain": "70%", 
+                "wind": "8 km/h NE", 
+                "wbgt": 31 if is_north else 29
             }
-            return nat, est_prices, dec, reason, env
+            
+            # Hydration Logic (Base + Heat Surcharge)
+            water = round(((weight * 35) / 1000) + (0.45 if env['wbgt'] >= 31 else 0.25), 1)
+            sip = int((water * 1000) / 14)
+            
+            return nat, est_prices, dec, reason, env, water, sip
         
-        nat, est, dec, reason, env = get_gold10_intel(query, u_weight)
+        nat, est, dec, reason, env, water, sip = get_gold10_master(query, u_weight)
         
         # --- 3. UI DISPLAY (gold 10 Optimized) ---
         st.markdown(f"### 📍 {query} Dashboard")
         
-        # ROW 1: CORRECTED WEATHER (Full Suite)
-        st.markdown("**🌤️ Environmental Pulse**")
+        # ROW 1: WEATHER (Untouched Logic, Compact Layout)
         w1, w2, w3, w4, w5 = st.columns(5)
         w1.metric("Temp", env['temp'])
-        w2.metric("PSI", env['psi'], delta="Moderate" if env['psi'] > 50 else None)
-        w3.metric("Rain %", env['rain'], delta="Showers", delta_color="inverse")
+        w2.metric("PSI", env['psi'])
+        w3.metric("Rain", env['rain'])
         w4.metric("Wind", env['wind'])
         w5.metric("WBGT", f"{env['wbgt']}°C")
         
@@ -626,24 +617,38 @@ with tab2:
         st.write("---")
         h1, h2 = st.columns([1, 2])
         with h1:
-            st.metric("Daily Water", f"{env['water']}L", delta=f"+{int(env['wbgt']-27)*150}ml Heat")
+            st.metric("Daily Water", f"{water}L", delta=f"+{int(env['wbgt']-27)*150}ml Heat")
         with h2:
             st.markdown(f"""
                 <div style="background:#1e1e1e; padding:6px; border-radius:6px; border-left:4px solid {'#dc3545' if env['wbgt']>=31 else '#ffc107'}; margin-bottom:0px;">
                     <b style="color:white; font-size:0.9rem;">{'🟡 MOD' if env['wbgt']>=31 else '🟢 LOW'} Heat Stress</b><br>
-                    <span style="font-size:0.8rem; color:#ccc;">Target <b>{env['sip']}ml/hour</b>. Air cooled by 70% rain probability.</span>
+                    <span style="font-size:0.8rem; color:#ccc;">Target <b>{sip}ml/hour</b>. Air cooled by active 70% rain chance.</span>
                 </div>
             """, unsafe_allow_html=True)
         
-        # ROW 3: RESALE ANALYSIS
+        # ROW 3: HOUSING (Profit-Driven)
         st.write("---")
-        st.markdown("**🏠 2026 Resale Benchmarks Average**")
+        st.markdown("**🏠 2026 Strategy (Target: Sell High / Buy Low)**")
         r1, r2, r3 = st.columns(3)
-        r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=f"Nat: ${nat['3R']/1000:.0f}k", delta_color="off")
-        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=f"Nat: ${nat['4R']/1000:.0f}k", delta_color="off")
-        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", delta=f"Nat: ${nat['5R']/1000:.0f}k", delta_color="off")
         
-        # STRATEGY BOX (Compact 10pt)
+        def get_profit_delta(estate_p, nat_p):
+            gap = estate_p - nat_p
+            # If Price < Avg: Strategic "Buy Low" (Inverse Green Down)
+            if gap < 0:
+                return f"${abs(gap)/1000:.0f}k Below Avg", "inverse"
+            # If Price > Avg: Strategic "Sell High" (Normal Green Up)
+            else:
+                return f"${gap/1000:+.0f}k Above Avg", "normal"
+        
+        d3_v, d3_c = get_profit_delta(est['3R'], nat['3R'])
+        d4_v, d4_c = get_profit_delta(est['4R'], nat['4R'])
+        d5_v, d5_c = get_profit_delta(est['5R'], nat['5R'])
+        
+        r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=d3_v, delta_color=d3_c)
+        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=d4_v, delta_color=d4_c)
+        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", delta=d5_v, delta_color=d5_c)
+        
+        # ROW 4: STRATEGY BOX (Reduced 2px)
         color = "#28a745" if "BUY" in dec else "#dc3545" if "SELL" in dec else "#ffc107"
         st.markdown(f"""
             <div style="background:{color}; padding:6px; border-radius:5px; color:white; margin-top:8px;">
@@ -652,7 +657,7 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
         
-        st.caption(f"gold 10 | 29 Mar 2026 | Season: NE Monsoon | PSI: {env['psi']} | Bank Rate: 1.6%")
+        st.caption("gold 10 | 29 Mar 2026 | Green Down = High Value Buy | Green Up = Premium Sell Opportunity")
 
        
     
