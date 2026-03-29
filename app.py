@@ -366,44 +366,7 @@ with tab5:
         max_selections=4,
         key="g10_hero_routes"
     )
-
-    #try tf here
-    # Gemini Market Sync: March 29, 2026
-    fx_master = {
-        "Singapore (SIN)": {"sym": "S$",  "rate": 1.0,   "mult": 1.00},
-        "Bangkok (BKK)":    {"sym": "฿",   "rate": 25.37, "mult": 0.85},
-        "Hong Kong (HKG)": {"sym": "HK$", "rate": 6.05,  "mult": 0.90},
-        "China (CN)":      {"sym": "¥",   "rate": 5.35,  "mult": 0.88},
-        "Japan (JP)":      {"sym": "¥",   "rate": 124.49,"mult": 0.92}
-    }
-
-    # Get FX data based on u_origin_cat from your selectbox
-    active_fx = fx_master.get(u_origin_cat, fx_master["Singapore (SIN)"])
-    c_sym = active_fx["sym"]
-    c_rate = active_fx["rate"]
-    c_origin_adj = active_fx["mult"] # Strips SIN-specific levies if outbound
-
-    # --- END OF INSERTION ---
-
-    # [UPDATE YOUR SECTION 4 PRICING TABLE TO USE THESE NEW VARIABLES]
-    base_price = 820 if "China" in u_origin_cat else 980
-    multiplier = (1.45 if d_dep.month in [6, 12] else 1.0) * (1.0 if v_trip_type == "Round Trip" else 0.65)
-    
-    grid_rows = []
-    for c in final_sorted:
-        # Calculate local price using the engine above
-        p_local = (base_price * multiplier * c["w"] * c_origin_adj) * c_rate
-        
-        is_direct = (c["home"] in u_origin_cat) or (c["home"] == dest_country)
-        route_type = "✈️ Direct Service" if is_direct else f"🔄 Transit via {c['hub']}"
-        
-        grid_rows.append({
-            "Carrier": c["name"],
-            "Adult Avg Price ≈": f"{c_sym}{p_local:,.0f}", # Now reflects local currency
-            "Route / Type": route_type
-        })
-        #try fx
-    
+ 
     # 2. MASTER DATA (Defined once before the loop)
     master_carriers = [
         {"name": "Singapore Airlines", "w": 1.0},
