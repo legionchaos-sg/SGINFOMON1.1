@@ -425,19 +425,20 @@ with tab2:
     with ps_c3: st.markdown('<div class="svc-card"><h4>🚆 Transport & Environment</h4><ul><li><a href="https://www.lta.gov.sg">OneMotoring</a><li><a href="https://www.spgroup.com.sg">SP Group</a><li><a href="https://www.nea.gov.sg">NEA (PSI/Weather)</a><li><a href="https://www.police.gov.sg">SPF e-Services</a></ul></div>', unsafe_allow_html=True)
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
-    # --- 2. Network & Connectivity Status ---
+    # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
-    
-        # Updated Uptime Scores based on March 2026 Volatility
+       
+        # Variables aligned with the Mar 16-23 disruption cycle
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-        uptime_scores = [94.2, 98.1, 99.4, 100.0, 96.8] 
+        # Singtel score reflects the 4 separate incidents (Mechanical, Bug, Routing)
+        uptime_scores = [92.4, 98.1, 99.4, 100.0, 97.2] 
         
         col_graph, col_outage = st.columns([3, 2])
         
         with col_graph:
             st.write("**Provider Uptime Efficiency (Current Month)**")
             for prov, score in zip(providers, uptime_scores):
-                # Singtel flagged due to 4 outages in March
+                # Dynamic coloring for gold 10 visibility
                 bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
                 st.markdown(f"""
                     <div style="margin-bottom:12px;">
@@ -452,31 +453,33 @@ with tab2:
                 """, unsafe_allow_html=True)
             
             st.markdown("""
-                <p style='font-size: 0.75rem; color: #888;'>
-                    ⚠️ <b>Singtel Notice:</b> Score reflects 4 major disruptions between Mar 16–23. 
-                    International traffic optimization remains under monitoring.
+                <p style='font-size: 0.75rem; color: #888; line-height: 1.2;'>
+                    ⚠️ <b>Singtel Status:</b> Stability remains "Intermittent" following Mar 23 International Routing spike. 
+                    Local 5G network is stable but routing to overseas servers may lag.
                 </p>
             """, unsafe_allow_html=True)
     
         with col_outage:
             st.write("**⚠️ Incident & Maintenance Log**")
-            # Combining Downdetector spikes + Maintenance Announcements
+            # Current Log as of Sunday Mar 29, 2026 16:00 SGT
             incidents = [
-                ("Singtel", "Active", "Post-outage 'patchy' data reported (Downdetector)."),
+                ("Singtel", "Active", "Residual latency reports on Downdetector (Intl Routing)."),
                 ("NetLink", "Mar 31", "Sin Ming & Lorong Chuan Fiber Maint (0900-1800)."),
-                ("M1", "Today", "Lorong Chuan localized fiber instability."),
-                ("Simba", "24h", "Intermittent 5G signal drops (User reported)."),
-                ("Starhub", "N/A", "Stable backbone; no incidents reported.")
+                ("M1", "Today", "Scheduled fiber works in Lorong Chuan (Daytime)."),
+                ("Simba", "24h", "Minor 5G signal instability reported in Geylang area."),
+                ("Starhub", "N/A", "Stable; no major backbone incidents in last 48h.")
             ]
             
             for p, t, m in incidents:
-                # Color logic: Red for active/upcoming disruptions, Green for stable
-                status_color = "#dc3545" if "Maint" in m or "Active" in m else "#28a745" if "Stable" in m else "#ffc107"
+                status_color = "#dc3545" if "Active" in m or "Maint" in m else "#28a745" if "Stable" in m else "#ffc107"
                 st.markdown(f"""
                     <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;">
                         <b>{p}</b> <small style="color:gray;">[{t}]</small><br>{m}
                     </div>
                 """, unsafe_allow_html=True)
+
+    # Footer aligned with the upcoming NLT blackout
+    st.caption("📅 **Notice:** Nationwide NetLink Trust System Upgrade scheduled for Apr 23–30, 2026. Activation blackout applies.")
 
     # Footer Announcement for gold 10 clarity
     st.info("📅 **Upcoming:** Nationwide NetLink Trust System Upgrade scheduled for April 23–30, 2026. No new activations during this window.")
