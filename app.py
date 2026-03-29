@@ -3,9 +3,6 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import datetime 
-import streamlit.components.v1 as components
-import streamlit as st
-import base64
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -126,12 +123,6 @@ def get_latest_coe():
         {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
-
-def render_mermaid_as_image(mermaid_code):
-    # Encode the code for the Mermaid.ink API
-    graphbytes = mermaid_code.encode("ascii")
-    base64_bytes = base64.b64encode(graphbytes)
-    base64_string = base64_bytes.decode("ascii")
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -504,29 +495,7 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
-
-        # Generate the live image URL
-    image_url = f"https://mermaid.ink/img/{base64_string}?bgcolor=333"
-    return image_url
-
-# Your 2026 Connectivity Code
-mermaid_syntax = """
-graph LR
-    subgraph SG[Singapore Hubs]
-        C[Changi]
-        T[Tuas]
-    end
-    C -- "🔴 SMW-5 (255ms)" --> EU[Europe]
-    T -- "🟢 Bifrost (162ms)" --> US[USA]
-    C -- "🟡 SJC2 (88ms)" --> AS[Asia]
-    style SG fill:#222,stroke:#f9f
-"""
-
-# Render it
-st.image(render_mermaid_as_image(mermaid_syntax), caption="Live Global Link Status")
-
-
-        
+ 
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
