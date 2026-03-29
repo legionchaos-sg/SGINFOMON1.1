@@ -839,6 +839,31 @@ with tab5:
     # --- STEP 2: INSERT THE DYNAMIC RISK ANALYSIS HERE ---
     risk_level = "NORMAL"
     risk_msg = "Market conditions are within 2026 baseline projections."
+
+    *to enable fx currentcy in local dollars
+    # 1. DEFINE YOUR 2026 EXCHANGE RATES (March 29th Baseline)
+    # These are the S$1.00 equivalents
+    fx_rates = {
+        "Singapore (SIN)": {"code": "S$", "rate": 1.0},
+        "Hong Kong (HKG)": {"code": "HK$", "rate": 5.82},
+        "London (LHR)":    {"code": "£", "rate": 0.59},
+        "Tokyo (HND)":     {"code": "¥", "rate": 112.4}
+    }
+    
+    # 2. GET CURRENT SELECTION (From your Sidebar/Tabs)
+    # If origin is not SIN, we use the specific route's local rate
+    curr_origin = st.sidebar.selectbox("Departure Origin", list(fx_rates.keys()))
+    fx_data = fx_rates.get(curr_origin)
+    
+    # 3. APPLY TO THE CALCULATION
+    # If Origin is NOT Singapore, we apply the 8% "Overseas Discount" we discussed
+    origin_mult = 1.0 if curr_origin == "Singapore (SIN)" else 0.92
+    
+    # Final Variable Conversion
+    local_price = (avg_price * origin_mult) * fx_data['rate']
+    curr_symbol = fx_data['code']
+
+    #end of fx 
     
     # Priority 1: Fuel (The biggest threat in March 2026)
     if v_fuel > 150:
