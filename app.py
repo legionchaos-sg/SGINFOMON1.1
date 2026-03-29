@@ -812,64 +812,8 @@ with tab5:
     st.header("✈️ Your Target Asia Airfare Prediction -> Select from below routes only")
     avg_orince = 0.0 #base
 
-    #fx exchange results
-    # --- 1. GLOBAL CSS (Place at the top of app.py to reclaim space) ---
-    st.markdown("""
-        <style>
-            [data-testid="stHeader"] {display: none;} /* Kills the top bar gap */
-            .block-container {padding-top: 0rem !important;} /* Pulls title to the ceiling */
-            .stVerticalBlock {gap: 0.3rem !important;} /* Tightens space between elements */
-            /* Reduce font size for metrics to fit 10.9-inch screen */
-            [data-testid="stMetricValue"] {font-size: 22px !important;}
-            [data-testid="stMetricLabel"] {font-size: 14px !important;}
-        </style>
-        """, unsafe_allow_html=True)
     
-    # --- 2. THE REVAMPED TAB 5 CONTENT ---
-    with tab5:
-        # A. TOP ROW CONTROLS (Replacing Sidebar)
-        # Using columns here saves vertical space on a tablet
-        c1, c2 = st.columns([1, 1])
-        with c1:
-            # User selects origin here instead of sidebar
-            curr_origin = st.selectbox("📍 Departure Origin", ["Singapore (SIN)", "Hong Kong (HKG)", "London (LHR)"])
-        
-        # B. DYNAMIC EXCHANGE & RISK ENGINE (March 2026 Data)
-        # c = Symbol, r = FX Rate vs SGD, m = Origin Price Multiplier
-        fx_map = {
-            "Singapore (SIN)": {"c": "S$",  "r": 1.0,   "m": 1.0},
-            "Hong Kong (HKG)": {"c": "HK$", "r": 5.82,  "m": 0.92},
-            "London (LHR)":    {"c": "£",   "r": 0.59,  "m": 0.95}
-        }
-        
-        sel = fx_map[curr_origin]
-        curr_symbol = sel['c']
-        fx_rate = sel['r']
-        origin_mult = sel['m']
-    
-        # C. CALCULATION LOGIC
-        # avg_price_sgd is your core variable calculated in your sync block
-        # We adjust for origin cost, then convert to local currency
-        local_price = (avg_price_sgd * origin_mult) * fx_rate
-        
-        # D. THE DYNAMIC METRIC
-        # This now stays inside Tab 5 and updates instantly
-        st.divider() # Thin line to separate controls from data
-        
-        m1, m2 = st.columns(2)
-        with m1:
-            st.metric(
-                label=f"Fare from {curr_origin}", 
-                value=f"{curr_symbol}{local_price:,.0f}",
-                delta=f"{risk_variance:.1f}% vs Sept 2025",
-                delta_color="inverse" # Red if price goes up
-            )
-        with m2:
-            st.metric("Risk Level", "CRITICAL" if v_fuel > 150 else "STABLE", "March 2026 Fuel Shock")
-    
-        # E. FOOTER
-        st.caption(f"✅ gold 10 System | Origin Multiplier: {origin_mult}x | Base: {curr_symbol}")
-
+    #start of fx exchange
     #end of fx exchg
 
     # 1. The Dynamic Trigger: This only runs when the user views Tab 5
