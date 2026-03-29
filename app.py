@@ -628,7 +628,7 @@ with tab2:
         
         # ROW 3: HOUSING (Profit-Driven)
         st.write("---")
-        st.markdown("**🏠 2026 Strategy (Target: Sell High / Buy Low)**")
+        st.markdown("**🏠 2026 HDB Resale Sentiments**")
         r1, r2, r3 = st.columns(3)
         
         def get_profit_delta(estate_p, nat_p):
