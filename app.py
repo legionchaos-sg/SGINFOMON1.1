@@ -427,62 +427,40 @@ with tab2:
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
-       
-        # Variables aligned with the Mar 16-23 disruption cycle
+    
+        # Updated: Mar 29, 2026 | 16:15 SGT
         providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-        # Singtel score reflects the 4 separate incidents (Mechanical, Bug, Routing)
         uptime_scores = [92.4, 98.1, 99.4, 100.0, 97.2] 
         
         col_graph, col_outage = st.columns([3, 2])
         
         with col_graph:
-            st.write("**Provider Uptime Efficiency (Current Month)**")
+            st.write("**Provider Uptime Efficiency (March 2026)**")
             for prov, score in zip(providers, uptime_scores):
-                # Dynamic coloring for gold 10 visibility
                 bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
-                st.markdown(f"""
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
-                            <span><b>{prov}</b></span>
-                            <span>{score}%</span>
-                        </div>
-                        <div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;">
-                            <div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem;"><span><b>{prov}</b></span><span>{score}%</span></div><div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;"><div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div></div></div>""", unsafe_allow_html=True)
             
-            st.markdown("""
-                <p style='font-size: 0.75rem; color: #888; line-height: 1.2;'>
-                    ⚠️ <b>Singtel Status:</b> Stability remains "Intermittent" following Mar 23 International Routing spike. 
-                    Local 5G network is stable but routing to overseas servers may lag.
-                </p>
-            """, unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 0.7rem; color: #888;'>⚠️ Singtel: Recovery phase after Mar 23 Routing Spike.</p>", unsafe_allow_html=True)
     
         with col_outage:
             st.write("**⚠️ Incident & Maintenance Log**")
-            # Current Log as of Sunday Mar 29, 2026 16:00 SGT
             incidents = [
-                ("Singtel", "Active", "Residual latency reports on Downdetector (Intl Routing)."),
-                ("NetLink", "Mar 31", "Sin Ming & Lorong Chuan Fiber Maint (0900-1800)."),
-                ("M1", "Today", "Scheduled fiber works in Lorong Chuan (Daytime)."),
-                ("Simba", "24h", "Minor 5G signal instability reported in Geylang area."),
-                ("Starhub", "N/A", "Stable; no major backbone incidents in last 48h.")
+                ("Singtel", "Active", "Residual DNS latency reports (Downdetector)."),
+                ("NetLink", "Mar 31", "Sin Ming & Lorong Chuan Fiber Works (0900-1800)."),
+                ("M1", "Today", "Lorong Chuan localized fiber maintenance."),
+                ("Simba", "24h", "5G patchy signal in Geylang / Central areas."),
+                ("Starhub", "N/A", "Stable; no major backbone incidents reported.")
             ]
             
             for p, t, m in incidents:
-                status_color = "#dc3545" if "Active" in m or "Maint" in m else "#28a745" if "Stable" in m else "#ffc107"
-                st.markdown(f"""
-                    <div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;">
-                        <b>{p}</b> <small style="color:gray;">[{t}]</small><br>{m}
-                    </div>
-                """, unsafe_allow_html=True)
-
-    # Footer aligned with the upcoming NLT blackout
-    st.caption("📅 **Notice:** Nationwide NetLink Trust System Upgrade scheduled for Apr 23–30, 2026. Activation blackout applies.")
-
-    # Footer Announcement for gold 10 clarity
-    st.info("📅 **Upcoming:** Nationwide NetLink Trust System Upgrade scheduled for April 23–30, 2026. No new activations during this window.")
+                status_color = "#dc3545" if "Active" in m or "Maint" in m or "Works" in m else "#28a745"
+                st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">[{t}]</small><br>{m}</div>""", unsafe_allow_html=True)
+    
+        st.divider()
+        st.caption("📅 **Notice:** Nationwide NetLink Trust System Upgrade scheduled for **Apr 23–30, 2026**. Activation blackout applies.")
+    
+        # Footer Announcement for gold 10 clarity
+        st.info("📅 **Upcoming:** Nationwide NetLink Trust System Upgrade scheduled for April 23–30, 2026. No new activations during this window.")
 
 
         
