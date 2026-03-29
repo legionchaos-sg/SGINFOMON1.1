@@ -2,7 +2,7 @@ import streamlit as st
 import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
-import request
+import requests
 import datetime 
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
