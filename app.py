@@ -501,40 +501,40 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False):
     # --- PART 1: MRT STATUS ---
-    st.markdown("#### 🚆 Train Service Status")
-            rail_data = [
-                {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar). Alternative: Shuttle 37."},
-            {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19. Currently stable."},
-            {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "7th-gen R151 trains in service. No issues reported."}
-    ]
-
-    for r in rail_data:
-        r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
-        c1, c2, c3 = st.columns([2, 1, 1])
-        c1.markdown(f"**{r['line']}**")
-        c2.markdown(f"<span style='color:{r_col};'>● {r['status']}</span>", unsafe_allow_html=True)
-        c3.write(f"`{r['delay']}`")
-        st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
-
-    st.divider()
-
-    # --- PART 2: ROAD INCIDENTS & EXPRESSWAY RISK ---
-    st.markdown("#### 🛣️ Road Incidents & Commute Risk")
+        st.markdown("#### 🚆 Train Service Status")
+                rail_data = [
+                    {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar). Alternative: Shuttle 37."},
+                {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19. Currently stable."},
+                {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "7th-gen R151 trains in service. No issues reported."}
+        ]
     
-    # 2026 Live Findings: MetaSprint and Punggol GRC events
-    road_incidents = [
-        {"time": "16:45", "loc": "East Coast Park", "msg": "MetaSprint Triathlon: Full closure Carparks F1 to NSC until 12pm."},
-        {"time": "16:30", "loc": "Punggol Field Walk", "msg": "Chingay @ Punggol: Full closure (Lamp Post 13 to 24)."},
-        {"time": "00:30", "loc": "PIE (Tuas)", "msg": "Jln Toa Payoh to PIE(Tuas) detour active (Works)."}
-    ]
-
-    for ri in road_incidents:
-        st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:8px;'><b>{ri['time']}</b> | {ri['loc']}: {ri['msg']}</div>", unsafe_allow_html=True)
-
-    # Commute Risk Logic for Today
-    st.info("⚠️ **High Risk Zone:** East Coast / Marine Parade. Bus 401 skipping 8 stops. Avoid ECP Service Rd until 1pm.")
-
-    st.caption("📅 **Note:** MRT/Bus services **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")
+        for r in rail_data:
+            r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
+            c1, c2, c3 = st.columns([2, 1, 1])
+            c1.markdown(f"**{r['line']}**")
+            c2.markdown(f"<span style='color:{r_col};'>● {r['status']}</span>", unsafe_allow_html=True)
+            c3.write(f"`{r['delay']}`")
+            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+    
+        st.divider()
+    
+        # --- PART 2: ROAD INCIDENTS & EXPRESSWAY RISK ---
+        st.markdown("#### 🛣️ Road Incidents & Commute Risk")
+        
+        # 2026 Live Findings: MetaSprint and Punggol GRC events
+        road_incidents = [
+            {"time": "16:45", "loc": "East Coast Park", "msg": "MetaSprint Triathlon: Full closure Carparks F1 to NSC until 12pm."},
+            {"time": "16:30", "loc": "Punggol Field Walk", "msg": "Chingay @ Punggol: Full closure (Lamp Post 13 to 24)."},
+            {"time": "00:30", "loc": "PIE (Tuas)", "msg": "Jln Toa Payoh to PIE(Tuas) detour active (Works)."}
+        ]
+    
+        for ri in road_incidents:
+            st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:8px;'><b>{ri['time']}</b> | {ri['loc']}: {ri['msg']}</div>", unsafe_allow_html=True)
+    
+        # Commute Risk Logic for Today
+        st.info("⚠️ **High Risk Zone:** East Coast / Marine Parade. Bus 401 skipping 8 stops. Avoid ECP Service Rd until 1pm.")
+    
+        st.caption("📅 **Note:** MRT/Bus services **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")
     
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
         st.write("---")
