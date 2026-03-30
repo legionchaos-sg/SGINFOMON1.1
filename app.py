@@ -528,9 +528,9 @@ with tab2:
           town = "WOODLANDS"
 
     #-----------------HDB National Resale  
-    with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
+    with st.expander("📊 **National HDB Resale Sentiments**", expanded=False)
          
-          calculate_national_averages(df_debug):
+          STATS = calculate_national_averages(df_debug):
             
             if stats is not None:
                 st.markdown("### 📊 2026 National Average Resale Prices")
