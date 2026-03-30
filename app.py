@@ -556,66 +556,6 @@ with tab2:
     
         st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
     
-        
-        # --- 3. UI DISPLAY (gold 10 Optimized) ---
-        st.markdown(f"### 📍 {query} Dashboard")
-        
-        # ROW 1: WEATHER (Untouched Logic, Compact Layout)
-        w1, w2, w3, w4, w5 = st.columns(5)
-        w1.metric("Temp", env['temp'])
-        w2.metric("PSI", env['psi'])
-        w3.metric("Rain", env['rain'])
-        w4.metric("Wind", env['wind'])
-        w5.metric("WBGT", f"{env['wbgt']}°C")
-        
-        # ROW 2: HYDRATION & HEAT
-        st.write("---")
-        h1, h2 = st.columns([1, 2])
-        with h1:
-            st.metric("Daily Water", f"{water}L", delta=f"+{int(env['wbgt']-27)*150}ml Heat")
-        with h2:
-            st.markdown(f"""
-                <div style="background:#1e1e1e; padding:6px; border-radius:6px; border-left:4px solid {'#dc3545' if env['wbgt']>=31 else '#ffc107'}; margin-bottom:0px;">
-                    <b style="color:white; font-size:0.9rem;">{'🟡 MOD' if env['wbgt']>=31 else '🟢 LOW'} Heat Stress</b><br>
-                    <span style="font-size:0.8rem; color:#ccc;">Target <b>{sip}ml/hour</b>. Air cooled by active 70% rain chance.</span>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        # ROW 3: HOUSING (Profit-Driven)
-        st.write("---")
-        st.markdown("**🏠 2026 HDB Resale Sentiments**")
-        r1, r2, r3 = st.columns(3)
-        
-        def get_profit_delta(estate_p, nat_p):
-            gap = estate_p - nat_p
-            # If Price < Avg: Strategic "Buy Low" (Inverse Green Down)
-            if gap < 0:
-                return f"${abs(gap)/1000:.0f}k Below Avg", "inverse"
-            # If Price > Avg: Strategic "Sell High" (Normal Green Up)
-            else:
-                return f"${gap/1000:+.0f}k Above Avg", "normal"
-        
-        d3_v, d3_c = get_profit_delta(est['3R'], nat['3R'])
-        d4_v, d4_c = get_profit_delta(est['4R'], nat['4R'])
-        d5_v, d5_c = get_profit_delta(est['5R'], nat['5R'])
-        
-        r1.metric("3-Room", f"${est['3R']/1000:.0f}k", delta=d3_v, delta_color=d3_c)
-        r2.metric("4-Room", f"${est['4R']/1000:.0f}k", delta=d4_v, delta_color=d4_c)
-        r3.metric("5-Room", f"${est['5R']/1000:.0f}k", delta=d5_v, delta_color=d5_c)
-        
-        # ROW 4: STRATEGY BOX (Reduced 2px)
-        color = "#28a745" if "BUY" in dec else "#dc3545" if "SELL" in dec else "#ffc107"
-        st.markdown(f"""
-            <div style="background:{color}; padding:6px; border-radius:5px; color:white; margin-top:8px;">
-                <b style="font-size:0.95rem;">DECISION: {dec}</b><br>
-                <span style="font-size:0.85rem; line-height:1.1;">{reason}</span>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.caption("gold 10 | 29 Mar 2026 | Green Down = High Value Buy | Green Up = Premium Sell Opportunity")
-
-       
-    
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
