@@ -131,7 +131,24 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-
+def get_recent_incidents():
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Current time for context: Monday, March 30, 2026, 11:30 AM
+    prompt = """
+    Search for Singapore traffic incidents (accidents, breakdowns, roadworks) from the last 60 minutes.
+    Focus ONLY on: CTE, PIE, KJE, MCE, ECP.
+    Format the output as a Python list of dictionaries: 
+    [{'road': 'CTE', 'type': 'Accident', 'desc': 'Accident after Ang Mo Kio Ave 1', 'time': '11:15'}, ...]
+    If no incidents, return an empty list []. Return ONLY the list.
+    """
+    try:
+        response = model.generate_content(prompt)
+        # Convert the AI text into a real Python list
+        data = eval(response.text.replace("```python", "").replace("```", "").strip())
+        return data
+    except:
+        return []
 
 
 
@@ -511,13 +528,7 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
 
-        st.markdown("### 🗺️ Live Traffic Overview")
-        # This is a standard Google Maps embed set to Singapore with the traffic layer
-        st.components.v1.iframe("https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d127641.16874415842!2d103.819836!3d1.352083!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2ssg!4v1620000000000!5m2!1sen!2ssg&layer=t", height=450)
-      
-        
-    
-        # --- PART 2: MRT SERVICE STATUS ---
+        # --- PART 1: MRT SERVICE STATUS ---
         st.markdown("#### 🚆 Train Service Status")
         rail_data = [
             {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar)."},
@@ -545,7 +556,32 @@ with tab2:
         for t, cat, msg in incidents:
             st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
     
-        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
+        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")
+
+        #---------Traffic indicents reported
+
+        st.write("---")
+        st.markdown("#### 🚨 Recent Expressway Incidents (Last 60 Mins)")
+        
+        # 1. Fetch data
+        with st.spinner("Scanning LTA Incident Feeds..."):
+            incidents = get_recent_incidents()
+        
+        # 2. Display logic
+        if incidents:
+            for inc in incidents:
+                # Create a colored alert based on incident type
+                icon = "⚠️" if inc['type'] == 'Breakdown' else "🚫" if inc['type'] == 'Accident' else "🚧"
+                
+                # UI Card
+                with st.container():
+                    col_a, col_b = st.columns([1, 4])
+                    col_a.metric(inc['road'], inc['time'])
+                    col_b.warning(f"{icon} **{inc['type']}**: {inc['desc']}")
+        else:
+            st.success("✅ No major incidents reported on CTE, PIE, KJE, MCE, or ECP in the last hour.")
+        
+        st.caption("Data source: LTA OneMotoring Real-Time Feed")
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
