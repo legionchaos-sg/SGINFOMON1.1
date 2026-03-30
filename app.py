@@ -124,6 +124,20 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+@st.cache_data(ttl=3600)  # Keeps data for 1 hour
+def fetch_hdb_data(town_query):
+    dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
+    # We use a filter 'q' to only pull what we need, reducing payload size
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q={town_query}"
+    
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        return pd.DataFrame(data['result']['records'])
+    except Exception as e:
+        st.error(f"Connection Error: {e}")
+        return pd.DataFrame()
+
 #---- end of def----------------
 
 # --- UI CONFIG ---
@@ -296,6 +310,21 @@ with tab1:
 # TAB 2: PUBLIC SERVICES
 # ==========================================
 #with tab2:
+#2. UI SECTION
+st.title("⚡ Fast HDB Resale Test")
+town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
+
+if town:
+    with st.spinner(f"Fetching {town} data..."):
+        df = fetch_hdb_data(town)
+    
+    if not df.empty:
+        st.success(f"Loaded {len(df)} recent trades in {town}")
+        st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
+        
+        # Calculate NAT (National Average) on the fly
+        avg_price = pd.to_numeric(df['resale_price']).mean()
+        st.metric(f"Current {town} Avg", f"${avg_price/1000:.1f}k")
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS
@@ -505,31 +534,6 @@ with tab2:
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
 
-  
-        def test_hdb_api():
-            # 2026 Dataset ID for Resale Prices (Jan 2017 - Mar 2026)
-            dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
-            url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5"
-            
-            try:
-                response = requests.get(url)
-                if response.status_code == 200:
-                    data = response.json()
-                    records = data['result']['records']
-                    
-                    print("✅ HDB API IS WORKING")
-                    print(f"Showing last {len(records)} transactions:")
-                    
-                    # Convert to DataFrame for a clean look
-                    df = pd.DataFrame(records)
-                    print(df[['month', 'town', 'flat_type', 'resale_price']])
-                else:
-                    print(f"❌ API Error: Status Code {response.status_code}")
-            except Exception as e:
-                print(f"❌ Connection Failed: {e}")
-        
-        if __name__ == "__main__":
-            test_hdb_api()
       
 
 # ==========================================
