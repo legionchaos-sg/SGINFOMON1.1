@@ -141,6 +141,64 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+#----------------For HDB API
+@st.cache_data(ttl=600)
+def get_hdb_realtime_pulse():
+    # RESOURCE ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
+    # We sort by 'month desc' AND increase limit to 2000 to ensure we bypass today's empty lag
+    url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=2000&sort=month desc"
+    
+    # Baseline: Mar 2026 Reference
+    baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
+    
+    try:
+        response = requests.get(url, timeout=15).json()
+        records = response.get('result', {}).get('records', [])
+        
+        if not records:
+            return None
+            
+        df = pd.DataFrame(records)
+        
+        # FIX 1: Explicitly convert prices and DROP any that are 0 or empty
+        df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
+        df = df[df['resale_price'] > 0].dropna(subset=['resale_price'])
+        
+        # FIX 2: Ensure flat_type names match exactly (uppercase check)
+        df['flat_type'] = df['flat_type'].str.upper()
+        
+        if df.empty:
+            return None
+            
+        results = {}
+        total_pct = 0
+        
+        for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
+            type_df = df[df['flat_type'] == hdb_label]
+            
+            # FIX 3: Calculate median only if we have at least 5 records for that type
+            if len(type_df) >= 5:
+                current_val = type_df['resale_price'].median()
+            else:
+                current_val = baseline[key]
+                
+            diff = current_val - baseline[key]
+            pct = (diff / baseline[key]) * 100
+            total_pct += pct
+            results[key] = {"val": current_val, "diff": diff, "pct": pct}
+            
+        # SENTIMENT LOGIC
+        avg_pct = total_pct / 3
+        if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
+        elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
+        elif avg_pct > -0.2: tag, color = "⚖️ STABLE", "#0083B8"
+        else:                tag, color = "📉 COOLING", "#FFA421"
+        
+        results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
+        return results
+    except Exception as e:
+        return None
+
 st_autorefresh(interval=180000, key="sync_109_stable")
 
 st.markdown("""
@@ -500,86 +558,19 @@ with tab2:
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
         st.write("CODE FOR RAIL AND ROAD .")
 
-    #-----------------HDB National Resale 
-    with st.expander("📊 National HDB Resale Sentiments (Mar 2026)", expanded=False):
-
-        @st.cache_data(ttl=600)
-        def get_hdb_realtime_pulse():
-            # RESOURCE ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
-            # We sort by 'month desc' AND increase limit to 2000 to ensure we bypass today's empty lag
-            url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=2000&sort=month desc"
-            
-            # Baseline: Mar 2026 Reference
-            baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
-            
-            try:
-                response = requests.get(url, timeout=15).json()
-                records = response.get('result', {}).get('records', [])
-                
-                if not records:
-                    return None
-                    
-                df = pd.DataFrame(records)
-                
-                # FIX 1: Explicitly convert prices and DROP any that are 0 or empty
-                df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
-                df = df[df['resale_price'] > 0].dropna(subset=['resale_price'])
-                
-                # FIX 2: Ensure flat_type names match exactly (uppercase check)
-                df['flat_type'] = df['flat_type'].str.upper()
-                
-                if df.empty:
-                    return None
-                    
-                results = {}
-                total_pct = 0
-                
-                for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
-                    type_df = df[df['flat_type'] == hdb_label]
-                    
-                    # FIX 3: Calculate median only if we have at least 5 records for that type
-                    if len(type_df) >= 5:
-                        current_val = type_df['resale_price'].median()
-                    else:
-                        current_val = baseline[key]
-                        
-                    diff = current_val - baseline[key]
-                    pct = (diff / baseline[key]) * 100
-                    total_pct += pct
-                    results[key] = {"val": current_val, "diff": diff, "pct": pct}
-                    
-                # SENTIMENT LOGIC
-                avg_pct = total_pct / 3
-                if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
-                elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
-                elif avg_pct > -0.2: tag, color = "⚖️ STABLE", "#0083B8"
-                else:                tag, color = "📉 COOLING", "#FFA421"
-                
-                results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
-                return results
-            except Exception as e:
-                return None
-        
-        # --- UI RENDER (Add this to your Dashboard) ---
-        data = get_hdb_realtime_pulse()
-        
-        with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-            if data:
-                st.markdown(f"""
-                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                        <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
-                            <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
-                        </div>
-                        <span style="font-size:11px; margin-left:10px; color:gray;">Verified Pulse: {data['meta']['sync']}</span>
+    #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
+    data = get_hdb_realtime_pulse()
+    
+    with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
+        if data:
+            st.markdown(f"""
+                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                    <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
+                        <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
                     </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2, col3 = st.columns(3)
-                for col, flat in zip([col1, col2, col3], ["3R", "4R", "5R"]):
-                    item = data[flat]
-                    col.metric(f"{flat} Median", f"${item['val']/1000:.1f}k", f"{item['pct']:+.1f}%")
-            else:
-                st.info("🔄 API is populating March 30 records... showing verified baselines.")
+                    <span style="font-size:11px; margin-left:10px; color:gray;">Verified Pulse: {data['meta']['sync']}</span>
+                </div>
+            """, unsafe_allow_html=True)
     
 
 # ==========================================
