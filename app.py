@@ -530,68 +530,68 @@ with tab2:
 
     # 1. THE ENGINE: Gemini grabs the 'Pulse' once every 30 mins FOR TRAIN
        
-    @st.cache_data(ttl=1800) 
-    def get_sg_transport_pulse():
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = """
-        Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
-        Return ONLY a Python dictionary with two keys: 
-        'rail': list of {'line', 'status', 'delay', 'msg'}
-        'incidents': list of [time, type, desc]
-        """
-        try:
-            response = model.generate_content(prompt)
-            # We parse the AI's "brain" into your variables
-            return eval(response.text.replace("```python", "").replace("```", "").strip())
-        except:
-            # Fallback to your original static data if the internet fails
-            return {
-                "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
-                "incidents": [("00:00", "System", "No active incidents detected.")]
-            }
+        @st.cache_data(ttl=1800) 
+        def get_sg_transport_pulse():
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = """
+            Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
+            Return ONLY a Python dictionary with two keys: 
+            'rail': list of {'line', 'status', 'delay', 'msg'}
+            'incidents': list of [time, type, desc]
+            """
+            try:
+                response = model.generate_content(prompt)
+                # We parse the AI's "brain" into your variables
+                return eval(response.text.replace("```python", "").replace("```", "").strip())
+            except:
+                # Fallback to your original static data if the internet fails
+                return {
+                    "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
+                    "incidents": [("00:00", "System", "No active incidents detected.")]
+                }
 
-# 2. THE UI: Use the data fetched above
-with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
+    # 2. THE UI: Use the data fetched above
+    with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
+        
+        pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
+        
+        # --- PART 1: MRT SERVICE STATUS ---
+        st.markdown("#### 🚆 Train Service Status")
+        for r in pulse_data['rail']:
+            r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
+            c1, c2, c3 = st.columns([2, 1, 1])
+            c1.markdown(f"**{r['line']}**")
+            c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
+            c3.write(f"`{r['delay']}`")
+            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
     
-    pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
-    
-    # --- PART 1: MRT SERVICE STATUS ---
-    st.markdown("#### 🚆 Train Service Status")
-    for r in pulse_data['rail']:
-        r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
-        c1, c2, c3 = st.columns([2, 1, 1])
-        c1.markdown(f"**{r['line']}**")
-        c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
-        c3.write(f"`{r['delay']}`")
-        st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
-
-    # --- PART 2: FIFO INCIDENT LOG ---
-    st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
-    for time, category, desc in pulse_data['incidents']:
-        st.write(f"**{time}** | `{category}` | {desc}")
-
-        #---------Traffic indicents reported
+        # --- PART 2: FIFO INCIDENT LOG ---
         st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
-        # No spinner needed as this takes < 1 second
-        incidents = get_fast_incidents()
-        
-        if incidents:
-            for row in incidents:
-                # OneMotoring usually format: [Description, Date/Time]
-                desc = row[0]
-                timestamp = row[1]
-                
-                # Color code based on keyword
-                if "Accident" in desc:
-                    st.error(f"🛑 **{timestamp}**: {desc}")
-                elif "Breakdown" in desc:
-                    st.warning(f"⚠️ **{timestamp}**: {desc}")
-                else:
-                    st.info(f"🚧 **{timestamp}**: {desc}")
-        else:
-            st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
-        
-        st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
+        for time, category, desc in pulse_data['incidents']:
+            st.write(f"**{time}** | `{category}` | {desc}")
+    
+            #---------Traffic indicents reported
+            st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
+            # No spinner needed as this takes < 1 second
+            incidents = get_fast_incidents()
+            
+            if incidents:
+                for row in incidents:
+                    # OneMotoring usually format: [Description, Date/Time]
+                    desc = row[0]
+                    timestamp = row[1]
+                    
+                    # Color code based on keyword
+                    if "Accident" in desc:
+                        st.error(f"🛑 **{timestamp}**: {desc}")
+                    elif "Breakdown" in desc:
+                        st.warning(f"⚠️ **{timestamp}**: {desc}")
+                    else:
+                        st.info(f"🚧 **{timestamp}**: {desc}")
+            else:
+                st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
+            
+            st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
