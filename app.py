@@ -124,19 +124,29 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-@st.cache_data(ttl=3600)  # Keeps data for 1 hour
-def fetch_hdb_data(town_query):
+def debug_hdb_api():
+    # Attempting to fetch Woodlands data specifically
     dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
-    # We use a filter 'q' to only pull what we need, reducing payload size
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q={town_query}"
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q=Woodlands&limit=1"
+    
+    print(f"📡 Testing Connection to: {url}")
     
     try:
         response = requests.get(url, timeout=10)
         data = response.json()
-        return pd.DataFrame(data['result']['records'])
+        
+        # Check if 'result' is in the response
+        if 'result' in data:
+            print("✅ SUCCESS: 'result' key found.")
+            print(f"Data Sample: {data['result']['records'][0]}")
+        else:
+            print("❌ ERROR: 'result' key is missing from response.")
+            print("Full API Response:", data) # This will tell us the real error
+            
     except Exception as e:
-        st.error(f"Connection Error: {e}")
-        return pd.DataFrame()
+        print(f"❌ CONNECTION FAILED: {e}")
+
+debug_hdb_api()
 
 #---- end of def----------------
 
