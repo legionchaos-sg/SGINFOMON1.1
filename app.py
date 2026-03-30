@@ -504,6 +504,77 @@ with tab2:
     #-----------------HDB National Resale 
     with st.expander("📊 National HDB Resale Sentiments (Mar 2026)", expanded=False):
         st.write("CODE TO COME IN .")
+
+        
+        
+        # --- 1. DATA ENGINE (API + CALCULATIONS) ---
+        @st.cache_data(ttl=3600)
+        def get_hdb_integrated_data():
+            url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000"
+            # Feb 2026 Baseline Medians (Reference for March movement)
+            baseline = {"3R": 488000, "4R": 605000, "5R": 718000}
+            
+            try:
+                response = requests.get(url, timeout=5).json()
+                df = pd.DataFrame(response['result']['records'])
+                df['resale_price'] = df['resale_price'].astype(float)
+                
+                results = {}
+                total_delta_pct = 0
+                
+                flat_types = [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]
+                for key, hdb_label in flat_types:
+                    current_median = df[df['flat_type'] == hdb_label]['resale_price'].median()
+                    # If no data found for a type, use baseline to prevent crash
+                    current_median = current_median if not pd.isna(current_median) else baseline[key]
+                    
+                    diff = current_median - baseline[key]
+                    pct = (diff / baseline[key]) * 100
+                    total_delta_pct += pct
+                    
+                    results[key] = {"val": current_median, "diff": diff, "pct": pct}
+                
+                # Calculate National Sentiment (Avg of 3 types)
+                avg_pct = total_delta_pct / 3
+                if avg_pct > 1.5:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
+                elif avg_pct >= 0.5: tag, color = "📈 BULLISH", "#00CC96"
+                elif avg_pct > -0.5: tag, color = "⚖️ STABLE", "#0083B8"
+                else:                tag, color = "📉 COOLING", "#FFA421"
+                
+                results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
+                return results
+            except:
+                return None
+        
+        # --- 2. UI RENDER (EXPANDER & METRICS) ---
+        data = get_hdb_integrated_data()
+        
+        with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
+            if data:
+                # Sentiment Tag Line
+                st.markdown(f"""
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
+                            <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
+                        </div>
+                        <span style="font-size:11px; margin-left:10px; color:gray;">Last Sync: {data['meta']['sync']} (SGT)</span>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3)
+                for col, flat in zip([col1, col2, col3], ["3R", "4R", "5R"]):
+                    item = data[flat]
+                    col.markdown(f"<p style='font-size:12px; margin-bottom:-12px;'>{flat} Median</p>", unsafe_allow_html=True)
+                    col.metric(
+                        label="", 
+                        value=f"${item['val']/1000:.1f}k", 
+                        delta=f"{item['diff']/1000:+.1f}k ({item['pct']:.1f}%)"
+                    )
+                
+                st.markdown("---")
+                st.caption("Data source: HDB Real-Time API (Jan 2017 - Mar 2026 Dataset)")
+            else:
+                st.error("Unable to reach HDB Data Engine. Please check internet connection.")
     
 
 # ==========================================
