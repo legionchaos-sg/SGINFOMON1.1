@@ -525,39 +525,12 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        2. UI SECTION
-st.title("⚡ Fast HDB Resale Test")
-town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
-
-if town:
-    with st.spinner(f"Fetching {town} data..."):
-        df = fetch_hdb_data(town)
-    
-    if not df.empty:
-        st.success(f"Loaded {len(df)} recent trades in {town}")
-        st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
-        
-        # Calculate NAT (National Average) on the fly
-        avg_price = pd.to_numeric(df['resale_price']).mean()
-        st.metric(f"Current {town} Avg", f"${avg_price/1000:.1f}k")
+      st.caption("🔍 *pending code")
 
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-    #2. UI SECTION
-        st.title("⚡ Fast HDB Resale Test")
-        town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
-        
-        if town:
-            with st.spinner(f"Fetching {town} data..."):
-                df = fetch_hdb_data(town)
-            
-            if not df.empty:
-                st.success(f"Loaded {len(df)} recent trades in {town}")
-                st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
-                
-                # Calculate NAT (National Average) on the fly
-                avg_price = pd.to_numeric(df['resale_price']).mean()
-                st.metric(f"Current {town} Avg", f"${avg_price/1000:.1f}k")
+        st.caption("🔍 *pending code")
+   
 
       
 
