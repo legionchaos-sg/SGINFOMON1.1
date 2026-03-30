@@ -146,7 +146,7 @@ def debug_hdb_api():
     except Exception as e:
         print(f"❌ CONNECTION FAILED: {e}")
 
-debug_hdb_api()
+
 
 #---- end of def----------------
 
@@ -529,7 +529,8 @@ with tab2:
 
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-        st.caption("🔍 *pending code")
+        st.caption("🔍 *pending code2")
+        debug_hdb_api()
    
 
       
