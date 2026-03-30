@@ -141,44 +141,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-#----------------For HDB API
-@st.cache_data(ttl=600)
-def get_hdb_realtime_pulse():
-    # RESOURCE: Jan 2017 - Mar 2026 Resale Prices
-    url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=2000&sort=month desc"
-    baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
-    
-    try:
-        response = requests.get(url, timeout=10).json()
-        records = response.get('result', {}).get('records', [])
-        if not records: return None
-        
-        df = pd.DataFrame(records)
-        df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
-        df = df[df['resale_price'] > 0].dropna(subset=['resale_price'])
-        
-        results = {}
-        total_pct = 0
-        for key, label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
-            # Filter specifically for the type
-            type_df = df[df['flat_type'].str.upper() == label]
-            val = type_df['resale_price'].median() if len(type_df) > 0 else baseline[key]
-            
-            diff = val - baseline[key]
-            pct = (diff / baseline[key]) * 100
-            total_pct += pct
-            results[key] = {"val": val, "diff": diff, "pct": pct}
-            
-        avg_pct = total_pct / 3
-        if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
-        elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
-        elif avg_pct > -0.2: tag, color = "⚖️ STABLE", "#0083B8"
-        else:                tag, color = "📉 COOLING", "#FFA421"
-        
-        results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
-        return results
-    except:
-        return None
+
 
 #-----------------------------------------------------
 
@@ -542,30 +505,11 @@ with tab2:
         st.write("CODE FOR RAIL AND ROAD .")
 
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
-    data = get_hdb_realtime_pulse()
+    d
     
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-    
-        pulse_data = get_hdb_realtime_pulse()
-    
-        if pulse_data:
-            # The Sentiment Badge
-            st.markdown(f"""
-                <div style="background-color:{pulse_data['meta']['color']}; padding:3px 12px; border-radius:15px; display:inline-block; margin-bottom:15px;">
-                    <b style="color:white; font-size:12px;">{pulse_data['meta']['tag']}</b>
-                </div>
-                <span style="font-size:11px; color:gray; margin-left:10px;">Sync: {pulse_data['meta']['sync']}</span>
-            """, unsafe_allow_html=True)
-            
-            # The Metrics
-            c1, c2, c3 = st.columns(3)
-            c1.metric("3R Median", f"${pulse_data['3R']['val']/1000:.1f}k", f"{pulse_data['3R']['pct']:+.1f}%")
-            c2.metric("4R Median", f"${pulse_data['4R']['val']/1000:.1f}k", f"{pulse_data['4R']['pct']:+.1f}%")
-            c3.metric("5R Median", f"${pulse_data['5R']['val']/1000:.1f}k", f"{pulse_data['5R']['pct']:+.1f}%")
-        else:
-            st.warning("⚠️ API Connection Slow. Using baseline estimates...")
-            # Optional: Render the baseline metrics here so the tab isn't empty
-    
+        st.write("CODE FOR RAIL AND ROAD .")
+      
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
