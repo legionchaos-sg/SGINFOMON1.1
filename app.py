@@ -499,6 +499,7 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
+        
         # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
         st.write("---")
         st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
@@ -506,26 +507,84 @@ with tab2:
         # --- PART 1: EXPRESSWAY FLOW & COMMUTE RISK ---
         st.markdown("#### 🛣️ Expressway Speed & Risk (Live SGT)")
         
-        # 2026 Findings: LTA TrafficScan Band Data
-        expressways = [
-            {"name": "PIE (Tuas)", "avg_speed": "45-55 km/h", "band": "🟡 Moderate", "risk": 7, "reason": "Clementi Rd Exit CLOSED (Works)."},
-            {"name": "AYE (MCE)", "avg_speed": "75-85 km/h", "band": "🟢 Optimal", "risk": 2, "reason": "Free flowing; no incidents."},
-            {"name": "CTE (SLE)", "avg_speed": "30-40 km/h", "band": "🟠 Slow", "risk": 5, "reason": "Build-up at Havelock Exit (Lane 3 closed)."},
-            {"name": "KPE (TPE)", "avg_speed": "70-80 km/h", "band": "🟢 Optimal", "risk": 3, "reason": "Stable; Nicoll Hwy entrance works active."}
-        ]
-    
-        col1, col2, col3 = st.columns([2, 2, 2])
-        col1.caption("Expressway")
-        col2.caption("Avg Speed")
-        col3.caption("Risk Score")
-    
-        for ex in expressways:
-            r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
+        # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR (DYNAMIC) ---
+        st.write("---")
+        st.markdown("#### 🛣️ Expressway Speed & Risk (Live LTA Sync)")
+        
+        # 1. Pull the 'Firehose' of data from LTA
+        raw_data = get_lta_traffic_speeds()
+        
+        # 2. Define our target roads for 'gold 10'
+        target_roads = ["PIE", "AYE", "CTE", "KPE", "SLE", "BKE", "TPE", "MCE"]
+        road_stats = {road: [] for road in target_roads}
+        SPEED_LIMIT = 90 
+        
+        if raw_data:
+            # --- DYNAMIC PROCESSING LOOP ---
+            for segment in raw_data:
+                road_name = segment.get('RoadName', '').upper()
+                # Average of the speed band provided by LTA
+                avg_speed = (segment.get('SpeedMin', 0) + segment.get('SpeedMax', 0)) / 2
+                
+                for road in target_roads:
+                    if road in road_name:
+                        road_stats[road].append(avg_speed)
+        
+            display_list = []
+            for road, speeds in road_stats.items():
+                if speeds:
+                    current_avg = sum(speeds) / len(speeds)
+                    
+                    # MATH-BASED RISK: (Limit - Current) / Limit * 10
+                    calc_risk = ((SPEED_LIMIT - current_avg) / SPEED_LIMIT) * 10
+                    risk_score = min(max(int(calc_risk), 1), 10)
+                    
+                    # Dynamic Banding
+                    if risk_score <= 3: band = "🟢 Optimal"
+                    elif risk_score <= 6: band = "🟡 Moderate"
+                    else: band = "🟠 High Risk"
+                    
+                    display_list.append({
+                        "name": road,
+                        "speed": f"{int(current_avg)} km/h",
+                        "band": band,
+                        "risk": risk_score
+                    })
+        else:
+            # 3. EMERGENCY FALLBACK (If LTA API is down)
+            st.caption("⚠️ Live LTA Sync Offline. Showing last known 2026 trends.")
+            display_list = [
+                {"name": "PIE", "speed": "52 km/h", "band": "🟡 Moderate", "risk": 4},
+                {"name": "AYE", "speed": "80 km/h", "band": "🟢 Optimal", "risk": 1},
+                {"name": "CTE", "speed": "35 km/h", "band": "🟠 Slow", "risk": 7}
+            ]
+        
+        # 4. RENDER THE UI
+        col_h1, col_h2, col_h3 = st.columns([2, 2, 2])
+        col_h1.caption("Expressway")
+        col_h2.caption("Avg Speed")
+        col_h3.caption("Risk Score")
+        
+        for item in display_list:
             c1, c2, c3 = st.columns([2, 2, 2])
-            c1.markdown(f"**{ex['name']}**")
-            c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
+            c1.write(f"**{item['name']}**")
+            c2.write(f"{item['speed']} ({item['band']})")
+            
+            # Visual Alerting based on Risk Score
+            if item['risk'] >= 7:
+                c3.error(f"🚨 {item['risk']}/10")
+            elif item['risk'] >= 4:
+                c3.warning(f"⚠️ {item['risk']}/10")
+            else:
+                c3.success(f"✅ {item['risk']}/10")
+            
+                for ex in expressways:
+                    r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
+                    c1, c2, c3 = st.columns([2, 2, 2])
+                    c1.markdown(f"**{ex['name']}**")
+                    c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
+                    c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
     
         # --- PART 2: MRT SERVICE STATUS ---
         st.markdown("#### 🚆 Train Service Status")
@@ -545,7 +604,7 @@ with tab2:
     
         # --- PART 3: FIFO INCIDENT LOG (COMBINED) ---
         #st.divider()
-        st.markdown("#### ⚠️ Recent Train or Trffic Incidents (FIFO)")
+        st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
         incidents = [
             ("17:05", "Event", "MetaSprint Triathlon: Full closure East Coast Park Svc Rd."),
             ("16:30", "Event", "Chingay @ Punggol: Punggol Field Walk closed (LP 13-24)."),
