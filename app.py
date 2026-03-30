@@ -548,7 +548,7 @@ with tab2:
 
     # 2. THE UI: Use the data fetched above
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        @st.cache_data(ttl=1800) 
+        #@st.cache_data(ttl=1800) 
             
         pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
             
