@@ -124,6 +124,19 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+@st.cache_data(ttl=600)
+def connect_and_fetch_hdb():
+    dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5000"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            records = response.json().get('result', {}).get('records', [])
+            return pd.DataFrame(records), True, "API Connection 200: OK"
+        return pd.DataFrame(), False, f"Server Error: {response.status_code}"
+    except Exception as e:
+        return pd.DataFrame(), False, f"Connection Failed: {str(e)}
+
 
 
 
@@ -510,24 +523,30 @@ with tab2:
       if 'town' not in locals() or not town:
           town = "WOODLANDS"
 
-    #-----------------HDB National Resale  
-    with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        @st.cache_data(ttl=600)
-        def connect_and_fetch_hdb():
-            """Returns (DataFrame, Success_Boolean, Status_Message)"""
-            dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
-            url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5000"
-            
-            try:
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    records = data.get('result', {}).get('records', [])
-                    return pd.DataFrame(records), True, "API Connection 200: OK"
-                else:
-                    return pd.DataFrame(), False, f"Server Error: {response.status_code}"
-            except Exception as e:
-                return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
+    #-----------------HDB National Resale
+    with st.expander("📊 **National HDB Resale Sentiments**", expanded=True):
+    
+    # THIS IS THE PART THAT WAS MISSING: You must call the function!
+    df_ntl, is_connected, status_msg = connect_and_fetch_hdb()
+
+    if is_connected:
+        st.success(status_msg)
+        
+        # Now proceed with your 2026 calculations
+        df_ntl['resale_price'] = pd.to_numeric(df_ntl['resale_price'], errors='coerce')
+        df_2026 = df_ntl[df_ntl['month'].str.contains('2026', na=False)]
+        
+        if not df_2026.empty:
+            avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
+            st.markdown("### 🏆 NTL AVERAGE SALE PRICE (2026)")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("3-ROOM", f"${avg_stats.get('3 ROOM', 0):,.0f}")
+            c2.metric("4-ROOM", f"${avg_stats.get('4 ROOM', 0):,.0f}")
+            c3.metric("5-ROOM", f"${avg_stats.get('5 ROOM', 0):,.0f}")
+        else:
+            st.info("📅 Connection OK, but no 2026 records found yet. Government data usually lags by 4-6 weeks.")
+    else:
+        st.error(status_msg)
     
        
          
