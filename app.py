@@ -124,28 +124,34 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-@st.cache_data(ttl=600)
-def debug_hdb_api():
-    # Attempting to fetch Woodlands data specifically
+st.cache_data(ttl=300) # Cache for 5 mins to avoid hitting rate limits
+def debug_hdb_api(town_query):
+    # Ensure ID is clean and query is stripped
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}"
-    
-    print(f"📡 Testing Connection to: {url}")
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q={town_query.strip()}"
     
     try:
         response = requests.get(url, timeout=10)
         data = response.json()
         
-        # Check if 'result' is in the response
-        if 'result' in data:
-            st.write("✅ SUCCESS: 'result' key found.")
-            st.write(f"Data Sample: {data['result']['records'][0]}")
+        # --- CRITICAL CHECK ---
+        # We check if 'result' exists before doing anything else
+        if isinstance(data, dict) and 'result' in data:
+            records = data['result'].get('records', [])
+            return pd.DataFrame(records)
+        
+        # If 'result' is missing, handle the error gracefully
+        error_msg = data.get("errorMsg", "Unknown API Error")
+        if data.get("code") == 24: # Rate Limit Code
+            st.warning("⚠️ Government API Rate Limit reached. Please wait 10-15 seconds.")
         else:
-            st.write("❌ ERROR: 'result' key is missing from response.")
-            st.write("Full API Response:", data) # This will tell us the real error
+            st.error(f"❌ API blocked or ID invalid: {error_msg}")
+            
+        return pd.DataFrame() # Return empty so the rest of the app doesn't crash
             
     except Exception as e:
-        st.write(f"❌ CONNECTION FAILED: {e}")
+        st.error(f"📡 Connection Failed: {e}")
+        return pd.DataFrame()
 
 
 
@@ -530,13 +536,21 @@ with tab2:
 
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-        st.caption("🔍 *pending code2")
-        town = st.text_input("Search Estate", value="Woodlands").upper()
-        df = debug_hdb_api(town)
-
-        if not df.empty:
-            st.success(f"Successfully loaded {len(df)} records for {town}")
-            st.dataframe(df.head(5))
+        if st.button("♻️ Force Clear Cache"):
+            debug_hdb_api.clear(town)
+            st.success("Cache Cleared! The next run will pull fresh data from the API.")
+            # Optional: Trigger a rerun to apply the clear immediately
+            st.rerun() 
+    
+        st.divider()
+    
+        # 2. YOUR DEBUG FUNCTION CALL
+        # Ensure 'town' is defined from your main search input
+        df_debug = debug_hdb_api(town) 
+        
+        if not df_debug.empty:
+            st.write("✅ Data loaded successfully after clear.")
+            st.dataframe(df_debug.head(5))
    
 
       
