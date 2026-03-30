@@ -583,7 +583,7 @@ with tab2:
                 st.warning(f"⚠️ **{timestamp}**: {desc}")
             else:
                 st.info(f"🚧 **{timestamp}**: {desc}")
-     else:
+         else:
             st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
                     
     st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
