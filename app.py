@@ -529,26 +529,26 @@ with tab2:
 
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-
+ 
         if not df_debug.empty:
             stats = calculate_national_averages(df_debug)
             
-                if stats is not None:
-                    st.markdown("### 📊 2026 National Average Resale Prices")
-                    col1, col2, col3 = st.columns(3)
+            if stats is not None:
+                st.markdown("### 📊 2026 National Average Resale Prices")
+                col1, col2, col3 = st.columns(3)
                     
-                    # Displaying 3RM, 4RM, 5RM specifically
-                    with col1:
-                        price_3rm = stats.get('3 ROOM', 0)
-                        st.metric("Avg 3-ROOM", f"${price_3rm:,.0f}")
+                # Displaying 3RM, 4RM, 5RM specifically
+                with col1:
+                    price_3rm = stats.get('3 ROOM', 0)
+                    st.metric("Avg 3-ROOM", f"${price_3rm:,.0f}")
                         
-                    with col2:
-                        price_4rm = stats.get('4 ROOM', 0)
-                        st.metric("Avg 4-ROOM", f"${price_4rm:,.0f}", delta="Market High" if price_4rm > 500000 else None)
+                with col2:
+                    price_4rm = stats.get('4 ROOM', 0)
+                    st.metric("Avg 4-ROOM", f"${price_4rm:,.0f}", delta="Market High" if price_4rm > 500000 else None)
                         
-                    with col3:
-                        price_5rm = stats.get('5 ROOM', 0)
-                        st.metric("Avg 5-ROOM", f"${price_5rm:,.0f}")
+                with col3:
+                    price_5rm = stats.get('5 ROOM', 0)
+                    st.metric("Avg 5-ROOM", f"${price_5rm:,.0f}")
                 
         
    
