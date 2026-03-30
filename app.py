@@ -142,52 +142,38 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 #----------------For HDB API
+import streamlit as st
+import requests
+import pandas as pd
+from datetime import datetime
+
 @st.cache_data(ttl=600)
 def get_hdb_realtime_pulse():
-    # RESOURCE ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
-    # We sort by 'month desc' AND increase limit to 2000 to ensure we bypass today's empty lag
+    # RESOURCE: Jan 2017 - Mar 2026 Resale Prices
     url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=2000&sort=month desc"
-    
-    # Baseline: Mar 2026 Reference
     baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
     
     try:
-        response = requests.get(url, timeout=15).json()
+        response = requests.get(url, timeout=10).json()
         records = response.get('result', {}).get('records', [])
+        if not records: return None
         
-        if not records:
-            return None
-            
         df = pd.DataFrame(records)
-        
-        # FIX 1: Explicitly convert prices and DROP any that are 0 or empty
         df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
         df = df[df['resale_price'] > 0].dropna(subset=['resale_price'])
         
-        # FIX 2: Ensure flat_type names match exactly (uppercase check)
-        df['flat_type'] = df['flat_type'].str.upper()
-        
-        if df.empty:
-            return None
-            
         results = {}
         total_pct = 0
-        
-        for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
-            type_df = df[df['flat_type'] == hdb_label]
+        for key, label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
+            # Filter specifically for the type
+            type_df = df[df['flat_type'].str.upper() == label]
+            val = type_df['resale_price'].median() if len(type_df) > 0 else baseline[key]
             
-            # FIX 3: Calculate median only if we have at least 5 records for that type
-            if len(type_df) >= 5:
-                current_val = type_df['resale_price'].median()
-            else:
-                current_val = baseline[key]
-                
-            diff = current_val - baseline[key]
+            diff = val - baseline[key]
             pct = (diff / baseline[key]) * 100
             total_pct += pct
-            results[key] = {"val": current_val, "diff": diff, "pct": pct}
+            results[key] = {"val": val, "diff": diff, "pct": pct}
             
-        # SENTIMENT LOGIC
         avg_pct = total_pct / 3
         if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
         elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
@@ -196,8 +182,10 @@ def get_hdb_realtime_pulse():
         
         results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
         return results
-    except Exception as e:
+    except:
         return None
+
+#-----------------------------------------------------
 
 st_autorefresh(interval=180000, key="sync_109_stable")
 
@@ -562,15 +550,26 @@ with tab2:
     data = get_hdb_realtime_pulse()
     
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-        if data:
+    
+    pulse_data = get_hdb_realtime_pulse()
+    
+        if pulse_data:
+            # The Sentiment Badge
             st.markdown(f"""
-                <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                    <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
-                        <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
-                    </div>
-                    <span style="font-size:11px; margin-left:10px; color:gray;">Verified Pulse: {data['meta']['sync']}</span>
+                <div style="background-color:{pulse_data['meta']['color']}; padding:3px 12px; border-radius:15px; display:inline-block; margin-bottom:15px;">
+                    <b style="color:white; font-size:12px;">{pulse_data['meta']['tag']}</b>
                 </div>
+                <span style="font-size:11px; color:gray; margin-left:10px;">Sync: {pulse_data['meta']['sync']}</span>
             """, unsafe_allow_html=True)
+            
+            # The Metrics
+            c1, c2, c3 = st.columns(3)
+            c1.metric("3R Median", f"${pulse_data['3R']['val']/1000:.1f}k", f"{pulse_data['3R']['pct']:+.1f}%")
+            c2.metric("4R Median", f"${pulse_data['4R']['val']/1000:.1f}k", f"{pulse_data['4R']['pct']:+.1f}%")
+            c3.metric("5R Median", f"${pulse_data['5R']['val']/1000:.1f}k", f"{pulse_data['5R']['pct']:+.1f}%")
+        else:
+            st.warning("⚠️ API Connection Slow. Using baseline estimates...")
+            # Optional: Render the baseline metrics here so the tab isn't empty
     
 
 # ==========================================
