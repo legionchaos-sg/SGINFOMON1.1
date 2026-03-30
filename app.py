@@ -541,7 +541,12 @@ with tab2:
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
         st.caption("🔍 *pending code2")
-        debug_hdb_api()
+        town = st.text_input("Search Estate", value="Woodlands").upper()
+        df = fetch_hdb_data(town)
+
+        if not df.empty:
+            st.success(f"Successfully loaded {len(df)} records for {town}")
+            st.dataframe(df.head(5))
    
 
       
