@@ -125,6 +125,22 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+@st.cache_data(ttl=300) 
+def get_lta_traffic_speeds():
+    """Fetches real-time traffic data from LTA DataMall"""
+    # Replace with your actual LTA Account Key
+    api_key = st.secrets.get("LTA_API_KEY", "YOUR_KEY_HERE")
+    url = "http://datamall2.mytransport.sg/ltaodataservice/TrafficSpeedBandsv2"
+    headers = {'AccountKey': api_key, 'accept': 'application/json'}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return response.json().get('value', [])
+    except Exception as e:
+        st.error(f"LTA Sync Error: {e}")
+    return []
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
