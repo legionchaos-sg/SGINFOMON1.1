@@ -8,7 +8,6 @@ from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
-#d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
 st.markdown("""
     <style>
@@ -556,51 +555,7 @@ with tab2:
             st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
     
         st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
-
-    # --- 5. LIVE hdb rESALE ---
-    with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
-
-        # --- 1. DYNAMIC INPUTS ---
-        col_in1, col_in2 = st.columns(2)
-        with col_in1:
-            query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
-        with col_in2:
-            u_weight = st.number_input("⚖️ Weight (kg):", value=70)
-        
-        # --- 2. THE 2026 UNIFIED ENGINE ---
-        def get_gold10_master(estate, weight):
-            # National Average (S'pore Avg) Mar 29, 2026
-            nat = {"3R": 469370, "4R": 672110, "5R": 781812}
-            
-            # Estate Classification
-            mature = ["Queenstown", "Ang Mo Kio", "Bukit Merah", "Bishan", "Clementi", "Toa Payoh"]
-            is_mature = estate in mature
-            is_north = any(x in estate for x in ["Woodlands", "Yishun", "Sembawang"])
-            
-            # Housing Calculation
-            mult = 1.42 if is_mature else 0.95
-            est_prices = {k: int(v * mult) for k, v in nat.items()}
-            
-            # Strategic Logic
-            dec = "SELL / UPGRADE" if is_mature else "STRATEGIC BUY" if is_north else "HOLD"
-            reason = "Capitalize on high premium." if is_mature else "RTS Link 2026 upside; Low entry vs Nat Avg."
-        
-            # Environment Data (Sun, 29 Mar 2026 - Evening Update)
-            env = {
-                "temp": "29.0°C", 
-                "psi": 52 if is_north else 41, 
-                "rain": "70%", 
-                "wind": "8 km/h NE", 
-                "wbgt": 31 if is_north else 29
-            }
-            
-            # Hydration Logic (Base + Heat Surcharge)
-            water = round(((weight * 35) / 1000) + (0.45 if env['wbgt'] >= 31 else 0.25), 1)
-            sip = int((water * 1000) / 14)
-            
-            return nat, est_prices, dec, reason, env, water, sip
-        
-        nat, est, dec, reason, env, water, sip = get_gold10_master(query, u_weight)
+    
         
         # --- 3. UI DISPLAY (gold 10 Optimized) ---
         st.markdown(f"### 📍 {query} Dashboard")
