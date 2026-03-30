@@ -309,7 +309,7 @@ with tab1:
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
-#with tab2:
+with tab2:
 #2. UI SECTION
 st.title("⚡ Fast HDB Resale Test")
 town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
@@ -321,10 +321,6 @@ if town:
     if not df.empty:
         st.success(f"Loaded {len(df)} recent trades in {town}")
         st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
-        
-        # Calculate NAT (National Average) on the fly
-        avg_price = pd.to_numeric(df['resale_price']).mean()
-        st.metric(f"Current {town} Avg", f"${avg_price/1000:.1f}k")
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS
