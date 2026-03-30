@@ -124,6 +124,8 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+#---- end of def----------------
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
@@ -140,41 +142,6 @@ st.markdown("""
             header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
-
-#---hdb api------
-def get_hdb_quote(town="ANG MO KIO"):
-    url = "https://data.gov.sg/api/action/datastore_search"
-    
-    params = {
-        "resource_id": "f1765b54-a209-4718-8d38-a39237f502b3",  # HDB resale dataset
-        "limit": 50
-    }
-
-    try:
-        res = requests.get(url, params=params, timeout=10)
-        data = res.json()
-        records = data["result"]["records"]
-
-        # Filter by town
-        filtered = [r for r in records if r["town"].upper() == town.upper()]
-
-        if not filtered:
-            return "No data"
-
-        latest = filtered[0]
-
-        return {
-            "town": latest["town"],
-            "flat_type": latest["flat_type"],
-            "price": latest["resale_price"],
-            "block": latest["block"],
-            "street": latest["street_name"]
-        }
-
-    except Exception as e:
-        return f"Error: {e}"
-        
-#-----------------------------------------------------
 
 st_autorefresh(interval=180000, key="sync_109_stable")
 
@@ -537,6 +504,39 @@ with tab2:
 
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
+
+    #---hdb api------
+def get_hdb_quote(town="ANG MO KIO"):
+    url = "https://data.gov.sg/api/action/datastore_search"
+    
+    params = {
+        "resource_id": "f1765b54-a209-4718-8d38-a39237f502b3",  # HDB resale dataset
+        "limit": 50
+    }
+
+    try:
+        res = requests.get(url, params=params, timeout=10)
+        data = res.json()
+        records = data["result"]["records"]
+
+        # Filter by town
+        filtered = [r for r in records if r["town"].upper() == town.upper()]
+
+        if not filtered:
+            return "No data"
+
+        latest = filtered[0]
+
+        return {
+            "town": latest["town"],
+            "flat_type": latest["flat_type"],
+            "price": latest["resale_price"],
+            "block": latest["block"],
+            "street": latest["street_name"]
+        }
+
+    except Exception as e:
+        return f"Error: {e}"
         quote = get_hdb_quote("TOA PAYOH")
 
         if isinstance(quote, dict):
