@@ -522,7 +522,7 @@ with tab2:
             
         # 3. FETCH DATA 
         current_town = town if 'town' in locals() else "WOODLANDS"
-        df_debug = debug_hdb_api(town)
+        df_debug = debug_hdb_api(current_town)
         
         # 4. 2026 CALCULATION LOGIC
         if not df_debug.empty:
