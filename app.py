@@ -594,7 +594,7 @@ with tab2:
             else:
                 c3.success(f"✅ {item['risk']}/10")
             
-                for ex in expressways:
+                for item in display_list:
                     r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
                     c1, c2, c3 = st.columns([2, 2, 2])
                     c1.markdown(f"**{ex['name']}**")
