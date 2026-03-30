@@ -520,93 +520,68 @@ with tab2:
 
     #-----------------HDB National Resale 
     with st.expander("📊 National HDB Resale Sentiments (Mar 2026)", expanded=False):
-       
 
-        @st.cache_data(ttl=3600)
-        def get_hdb_live_pulse():
-            # RESOURCE ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
-            # We add '&sort=month desc' to get MARCH 2026 transactions at the very top!
-            url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=month desc"
-            
-            # baseline values for Mar 2026 comparison
-            baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
-            
-            try:
-                # Increase timeout to 10s for Gold 10 stability
-                response = requests.get(url, timeout=10)
-                
-                # Check if the website actually sent back valid JSON
-                if response.status_code != 200:
-                    return None
-                    
-                data = response.json()
-                records = data.get('result', {}).get('records', [])
-                
-                if not records:
-                    return None # Fallback to baseline if no records found
-                    
-                df = pd.DataFrame(records)
-                # Ensure prices are numbers
-                df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
-                
-                results = {}
-                total_pct = 0
-                
-                for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
-                    # Filter and calculate median
-                    val = df[df['flat_type'] == hdb_label]['resale_price'].median()
-                    
-                    # If the API has no sales for a specific type today, use baseline
-                    if pd.isna(val): val = baseline[key]
-                        
-                    diff = val - baseline[key]
-                    pct = (diff / baseline[key]) * 100
-                    total_pct += pct
-                    results[key] = {"val": val, "diff": diff, "pct": pct}
-                    
-                # Determine Sentiment Tag
-                avg_pct = total_pct / 3
-                if avg_pct > 1.2:     tag, color = "🔥 OVERHEATING", "#FF4B4B"
-                elif avg_pct >= 0.3:   tag, color = "📈 BULLISH", "#00CC96"
-                elif avg_pct > -0.3:  tag, color = "⚖️ STABLE", "#0083B8"
-                else:                  tag, color = "📉 COOLING", "#FFA421"
-                
-                results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
-                return results
+    @st.cache_data(ttl=600) # Reduced to 10 mins for "Today" focus
+    def get_hdb_realtime_pulse():
+        # CRITICAL CHANGE: sort=_id desc pulls the literal last-added rows first
+        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=_id desc"
         
-            except Exception as e:
-                # This catches internet disconnects or API changes
-                return None
+        # Gold 10 Baseline (Sunday, Mar 29)
+        baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
+        
+        try:
+            response = requests.get(url, timeout=10).json()
+            records = response.get('result', {}).get('records', [])
+            
+            if not records: return None
                 
-                # --- 2. UI RENDER (EXPANDER & METRICS) ---
-                data = get_hdb_integrated_data()
+            df = pd.DataFrame(records)
+            df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
+            
+            results = {}
+            total_pct = 0
+            
+            for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
+                # Calculate median from the 1,000 most recent registrations
+                current_val = df[df['flat_type'] == hdb_label]['resale_price'].median()
+                if pd.isna(current_val): current_val = baseline[key]
+                    
+                diff = current_val - baseline[key]
+                pct = (diff / baseline[key]) * 100
+                total_pct += pct
+                results[key] = {"val": current_val, "diff": diff, "pct": pct}
                 
-                with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
-                    if data:
-                        # Sentiment Tag Line
-                        st.markdown(f"""
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
-                                    <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
-                                </div>
-                                <span style="font-size:11px; margin-left:10px; color:gray;">Last Sync: {data['meta']['sync']} (SGT)</span>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
-                        col1, col2, col3 = st.columns(3)
-                        for col, flat in zip([col1, col2, col3], ["3R", "4R", "5R"]):
-                            item = data[flat]
-                            col.markdown(f"<p style='font-size:12px; margin-bottom:-12px;'>{flat} Median</p>", unsafe_allow_html=True)
-                            col.metric(
-                                label="", 
-                                value=f"${item['val']/1000:.1f}k", 
-                                delta=f"{item['diff']/1000:+.1f}k ({item['pct']:.1f}%)"
-                            )
-                        
-                        st.markdown("---")
-                        st.caption("Data source: HDB Real-Time API (Jan 2017 - Mar 2026 Dataset)")
-                    else:
-                        st.error("Unable to reach HDB Data Engine. Please check internet connection.")
+            # SENTIMENT LOGIC (Based on Real-Time Pulse)
+            avg_pct = total_pct / 3
+            if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
+            elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
+            elif avg_pct > -0.2: tag, color = "⚖️ STABLE", "#0083B8"
+            else:                tag, color = "📉 COOLING", "#FFA421"
+            
+            results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
+            return results
+        except:
+            return None
+    
+    # --- UI RENDER ---
+    data = get_hdb_realtime_pulse()
+    
+    with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
+        if data:
+            st.markdown(f"""
+                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                    <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
+                        <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
+                    </div>
+                    <span style="font-size:11px; margin-left:10px; color:gray;">Latest Registration Sync: {data['meta']['sync']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2, col3 = st.columns(3)
+            for col, flat in zip([col1, col2, col3], ["3R", "4R", "5R"]):
+                item = data[flat]
+                col.markdown(f"<p style='font-size:12px; margin-bottom:-12px;'>{flat} Median</p>", unsafe_allow_html=True)
+                col.metric("", f"${item['val']/1000:.1f}k", f"{item['pct']:+.1f}%")
     
 
 # ==========================================
