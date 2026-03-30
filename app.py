@@ -530,7 +530,7 @@ with tab2:
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
          
-          calculate_national_averages(df_debug)
+          calculate_national_averages(df_debug):
             
             if stats is not None:
                 st.markdown("### 📊 2026 National Average Resale Prices")
