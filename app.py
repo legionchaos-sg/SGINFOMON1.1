@@ -570,8 +570,8 @@ with tab2:
     #---------Traffic indicents reported
     incidents = get_fast_incidents()
                     
-        if incidents:
-            for row in incidents:
+    if incidents:
+        for row in incidents:
             # OneMotoring usually format: [Description, Date/Time]
             desc = row[0]
             timestamp = row[1]
@@ -583,7 +583,7 @@ with tab2:
                 st.warning(f"⚠️ **{timestamp}**: {desc}")
             else:
                 st.info(f"🚧 **{timestamp}**: {desc}")
-        else:
+     else:
             st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
                     
     st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
