@@ -554,7 +554,10 @@ with tab2:
         for t, cat, msg in incidents:
             st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
     
-        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
+        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")   
+
+    #-----------------HDB National Resale 
+    with st.expander("📊 **National HDB Resale Sentiments (Mar 2026)**", expanded=False):
     
 
 # ==========================================
