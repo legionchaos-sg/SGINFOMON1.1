@@ -131,23 +131,7 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-def get_ai_traffic_data():
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
-    # We ask for TWO things: the table data AND a news summary
-    prompt = """
-    1. Search for current Singapore expressway traffic (March 30, 2026).
-    2. Provide a Python list of dicts: [{'name','speed','band','risk'}].
-    3. Provide a brief 1-sentence 'alert' summarizing any major accidents or roadworks found.
-    Return only a Python dictionary with keys 'table' and 'alert'.
-    """
-    try:
-        response = model.generate_content(prompt)
-        # Clean the response to make it a valid Python dictionary
-        data = eval(response.text.replace("```python", "").replace("```", "").strip())
-        return data
-    except:
-        return {"table": [], "alert": "No major incidents reported at this time."}
+
 
 
 
@@ -526,53 +510,12 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        # this is for express way
-        st.write("---")
-        with st.spinner("🕵️ gold 10 is scanning LTA feeds and news..."):
-            result = get_ai_traffic_data()
-            display_list = result.get('table', [])
-            alert_text = result.get('alert', "")
-            
-        # Render the Table
-        if display_list:
-        # (Use your existing column loop here)
-        # 2. The Standardized Loop (Ensure this is indented once under 'if display_list')
-            for item in display_list:
-                c1, c2, c3 = st.columns([2, 2, 2])
-        
-                # FIX: These lines must all be aligned together (4 spaces from 'for')
-                name = item.get('name', 'N/A')
-                speed = item.get('speed', '---')
-                band = item.get('band', '⚪')
-                risk_val = item.get('risk', 5)
-        
-                # Color Logic (Still 4 spaces from 'for')
-                r_color = "#28a745" if risk_val < 4 else "#ffc107" if risk_val < 7 else "#dc3545"
-        
-                # Render Row
-                c1.write(f"**{name}**")
-                c2.write(f"{speed} {band}")
-                c3.markdown(
-                    f"<span style='color:{r_color}; font-weight:bold;'>{risk_val}/10</span>", 
-                    unsafe_allow_html=True
-                )
 
-            # 3. THE SMART ALERT BOX (Conditional Formatting)
-            if alert_text and "No major" not in alert_text:
-                st.write("") # Spacer
-                # If 'accident' or 'closed' is in the text, we use a warning box
-                if any(word in alert_text.lower() for word in ["accident", "closed", "heavy", "works"]):
-                    st.error(f"🚨 **Traffic Alert:** {alert_text}")
-                else:
-                    st.info(f"ℹ️ **Note:** {alert_text}")
+    import streamlit as st
 
-            else:
-                # Fallback if AI fails to return the list format
-                st.warning("⚠️ High traffic on AI servers. Displaying cached 2026 baseline.")
-                st.caption("PIE: 55km/h | CTE: 40km/h | AYE: 45km/h")
-                
-            # THE ALERT BOX
-                st.info(f"**📢 Live Incident Alert:** {alert_text}")
+    st.markdown("### 🗺️ Live Traffic Overview")
+    # This is a standard Google Maps embed set to Singapore with the traffic layer
+    st.components.v1.iframe("https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d127641.16874415842!2d103.819836!3d1.352083!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2ssg!4v1620000000000!5m2!1sen!2ssg&layer=t", height=450)
       
         
     
