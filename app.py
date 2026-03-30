@@ -552,42 +552,41 @@ with tab2:
             
         pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
             
-                # --- PART 1: MRT SERVICE STATUS ---
-                st.markdown("#### 🚆 Train Service Status")
-                for r in pulse_data['rail']:
-                    r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
-                    c1, c2, c3 = st.columns([2, 1, 1])
-                    c1.markdown(f"**{r['line']}**")
-                    c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
-                    c3.write(f"`{r['delay']}`")
-                    st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+        # --- PART 1: MRT SERVICE STATUS ---
+        st.markdown("#### 🚆 Train Service Status")
+        for r in pulse_data['rail']:
+            r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
+            c1, c2, c3 = st.columns([2, 1, 1])
+            c1.markdown(f"**{r['line']}**")
+            c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
+            c3.write(f"`{r['delay']}`")
+            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
             
-                # --- PART 2: FIFO INCIDENT LOG ---
-                st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
-                for time, category, desc in pulse_data['incidents']:
-                    st.write(f"**{time}** | `{category}` | {desc}")
+        # --- PART 2: FIFO INCIDENT LOG ---
+        st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
+        for time, category, desc in pulse_data['incidents']:
+            st.write(f"**{time}** | `{category}` | {desc}")
             
-                    #---------Traffic indicents reported
-                    # No spinner needed as this takes < 1 second
-                    incidents = get_fast_incidents()
+    #---------Traffic indicents reported
+    incidents = get_fast_incidents()
                     
-                    if incidents:
-                        for row in incidents:
-                            # OneMotoring usually format: [Description, Date/Time]
-                            desc = row[0]
-                            timestamp = row[1]
+        if incidents:
+            for row in incidents:
+            # OneMotoring usually format: [Description, Date/Time]
+            desc = row[0]
+            timestamp = row[1]
                             
-                            # Color code based on keyword
-                            if "Accident" in desc:
-                                st.error(f"🛑 **{timestamp}**: {desc}")
-                            elif "Breakdown" in desc:
-                                st.warning(f"⚠️ **{timestamp}**: {desc}")
-                            else:
-                                st.info(f"🚧 **{timestamp}**: {desc}")
-                    else:
-                        st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
+            # Color code based on keyword
+            if "Accident" in desc:
+                st.error(f"🛑 **{timestamp}**: {desc}")
+            elif "Breakdown" in desc:
+                st.warning(f"⚠️ **{timestamp}**: {desc}")
+            else:
+                st.info(f"🚧 **{timestamp}**: {desc}")
+        else:
+            st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
                     
-                    st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
+    st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
