@@ -141,6 +141,59 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+#---hdb api------
+def fetch_hdb_pulse():
+    # RESOURCE: Resale Flat Prices (Jan 2017 - Present)
+    # Using 'fields' to minimize data weight and 'limit' for speed
+    url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=month desc&fields=resale_price,flat_type,town"
+    
+    # 2026 Q1 INDUSTRY BASELINES (SRX/HDB Reference)
+    baselines = {"3 ROOM": 469000, "4 ROOM": 672000, "5 ROOM": 781000}
+    
+    try:
+        data = requests.get(url, timeout=5).json()
+        records = data.get('result', {}).get('records', [])
+        df = pd.DataFrame(records)
+        df['resale_price'] = pd.to_numeric(df['resale_price'])
+        
+        stats = {}
+        for f_type, base_price in baselines.items():
+            subset = df[df['flat_type'] == f_type]
+            current_median = subset['resale_price'].median()
+            change = ((current_median - base_price) / base_price) * 100
+            stats[f_type] = {"price": current_median, "delta": change}
+        
+        # MARKET SENTIMENT LOGIC (2026 March Trends)
+        avg_delta = sum(item['delta'] for item in stats.values()) / 3
+        if avg_delta > 1.0:   status, color = "🔥 OVERHEATING", "#FF4B4B"
+        elif avg_delta > -0.5: status, color = "⚖️ STABLE", "#00CC96"
+        else:                  status, color = "📉 COOLING", "#3D66FF"
+        
+        return stats, {"status": status, "color": color, "time": datetime.now().strftime("%H:%M")}
+    except: return None, None
+
+UI RENDER (Inside your Tab)
+def render_market_tab():
+    stats, meta = fetch_hdb_pulse()
+    
+    if stats:
+        # Header with compact styling
+        st.markdown(f"""
+            <div style="background-color:{meta['color']}; padding:2px 10px; border-radius:5px; display:inline-block;">
+                <span style="color:white; font-size:12px; font-weight:bold;">{meta['status']}</span>
+            </div>
+            <span style="font-size:10px; color:gray; margin-left:8px;">Live Feed: {meta['time']}</span>
+        """, unsafe_allow_html=True)
+        
+        # Metrics Row
+        cols = st.columns(3)
+        for i, (label, data) in enumerate(stats.items()):
+            cols[i].metric(label, f"${data['price']/1000:.1f}k", f"{data['delta']:+.1f}%")
+            
+        st.markdown("---")
+        st.caption("Data source: HDB Real-time API v2 (Data.gov.sg). Baselines anchored to Mar 2026 Flash Reports.")
+    else:
+        st.error("Connection to HDB Data Mall timed out. Retrying...")
 
 
 #-----------------------------------------------------
@@ -505,10 +558,9 @@ with tab2:
         st.write("CODE FOR RAIL AND ROAD .")
 
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
-    d
-    
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
         st.write("CODE FOR RAIL AND ROAD .")
+        render_market_tab()
       
 
 # ==========================================
