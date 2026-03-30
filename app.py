@@ -137,14 +137,14 @@ def debug_hdb_api():
         
         # Check if 'result' is in the response
         if 'result' in data:
-            print("✅ SUCCESS: 'result' key found.")
-            print(f"Data Sample: {data['result']['records'][0]}")
+            st.write("✅ SUCCESS: 'result' key found.")
+            st.write(f"Data Sample: {data['result']['records'][0]}")
         else:
-            print("❌ ERROR: 'result' key is missing from response.")
-            print("Full API Response:", data) # This will tell us the real error
+            st.write("❌ ERROR: 'result' key is missing from response.")
+            st.write("Full API Response:", data) # This will tell us the real error
             
     except Exception as e:
-        print(f"❌ CONNECTION FAILED: {e}")
+        st.write(f"❌ CONNECTION FAILED: {e}")
 
 
 
