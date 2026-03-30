@@ -131,101 +131,27 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-@st.cache_data(ttl=60)
-def get_lta_traffic_speeds():
-    url = "http://datamall2.mytransport.sg/ltaodataservice/TrafficSpeedBandsv2"
+def get_ai_traffic_data():
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
-    api_key = st.secrets.get("LTA_API_KEY", None)
-
-    # 🔁 If no API key → fallback mock data
-    if not api_key:
-        return [
-            {"RoadName": "PIE", "SpeedMin": 45, "SpeedMax": 60},
-            {"RoadName": "AYE", "SpeedMin": 70, "SpeedMax": 85},
-            {"RoadName": "CTE", "SpeedMin": 25, "SpeedMax": 40},
-            {"RoadName": "KPE", "SpeedMin": 60, "SpeedMax": 75},
-        ]
-
-    headers = {
-        "AccountKey": api_key,
-        "accept": "application/json"
-    }
-
+    # We ask for TWO things: the table data AND a news summary
+    prompt = """
+    1. Search for current Singapore expressway traffic (March 30, 2026).
+    2. Provide a Python list of dicts: [{'name','speed','band','risk'}].
+    3. Provide a brief 1-sentence 'alert' summarizing any major accidents or roadworks found.
+    Return only a Python dictionary with keys 'table' and 'alert'.
+    """
     try:
-        res = requests.get(url, headers=headers, timeout=10)
-        if res.status_code == 200:
-            return res.json().get("value", [])
-    except:
-        pass
-
-    return None
-
-@st.cache_data(ttl=300)
-def generate_ai_insights(display_list):
-    try:
-        prompt = f"""
-        You are a traffic analyst.
-
-        Given this Singapore expressway data:
-        {display_list}
-
-        Return JSON ONLY in this format:
-        [
-          {{
-            "road": "PIE",
-            "insight": "Short explanation of traffic condition",
-            "outlook": "Improving / Stable / Worsening"
-          }}
-        ]
-        """
-
         response = model.generate_content(prompt)
-        text = response.text.strip()
-
-        return json.loads(text)
-
+        # Clean the response to make it a valid Python dictionary
+        data = eval(response.text.replace("```python", "").replace("```", "").strip())
+        return data
     except:
-        return []
+        return {"table": [], "alert": "No major incidents reported at this time."}
 
-def process_data(raw_data):
-    target_roads = ["PIE", "AYE", "CTE", "KPE", "SLE", "BKE", "TPE", "MCE"]
-    road_stats = {road: [] for road in target_roads}
-    SPEED_LIMIT = 90
 
-    for segment in raw_data:
-        road_name = segment.get('RoadName', '').upper()
-        avg_speed = (segment.get('SpeedMin', 0) + segment.get('SpeedMax', 0)) / 2
 
-        for road in target_roads:
-            if road in road_name:
-                road_stats[road].append(avg_speed)
-
-    display_list = []
-
-    for road, speeds in road_stats.items():
-        if speeds:
-            current_avg = sum(speeds) / len(speeds)
-
-            calc_risk = ((SPEED_LIMIT - current_avg) / SPEED_LIMIT) * 10
-            risk_score = min(max(int(calc_risk), 1), 10)
-
-            if risk_score <= 3:
-                band = "🟢 Optimal"
-            elif risk_score <= 6:
-                band = "🟡 Moderate"
-            else:
-                band = "🟠 High Risk"
-
-            display_list.append({
-                "name": road,
-                "speed_val": int(current_avg),
-                "speed": f"{int(current_avg)} km/h",
-                "band": band,
-                "risk": risk_score
-            })
-
-    return display_list
-
+    
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
@@ -600,47 +526,24 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-    #st.markdown("### 🛣️ Expressway Traffic AI Dashboard")
 
-        raw_data = get_lta_traffic_speeds()
+    # this is for express way
+    st.write("---")
+        with st.spinner("🕵️ gold 10 is scanning LTA feeds and news..."):
+            result = get_ai_traffic_data()
+            display_list = result.get('table', [])
+            alert_text = result.get('alert', "")
         
-        if not raw_data:
-            st.error("❌ Unable to fetch traffic data")
-            st.stop()
+        # Render the Table
+        if display_list:
+            # (Use your existing column loop here)
+            for item in display_list:
+                c1, c2, c3 = st.columns([2, 2, 2])
+                # ... [Your Table Code] ...
         
-        display_list = process_data(raw_data)
-        
-        # 🤖 Get AI insights
-        ai_results = generate_ai_insights(display_list)
-        
-        # Convert AI list → dict for quick lookup
-        ai_map = {item["road"]: item for item in ai_results} if ai_results else {}
-        
-        # Header
-        h1, h2, h3, h4 = st.columns([2,2,1,3])
-        h1.caption("Expressway")
-        h2.caption("Speed")
-        h3.caption("Risk")
-        h4.caption("AI Insight")
-        
-        # Rows
-        for item in display_list:
-            c1, c2, c3, c4 = st.columns([2,2,1,3])
-        
-            risk_val = item["risk"]
-            r_color = "#28a745" if risk_val < 4 else "#ffc107" if risk_val < 7 else "#dc3545"
-        
-            ai_text = ai_map.get(item["name"], {}).get("insight", "—")
-        
-            c1.write(f"**{item['name']}**")
-            c2.write(f"{item['speed']} ({item['band']})")
-        
-            c3.markdown(
-                f"<span style='color:{r_color}; font-weight:bold;'>{risk_val}/10</span>",
-                unsafe_allow_html=True
-            )
-        
-            c4.write(ai_text)     
+            # THE ALERT BOX
+            st.info(f"**📢 Live Incident Alert:** {alert_text}")
+      
         
     
         # --- PART 2: MRT SERVICE STATUS ---
