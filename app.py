@@ -511,22 +511,23 @@ with tab2:
           town = "WOODLANDS"
 
     #-----------------HDB National Resale  
-    @st.cache_data(ttl=600)
-    def connect_and_fetch_hdb():
-        """Returns (DataFrame, Success_Boolean, Status_Message)"""
-        dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
-        url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5000"
-        
-        try:
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                records = data.get('result', {}).get('records', [])
-                return pd.DataFrame(records), True, "API Connection 200: OK"
-            else:
-                return pd.DataFrame(), False, f"Server Error: {response.status_code}"
-        except Exception as e:
-            return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
+    with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
+        @st.cache_data(ttl=600)
+        def connect_and_fetch_hdb():
+            """Returns (DataFrame, Success_Boolean, Status_Message)"""
+            dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
+            url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5000"
+            
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    records = data.get('result', {}).get('records', [])
+                    return pd.DataFrame(records), True, "API Connection 200: OK"
+                else:
+                    return pd.DataFrame(), False, f"Server Error: {response.status_code}"
+            except Exception as e:
+                return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
     
        
          
