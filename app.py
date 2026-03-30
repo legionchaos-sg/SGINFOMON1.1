@@ -142,11 +142,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 #----------------For HDB API
-import streamlit as st
-import requests
-import pandas as pd
-from datetime import datetime
-
 @st.cache_data(ttl=600)
 def get_hdb_realtime_pulse():
     # RESOURCE: Jan 2017 - Mar 2026 Resale Prices
