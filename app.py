@@ -125,8 +125,8 @@ def get_latest_coe():
     ]
 
 st.cache_data(ttl=300) # Cache for 5 mins to avoid hitting rate limits
- if 'town' not in locals() and 'town' not in globals():
-     town = "WOODLANDS" # Default fallback
+if 'town' not in locals() and 'town' not in globals():
+    town = "WOODLANDS" # Default fallback
 
 def debug_hdb_api(town):
    
