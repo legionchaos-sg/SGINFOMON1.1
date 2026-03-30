@@ -8,7 +8,7 @@ from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
-
+#
 st.markdown("""
     <style>
         /* This kills the invisible top bar */
