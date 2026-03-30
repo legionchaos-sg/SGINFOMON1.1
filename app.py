@@ -580,15 +580,27 @@ with tab2:
             # Housing Calculation
             mult = 1.42 if is_mature else 0.95
             est_prices = {k: int(v * mult) for k, v in nat.items()}
-            est=est_prices
             
             # Strategic Logic
             dec = "SELL / UPGRADE" if is_mature else "STRATEGIC BUY" if is_north else "HOLD"
             reason = "Capitalize on high premium." if is_mature else "RTS Link 2026 upside; Low entry vs Nat Avg."
         
-        return nat, est_prices, dec, reason, env, sip
+            # Environment Data (Sun, 29 Mar 2026 - Evening Update)
+            env = {
+                "temp": "29.0°C", 
+                "psi": 52 if is_north else 41, 
+                "rain": "70%", 
+                "wind": "8 km/h NE", 
+                "wbgt": 31 if is_north else 29
+            }
+            
+            # Hydration Logic (Base + Heat Surcharge)
+            water = round(((weight * 35) / 1000) + (0.45 if env['wbgt'] >= 31 else 0.25), 1)
+            sip = int((water * 1000) / 14)
+            
+            return nat, est_prices, dec, reason, env, water, sip
         
-        nat, est, dec, reason, env, sip = get_gold10_master(query, u_weight)
+        nat, est, dec, reason, env, water, sip = get_gold10_master(query, u_weight)
         
         # --- 3. UI DISPLAY (gold 10 Optimized) ---
         st.markdown(f"### 📍 {query} Dashboard")
@@ -603,7 +615,16 @@ with tab2:
         
         # ROW 2: HYDRATION & HEAT
         st.write("---")
-        
+        h1, h2 = st.columns([1, 2])
+        with h1:
+            st.metric("Daily Water", f"{water}L", delta=f"+{int(env['wbgt']-27)*150}ml Heat")
+        with h2:
+            st.markdown(f"""
+                <div style="background:#1e1e1e; padding:6px; border-radius:6px; border-left:4px solid {'#dc3545' if env['wbgt']>=31 else '#ffc107'}; margin-bottom:0px;">
+                    <b style="color:white; font-size:0.9rem;">{'🟡 MOD' if env['wbgt']>=31 else '🟢 LOW'} Heat Stress</b><br>
+                    <span style="font-size:0.8rem; color:#ccc;">Target <b>{sip}ml/hour</b>. Air cooled by active 70% rain chance.</span>
+                </div>
+            """, unsafe_allow_html=True)
         
         # ROW 3: HOUSING (Profit-Driven)
         st.write("---")
