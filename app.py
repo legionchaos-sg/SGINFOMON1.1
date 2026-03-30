@@ -506,30 +506,30 @@ with tab2:
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
 
   
-    def test_hdb_api():
-        # 2026 Dataset ID for Resale Prices (Jan 2017 - Mar 2026)
-        dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
-        url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5"
+        def test_hdb_api():
+            # 2026 Dataset ID for Resale Prices (Jan 2017 - Mar 2026)
+            dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
+            url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5"
+            
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    data = response.json()
+                    records = data['result']['records']
+                    
+                    print("✅ HDB API IS WORKING")
+                    print(f"Showing last {len(records)} transactions:")
+                    
+                    # Convert to DataFrame for a clean look
+                    df = pd.DataFrame(records)
+                    print(df[['month', 'town', 'flat_type', 'resale_price']])
+                else:
+                    print(f"❌ API Error: Status Code {response.status_code}")
+            except Exception as e:
+                print(f"❌ Connection Failed: {e}")
         
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                records = data['result']['records']
-                
-                print("✅ HDB API IS WORKING")
-                print(f"Showing last {len(records)} transactions:")
-                
-                # Convert to DataFrame for a clean look
-                df = pd.DataFrame(records)
-                print(df[['month', 'town', 'flat_type', 'resale_price']])
-            else:
-                print(f"❌ API Error: Status Code {response.status_code}")
-        except Exception as e:
-            print(f"❌ Connection Failed: {e}")
-    
-    if __name__ == "__main__":
-        test_hdb_api()
+        if __name__ == "__main__":
+            test_hdb_api()
       
 
 # ==========================================
