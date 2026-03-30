@@ -583,24 +583,23 @@ with tab2:
         
         for item in display_list:
             c1, c2, c3 = st.columns([2, 2, 2])
-            c1.write(f"**{item['name']}**")
-            c2.write(f"{item['speed']} ({item['band']})")
             
-            # Visual Alerting based on Risk Score
-            if item['risk'] >= 7:
-                c3.error(f"🚨 {item['risk']}/10")
-            elif item['risk'] >= 4:
-                c3.warning(f"⚠️ {item['risk']}/10")
-            else:
-                c3.success(f"✅ {item['risk']}/10")
+            # 2. Extract the numeric risk from the CURRENT item
+            risk_val = item.get('risk', 0)
             
-                for item in display_list:
-                    r_color = "#28a745" if display_list['risk'] < 4 else "#ffc107" if display_list['risk'] < 7 else "#dc3545"
-                    c1, c2, c3 = st.columns([2, 2, 2])
-                    c1.markdown(f"**{display_list['name']}**")
-                    c2.markdown(f"{display_list['avg_speed']}<br><small>{display_list['band']}</small>", unsafe_allow_html=True)
-                    c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{dispay_list['risk']}/10</b></div>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {display_list['reason']}</i></p>", unsafe_allow_html=True)
+            # 3. FIX: Determine the color using 'risk_val' (the individual score)
+            # This replaces your line 598
+            r_color = "#28a745" if risk_val < 4 else "#ffc107" if risk_val < 7 else "#dc3545"
+            
+            # 4. Display the results
+            c1.write(f"**{item.get('name', 'N/A')}**")
+            c2.write(f"{item.get('speed', '0 km/h')} ({item.get('band', 'N/A')})")
+            
+            # 5. Apply the dynamic color to the Risk Score
+            c3.markdown(
+                f"<span style='color:{r_color}; font-weight:bold;'>{risk_val}/10</span>", 
+                unsafe_allow_html=True
+            )
     
         # --- PART 2: MRT SERVICE STATUS ---
         st.markdown("#### 🚆 Train Service Status")
