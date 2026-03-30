@@ -573,7 +573,7 @@ with tab2:
                 {"name": "PIE", "speed": "52 km/h", "band": "🟡 Moderate", "risk": 4},
                 {"name": "AYE", "speed": "80 km/h", "band": "🟢 Optimal", "risk": 1},
                 {"name": "CTE", "speed": "35 km/h", "band": "🟠 Slow", "risk": 7},
-                {"Cache Data, connecton to LTA API fail"}
+                {"Cache Data, connecton to LTA API fail" "band": "🟠 Slow", "risk": 7}
             ]
         
         # 4. RENDER THE UI
