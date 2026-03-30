@@ -569,13 +569,13 @@ with tab2:
             
     #---------Traffic indicents reported
     incidents = get_fast_incidents()
-                    
+
     if incidents:
         for row in incidents:
             # OneMotoring usually format: [Description, Date/Time]
             desc = row[0]
             timestamp = row[1]
-                            
+            
             # Color code based on keyword
             if "Accident" in desc:
                 st.error(f"🛑 **{timestamp}**: {desc}")
@@ -583,9 +583,11 @@ with tab2:
                 st.warning(f"⚠️ **{timestamp}**: {desc}")
             else:
                 st.info(f"🚧 **{timestamp}**: {desc}")
-         else:
-            st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
-                    
+    else:
+        # This 'else' must align perfectly with the 'if incidents:'
+        st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
+    
+    # This caption shows regardless of whether there are incidents or not
     st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
 
     # --- 5. LIVE hdb rESALE ---
