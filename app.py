@@ -135,7 +135,7 @@ def connect_and_fetch_hdb():
             return pd.DataFrame(records), True, "API Connection 200: OK"
         return pd.DataFrame(), False, f"Server Error: {response.status_code}"
     except Exception as e:
-        return pd.DataFrame(), False, f"Connection Failed: {str(e)}
+        return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
 
 
 
