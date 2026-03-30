@@ -131,23 +131,23 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-def get_recent_incidents():
-    model = genai.GenerativeModel('gemini-1.5-flash')
+def get_fast_incidents():
+    # URL for LTA's live traffic news (publicly accessible)
+    url = "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/traffic_information/traffic_updates_and_road_closures.html"
     
-    # Current time for context: Monday, March 30, 2026, 11:30 AM
-    prompt = """
-    Search for Singapore traffic incidents (accidents, breakdowns, roadworks) from the last 60 minutes.
-    Focus ONLY on: CTE, PIE, KJE, MCE, ECP.
-    Format the output as a Python list of dictionaries: 
-    [{'road': 'CTE', 'type': 'Accident', 'desc': 'Accident after Ang Mo Kio Ave 1', 'time': '11:15'}, ...]
-    If no incidents, return an empty list []. Return ONLY the list.
-    """
     try:
-        response = model.generate_content(prompt)
-        # Convert the AI text into a real Python list
-        data = eval(response.text.replace("```python", "").replace("```", "").strip())
-        return data
-    except:
+        # 1. Directly read tables from the webpage (No API key needed)
+        tables = pd.read_html(url)
+        # Usually, the first table contains the recent incidents
+        df = tables[0] 
+        
+        # 2. Filter for your specific expressways
+        target_roads = ['CTE', 'PIE', 'KJE', 'MCE', 'ECP']
+        # We look for rows containing our target road names
+        df_filtered = df[df[0].str.contains('|'.join(target_roads), na=False, case=False)]
+        
+        return df_filtered.values.tolist()
+    except Exception as e:
         return []
 
 
@@ -560,28 +560,26 @@ with tab2:
 
         #---------Traffic indicents reported
 
-        st.write("---")
-        st.markdown("#### 🚨 Recent Expressway Incidents (Last 60 Mins)")
+        # No spinner needed as this takes < 1 second
+        incidents = get_fast_incidents()
         
-        # 1. Fetch data
-        with st.spinner("Scanning LTA Incident Feeds..."):
-            incidents = get_recent_incidents()
-        
-        # 2. Display logic
         if incidents:
-            for inc in incidents:
-                # Create a colored alert based on incident type
-                icon = "⚠️" if inc['type'] == 'Breakdown' else "🚫" if inc['type'] == 'Accident' else "🚧"
+            for row in incidents:
+                # OneMotoring usually format: [Description, Date/Time]
+                desc = row[0]
+                timestamp = row[1]
                 
-                # UI Card
-                with st.container():
-                    col_a, col_b = st.columns([1, 4])
-                    col_a.metric(inc['road'], inc['time'])
-                    col_b.warning(f"{icon} **{inc['type']}**: {inc['desc']}")
+                # Color code based on keyword
+                if "Accident" in desc:
+                    st.error(f"🛑 **{timestamp}**: {desc}")
+                elif "Breakdown" in desc:
+                    st.warning(f"⚠️ **{timestamp}**: {desc}")
+                else:
+                    st.info(f"🚧 **{timestamp}**: {desc}")
         else:
-            st.success("✅ No major incidents reported on CTE, PIE, KJE, MCE, or ECP in the last hour.")
+            st.success("✅ No major incidents on CTE, PIE, KJE, MCE, or ECP currently.")
         
-        st.caption("Data source: LTA OneMotoring Real-Time Feed")
+        st.caption(f"Last Synced: {datetime.now().strftime('%H:%M:%S')}")
 
     # --- 5. LIVE hdb rESALE ---
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
