@@ -561,18 +561,18 @@ with tab2:
             if alert_text and "No major" not in alert_text:
                 st.write("") # Spacer
                 # If 'accident' or 'closed' is in the text, we use a warning box
-                    if any(word in alert_text.lower() for word in ["accident", "closed", "heavy", "works"]):
+                if any(word in alert_text.lower() for word in ["accident", "closed", "heavy", "works"]):
                     st.error(f"🚨 **Traffic Alert:** {alert_text}")
                 else:
                     st.info(f"ℹ️ **Note:** {alert_text}")
 
-    else:
-        # Fallback if AI fails to return the list format
-        st.warning("⚠️ High traffic on AI servers. Displaying cached 2026 baseline.")
-        st.caption("PIE: 55km/h | CTE: 40km/h | AYE: 45km/h")
+            else:
+            # Fallback if AI fails to return the list format
+            st.warning("⚠️ High traffic on AI servers. Displaying cached 2026 baseline.")
+            st.caption("PIE: 55km/h | CTE: 40km/h | AYE: 45km/h")
                 
-                    # THE ALERT BOX
-                    st.info(f"**📢 Live Incident Alert:** {alert_text}")
+            # THE ALERT BOX
+                st.info(f"**📢 Live Incident Alert:** {alert_text}")
       
         
     
