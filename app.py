@@ -126,7 +126,7 @@ def get_latest_coe():
 
 def debug_hdb_api():
     # Attempting to fetch Woodlands data specifically
-    dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
+    dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q=Woodlands&limit=1"
     
     print(f"📡 Testing Connection to: {url}")
