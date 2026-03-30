@@ -561,16 +561,16 @@ with tab2:
     with st.expander("🏘️ Resale Housing Ntl Avg", expanded=True):
 
         # --- 1. DYNAMIC INPUTS ---
-        col_in1, col_in2 = st.columns(2)
+        col_in1 = st.columns(1)
         with col_in1:
             query = st.text_input("🔍 Search Estate:", value="Woodlands").strip().title()
-        with col_in2:
-            u_weight = st.number_input("⚖️ Weight (kg):", value=70)
+        #with col_in2:
         
         # --- 2. THE 2026 UNIFIED ENGINE ---
         def get_gold10_master(estate, weight):
             # National Average (S'pore Avg) Mar 29, 2026
             nat = {"3R": 469370, "4R": 672110, "5R": 781812}
+            return nat
             
             # Estate Classification
             mature = ["Queenstown", "Ang Mo Kio", "Bukit Merah", "Bishan", "Clementi", "Toa Payoh"]
