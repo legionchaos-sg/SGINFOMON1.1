@@ -595,12 +595,12 @@ with tab2:
                 c3.success(f"✅ {item['risk']}/10")
             
                 for item in display_list:
-                    r_color = "#28a745" if display_list['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
+                    r_color = "#28a745" if display_list['risk'] < 4 else "#ffc107" if display_list['risk'] < 7 else "#dc3545"
                     c1, c2, c3 = st.columns([2, 2, 2])
                     c1.markdown(f"**{display_list['name']}**")
-                    c2.markdown(f"{display_list['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
-                    c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
+                    c2.markdown(f"{display_list['avg_speed']}<br><small>{display_list['band']}</small>", unsafe_allow_html=True)
+                    c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{dispay_list['risk']}/10</b></div>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {display_list['reason']}</i></p>", unsafe_allow_html=True)
     
         # --- PART 2: MRT SERVICE STATUS ---
         st.markdown("#### 🚆 Train Service Status")
