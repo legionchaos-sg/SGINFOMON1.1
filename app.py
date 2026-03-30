@@ -310,17 +310,17 @@ with tab1:
 # TAB 2: PUBLIC SERVICES
 # ==========================================
 with tab2:
-#2. UI SECTION
-st.title("⚡ Fast HDB Resale Test")
-town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
-
-if town:
-    with st.spinner(f"Fetching {town} data..."):
-        df = fetch_hdb_data(town)
+    #2. UI SECTION
+    st.title("⚡ Fast HDB Resale Test")
+    town = st.text_input("Enter Town (e.g. Woodlands):", value="Woodlands").upper()
     
-    if not df.empty:
-        st.success(f"Loaded {len(df)} recent trades in {town}")
-        st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
+    if town:
+        with st.spinner(f"Fetching {town} data..."):
+            df = fetch_hdb_data(town)
+        
+        if not df.empty:
+            st.success(f"Loaded {len(df)} recent trades in {town}")
+            st.dataframe(df[['month', 'flat_type', 'resale_price']].head(10))
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS
