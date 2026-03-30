@@ -550,7 +550,7 @@ with tab2:
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
         @st.cache_data(ttl=1800) 
             
-            pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
+        pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
             
             # --- PART 1: MRT SERVICE STATUS ---
             st.markdown("#### 🚆 Train Service Status")
