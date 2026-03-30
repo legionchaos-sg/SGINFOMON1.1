@@ -498,7 +498,24 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        st.write("CODE TO COME IN .")
+        st.write("test hdb api .")
+
+        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000"
+
+        try:
+            res = requests.get(url, timeout=10)
+            
+            print("Status Code:", res.status_code)
+            
+            if res.status_code == 200:
+                data = res.json()
+                print("Success:", data.get("success"))
+                print("Records:", len(data.get("result", {}).get("records", [])))
+            else:
+                print("Response:", res.text)
+        
+        except Exception as e:
+            print("Error:", e)
         
 
     #-----------------HDB National Resale 
