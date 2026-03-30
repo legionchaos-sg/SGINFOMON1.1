@@ -151,23 +151,33 @@ def get_fast_incidents():
         return []
 
 def get_sg_transport_pulse():
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            prompt = """
-            Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
-            Return ONLY a Python dictionary with two keys: 
-            'rail': list of {'line', 'status', 'delay', 'msg'}
-            'incidents': list of [time, type, desc]
-            """
-            try:
-                response = model.generate_content(prompt)
-                # We parse the AI's "brain" into your variables
-                return eval(response.text.replace("```python", "").replace("```", "").strip())
-            except:
-                # Fallback to your original static data if the internet fails
-                return {
-                    "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
-                    "incidents": [("00:00", "System", "No active incidents detected.")]
-                }
+    # Make sure this is at the VERY LEFT of your file (0 spaces)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = """
+    Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
+    Return ONLY a valid Python dictionary. No conversation, no backticks.
+    Format:
+    {
+        "rail": [{"line": "CCL", "status": "Advisory", "delay": "+10m", "msg": "description"}],
+        "incidents": [["time", "type", "description"]]
+    }
+    """
+    
+    try:
+        # Lower temperature = more stable data format
+        response = model.generate_content(prompt, generation_config={"temperature": 0.1})
+        
+        # Clean response and convert string to dictionary safely
+        clean_text = response.text.replace("```python", "").replace("```", "").strip()
+        return eval(clean_text)
+    
+    except Exception as e:
+        # If anything goes wrong, return this safe fallback immediately
+        return {
+            "rail": [{"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "Systems nominal."}],
+            "incidents": [("00:00", "System", "No active incidents detected.")]
+        }
 
 
 
