@@ -536,25 +536,26 @@ with tab2:
         # Render the Table
         if display_list:
         # (Use your existing column loop here)
+        # 2. The Standardized Loop (Ensure this is indented once under 'if display_list')
             for item in display_list:
                 c1, c2, c3 = st.columns([2, 2, 2])
-                    # ... [Your Table Code] ...
-                    # Extract values with fallbacks to prevent crashes
-                    name = item.get('name', 'N/A')
-                    speed = item.get('speed', '---')
-                    band = item.get('band', '⚪')
-                    risk_val = item.get('risk', 5)
-                    
-                    # Hex Color Logic: Green (<4), Amber (<7), Red (>=7)
-                    r_color = "#28a745" if risk_val < 4 else "#ffc107" if risk_val < 7 else "#dc3545"
-                    
-                    # Render Row
-                    c1.write(f"**{name}**")
-                    c2.write(f"{speed} {band}")
-                    c3.markdown(
-                        f"<span style='color:{r_color}; font-weight:bold;'>{risk_val}/10</span>", 
-                        unsafe_allow_html=True
-                    )
+        
+                # FIX: These lines must all be aligned together (4 spaces from 'for')
+                name = item.get('name', 'N/A')
+                speed = item.get('speed', '---')
+                band = item.get('band', '⚪')
+                risk_val = item.get('risk', 5)
+        
+                # Color Logic (Still 4 spaces from 'for')
+                r_color = "#28a745" if risk_val < 4 else "#ffc107" if risk_val < 7 else "#dc3545"
+        
+                # Render Row
+                c1.write(f"**{name}**")
+                c2.write(f"{speed} {band}")
+                c3.markdown(
+                    f"<span style='color:{r_color}; font-weight:bold;'>{risk_val}/10</span>", 
+                    unsafe_allow_html=True
+                )
 
             # 3. THE SMART ALERT BOX (Conditional Formatting)
             if alert_text and "No major" not in alert_text:
