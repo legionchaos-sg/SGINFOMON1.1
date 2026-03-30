@@ -527,22 +527,22 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
 
-    # this is for express way
-    st.write("---")
-        with st.spinner("🕵️ gold 10 is scanning LTA feeds and news..."):
-            result = get_ai_traffic_data()
-            display_list = result.get('table', [])
-            alert_text = result.get('alert', "")
-        
-        # Render the Table
-        if display_list:
-            # (Use your existing column loop here)
-            for item in display_list:
-                c1, c2, c3 = st.columns([2, 2, 2])
-                # ... [Your Table Code] ...
-        
-            # THE ALERT BOX
-            st.info(f"**📢 Live Incident Alert:** {alert_text}")
+        # this is for express way
+        st.write("---")
+            with st.spinner("🕵️ gold 10 is scanning LTA feeds and news..."):
+                result = get_ai_traffic_data()
+                display_list = result.get('table', [])
+                alert_text = result.get('alert', "")
+            
+            # Render the Table
+            if display_list:
+                # (Use your existing column loop here)
+                for item in display_list:
+                    c1, c2, c3 = st.columns([2, 2, 2])
+                    # ... [Your Table Code] ...
+            
+                # THE ALERT BOX
+                st.info(f"**📢 Live Incident Alert:** {alert_text}")
       
         
     
