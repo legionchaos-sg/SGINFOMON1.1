@@ -640,12 +640,21 @@ with tab2:
         st.markdown(f"### 📍 {query} Dashboard")
         
         # ROW 1: WEATHER (Untouched Logic, Compact Layout)
-        w1, w2, w3, w4, w5 = st.columns(5)
-        w1.metric("Temp", env['temp'])
-        w2.metric("PSI", env['psi'])
-        w3.metric("Rain", env['rain'])
-        w4.metric("Wind", env['wind'])
-        w5.metric("WBGT", f"{env['wbgt']}°C")
+        #w1, w2, w3, w4, w5 = st.columns(5)
+        #w1.metric("Temp", env['temp'])
+        #w2.metric("PSI", env['psi'])
+        #w3.metric("Rain", env['rain'])
+        #w4.metric("Wind", env['wind'])
+        #w5.metric("WBGT", f"{env['wbgt']}°C")
+
+        #Row 1: New Weather reading
+        data = get_now_weather()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Temp", data["temp"])
+        col2.metric("PSI", data["psi"])
+        col3.metric("Rain", data["rain"])
+        col4.metric("WBGT", data["wbgt"])
         
         # ROW 2: HYDRATION & HEAT
         st.write("---")
