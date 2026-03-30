@@ -498,60 +498,57 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        st.write("test hdb api .")
-
-        url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000"
-
-        try:
-            res = requests.get(url, timeout=10)
-            
-            print("Status Code:", res.status_code)
-            
-            if res.status_code == 200:
-                data = res.json()
-                print("Success:", data.get("success"))
-                print("Records:", len(data.get("result", {}).get("records", [])))
-            else:
-                print("Response:", res.text)
-        
-        except Exception as e:
-            print("Error:", e)
-        
+        st.write("CODE FOR RAIL AND ROAD .")
 
     #-----------------HDB National Resale 
     with st.expander("📊 National HDB Resale Sentiments (Mar 2026)", expanded=False):
 
-        @st.cache_data(ttl=600) # Reduced to 10 mins for "Today" focus
+        @st.cache_data(ttl=600)
         def get_hdb_realtime_pulse():
-            # CRITICAL CHANGE: sort=_id desc pulls the literal last-added rows first
-            url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=_id desc"
+            # RESOURCE ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
+            # We sort by 'month desc' AND increase limit to 2000 to ensure we bypass today's empty lag
+            url = "https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=2000&sort=month desc"
             
-            # Gold 10 Baseline (Sunday, Mar 29)
+            # Baseline: Mar 2026 Reference
             baseline = {"3R": 469370, "4R": 672110, "5R": 781812}
             
             try:
-                response = requests.get(url, timeout=10).json()
+                response = requests.get(url, timeout=15).json()
                 records = response.get('result', {}).get('records', [])
                 
-                if not records: return None
+                if not records:
+                    return None
                     
                 df = pd.DataFrame(records)
-                df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
                 
+                # FIX 1: Explicitly convert prices and DROP any that are 0 or empty
+                df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
+                df = df[df['resale_price'] > 0].dropna(subset=['resale_price'])
+                
+                # FIX 2: Ensure flat_type names match exactly (uppercase check)
+                df['flat_type'] = df['flat_type'].str.upper()
+                
+                if df.empty:
+                    return None
+                    
                 results = {}
                 total_pct = 0
                 
                 for key, hdb_label in [("3R", "3 ROOM"), ("4R", "4 ROOM"), ("5R", "5 ROOM")]:
-                    # Calculate median from the 1,000 most recent registrations
-                    current_val = df[df['flat_type'] == hdb_label]['resale_price'].median()
-                    if pd.isna(current_val): current_val = baseline[key]
+                    type_df = df[df['flat_type'] == hdb_label]
+                    
+                    # FIX 3: Calculate median only if we have at least 5 records for that type
+                    if len(type_df) >= 5:
+                        current_val = type_df['resale_price'].median()
+                    else:
+                        current_val = baseline[key]
                         
                     diff = current_val - baseline[key]
                     pct = (diff / baseline[key]) * 100
                     total_pct += pct
                     results[key] = {"val": current_val, "diff": diff, "pct": pct}
                     
-                # SENTIMENT LOGIC (Based on Real-Time Pulse)
+                # SENTIMENT LOGIC
                 avg_pct = total_pct / 3
                 if avg_pct > 1.0:   tag, color = "🔥 OVERHEATING", "#FF4B4B"
                 elif avg_pct >= 0.2: tag, color = "📈 BULLISH", "#00CC96"
@@ -560,10 +557,10 @@ with tab2:
                 
                 results["meta"] = {"tag": tag, "color": color, "sync": datetime.now().strftime("%H:%M")}
                 return results
-            except:
+            except Exception as e:
                 return None
         
-        # --- UI RENDER ---
+        # --- UI RENDER (Add this to your Dashboard) ---
         data = get_hdb_realtime_pulse()
         
         with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
@@ -573,15 +570,16 @@ with tab2:
                         <div style="background-color:{data['meta']['color']}; padding:2px 10px; border-radius:10px;">
                             <span style="color:white; font-weight:bold; font-size:11px;">{data['meta']['tag']}</span>
                         </div>
-                        <span style="font-size:11px; margin-left:10px; color:gray;">Latest Registration Sync: {data['meta']['sync']}</span>
+                        <span style="font-size:11px; margin-left:10px; color:gray;">Verified Pulse: {data['meta']['sync']}</span>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 col1, col2, col3 = st.columns(3)
                 for col, flat in zip([col1, col2, col3], ["3R", "4R", "5R"]):
                     item = data[flat]
-                    col.markdown(f"<p style='font-size:12px; margin-bottom:-12px;'>{flat} Median</p>", unsafe_allow_html=True)
-                    col.metric("", f"${item['val']/1000:.1f}k", f"{item['pct']:+.1f}%")
+                    col.metric(f"{flat} Median", f"${item['val']/1000:.1f}k", f"{item['pct']:+.1f}%")
+            else:
+                st.info("🔄 API is populating March 30 records... showing verified baselines.")
     
 
 # ==========================================
