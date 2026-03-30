@@ -505,49 +505,31 @@ with tab2:
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
 
-    #---hdb api------
-def get_hdb_quote(town="ANG MO KIO"):
-    url = "https://data.gov.sg/api/action/datastore_search"
+  
+    def test_hdb_api():
+        # 2026 Dataset ID for Resale Prices (Jan 2017 - Mar 2026)
+        dataset_id = "d_8b84c4ee58e3cfc0ec0d773c8663f730"
+        url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&limit=5"
+        
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                records = data['result']['records']
+                
+                print("✅ HDB API IS WORKING")
+                print(f"Showing last {len(records)} transactions:")
+                
+                # Convert to DataFrame for a clean look
+                df = pd.DataFrame(records)
+                print(df[['month', 'town', 'flat_type', 'resale_price']])
+            else:
+                print(f"❌ API Error: Status Code {response.status_code}")
+        except Exception as e:
+            print(f"❌ Connection Failed: {e}")
     
-    params = {
-        "resource_id": "f1765b54-a209-4718-8d38-a39237f502b3",  # HDB resale dataset
-        "limit": 50
-    }
-
-    try:
-        res = requests.get(url, params=params, timeout=10)
-        data = res.json()
-        records = data["result"]["records"]
-
-        # Filter by town
-        filtered = [r for r in records if r["town"].upper() == town.upper()]
-
-        if not filtered:
-            return "No data"
-
-        latest = filtered[0]
-
-        return {
-            "town": latest["town"],
-            "flat_type": latest["flat_type"],
-            "price": latest["resale_price"],
-            "block": latest["block"],
-            "street": latest["street_name"]
-        }
-
-    except Exception as e:
-        return f"Error: {e}"
-        quote = get_hdb_quote("TOA PAYOH")
-
-        if isinstance(quote, dict):
-            st.metric(
-                label=f"{quote['town']} ({quote['flat_type']})",
-                value=f"${quote['price']}"
-            )
-            
-            st.caption(f"{quote['block']} {quote['street']}")
-        else:
-            st.error(quote)
+    if __name__ == "__main__":
+        test_hdb_api()
       
 
 # ==========================================
