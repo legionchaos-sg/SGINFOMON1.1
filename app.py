@@ -14,7 +14,10 @@ import yfinance as yf
 #GEMINI AI MODEL
 # ✅ CONFIGURE ONCE (top of file)
 genai.configure(api_key=st.secrets.get("GEMINI_API_KEY", ""))
-model = genai.GenerativeModel("gemini-pro")
+model = genai.GenerativeModel("gemini-3-flash")
+
+# 1. Create a placeholder at the start (This stays white/active)
+pulse_placeholder = st.empty()
 
 st.markdown("""
     <style>
