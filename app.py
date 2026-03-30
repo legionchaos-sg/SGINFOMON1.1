@@ -572,8 +572,8 @@ with tab2:
             display_list = [
                 {"name": "PIE", "speed": "52 km/h", "band": "🟡 Moderate", "risk": 4},
                 {"name": "AYE", "speed": "80 km/h", "band": "🟢 Optimal", "risk": 1},
-                {"name": "CTE", "speed": "35 km/h", "band": "🟠 Slow", "risk": 7}
-                {"Cache Data, connecton to LTA API fail}
+                {"name": "CTE", "speed": "35 km/h", "band": "🟠 Slow", "risk": 7},
+                {"Cache Data, connecton to LTA API fail"}
             ]
         
         # 4. RENDER THE UI
