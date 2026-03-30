@@ -511,11 +511,9 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
 
-    import streamlit as st
-
-    st.markdown("### 🗺️ Live Traffic Overview")
-    # This is a standard Google Maps embed set to Singapore with the traffic layer
-    st.components.v1.iframe("https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d127641.16874415842!2d103.819836!3d1.352083!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2ssg!4v1620000000000!5m2!1sen!2ssg&layer=t", height=450)
+        st.markdown("### 🗺️ Live Traffic Overview")
+        # This is a standard Google Maps embed set to Singapore with the traffic layer
+        st.components.v1.iframe("https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d127641.16874415842!2d103.819836!3d1.352083!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2ssg!4v1620000000000!5m2!1sen!2ssg&layer=t", height=450)
       
         
     
