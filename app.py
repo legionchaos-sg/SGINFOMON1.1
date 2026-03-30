@@ -551,7 +551,7 @@ with tab2:
     
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
     
-    pulse_data = get_hdb_realtime_pulse()
+        pulse_data = get_hdb_realtime_pulse()
     
         if pulse_data:
             # The Sentiment Badge
