@@ -128,6 +128,10 @@ def get_latest_coe():
 def connect_and_fetch_hdb():
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search?resource_id="+ dataset_id
+
+    # Capture the exact time of the attempt
+    pull_time = datetime.now().strftime("%H:%M:%S")
+    
     try:
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
