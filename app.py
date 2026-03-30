@@ -521,7 +521,7 @@ with tab2:
             town = "WOODLANDS" # Default fallback for the API call
             
         # 3. FETCH DATA 
-        # (Note: st.cache_data should be on the function definition, not here)
+        current_town = town if 'town' in locals() else "WOODLANDS"
         df_debug = debug_hdb_api(town)
         
         # 4. 2026 CALCULATION LOGIC
