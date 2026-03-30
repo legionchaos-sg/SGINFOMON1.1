@@ -520,33 +520,31 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
       st.caption("🔍 *pending code")
-      if 'town' not in locals() or not town:
-          town = "WOODLANDS"
 
     #-----------------HDB National Resale
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=True):
     
-    # THIS IS THE PART THAT WAS MISSING: You must call the function!
-    df_ntl, is_connected, status_msg = connect_and_fetch_hdb()
-
-    if is_connected:
-        st.success(status_msg)
-        
-        # Now proceed with your 2026 calculations
-        df_ntl['resale_price'] = pd.to_numeric(df_ntl['resale_price'], errors='coerce')
-        df_2026 = df_ntl[df_ntl['month'].str.contains('2026', na=False)]
-        
-        if not df_2026.empty:
-            avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
-            st.markdown("### 🏆 NTL AVERAGE SALE PRICE (2026)")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("3-ROOM", f"${avg_stats.get('3 ROOM', 0):,.0f}")
-            c2.metric("4-ROOM", f"${avg_stats.get('4 ROOM', 0):,.0f}")
-            c3.metric("5-ROOM", f"${avg_stats.get('5 ROOM', 0):,.0f}")
+        # THIS IS THE PART THAT WAS MISSING: You must call the function!
+        df_ntl, is_connected, status_msg = connect_and_fetch_hdb()
+    
+        if is_connected:
+            st.success(status_msg)
+            
+            # Now proceed with your 2026 calculations
+            df_ntl['resale_price'] = pd.to_numeric(df_ntl['resale_price'], errors='coerce')
+            df_2026 = df_ntl[df_ntl['month'].str.contains('2026', na=False)]
+            
+            if not df_2026.empty:
+                avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
+                st.markdown("### 🏆 NTL AVERAGE SALE PRICE (2026)")
+                c1, c2, c3 = st.columns(3)
+                c1.metric("3-ROOM", f"${avg_stats.get('3 ROOM', 0):,.0f}")
+                c2.metric("4-ROOM", f"${avg_stats.get('4 ROOM', 0):,.0f}")
+                c3.metric("5-ROOM", f"${avg_stats.get('5 ROOM', 0):,.0f}")
+            else:
+                st.info("📅 Connection OK, but no 2026 records found yet. Government data usually lags by 4-6 weeks.")
         else:
-            st.info("📅 Connection OK, but no 2026 records found yet. Government data usually lags by 4-6 weeks.")
-    else:
-        st.error(status_msg)
+            st.error(status_msg)
     
        
          
