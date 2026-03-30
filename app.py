@@ -124,16 +124,6 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-Gemini said
-This error confirms you’ve hit the Rate Limit for the public data.gov.sg API. Because you are testing the gold 10 dashboard with frequent refreshes (which happens every time you change a widget in Streamlit), the API has temporarily blocked your IP address.
-
-🛠️ How to Fix This Immediately
-To get your dashboard running for the Monday night (Mar 30) market prep, you have two options:
-
-1. The "Quick Hack" (Wait & Cache)
-The error message says "Please try again in 10 seconds." However, Streamlit will just hit it again and block you again. You must wrap your fetch function in @st.cache_data so it doesn't call the API every time you move your mouse.
-
-Python
 @st.cache_data(ttl=600)
 def debug_hdb_api():
     # Attempting to fetch Woodlands data specifically
