@@ -580,12 +580,13 @@ with tab2:
             # Housing Calculation
             mult = 1.42 if is_mature else 0.95
             est_prices = {k: int(v * mult) for k, v in nat.items()}
+            est=est_prices
             
             # Strategic Logic
             dec = "SELL / UPGRADE" if is_mature else "STRATEGIC BUY" if is_north else "HOLD"
             reason = "Capitalize on high premium." if is_mature else "RTS Link 2026 upside; Low entry vs Nat Avg."
         
-           return nat, est_prices, dec, reason, env, water, sip
+        return nat, est_prices, dec, reason, env, sip
         
         nat, est, dec, reason, env, sip = get_gold10_master(query, u_weight)
         
