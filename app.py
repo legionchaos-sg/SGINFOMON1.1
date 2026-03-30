@@ -546,7 +546,7 @@ with tab2:
     
         # 2. YOUR DEBUG FUNCTION CALL
         # Ensure 'town' is defined from your main search input
-        town = 'bishan'
+        town = "bishan"
         df_debug = debug_hdb_api(town) 
         
         if not df_debug.empty:
