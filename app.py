@@ -10,6 +10,11 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
+if 'cache_cleared' not in st.session_state:
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.session_state['cache_cleared'] = True
+
 st.markdown("""
     <style>
         /* This kills the invisible top bar */
@@ -125,6 +130,40 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+def get_now_weather():
+    # NEA API Endpoints
+    urls = {
+        "temp": "https://api.data.gov.sg/v1/environment/air-temperature",
+        "psi": "https://api.data.gov.sg/v1/environment/psi",
+        "rain": "https://api.data.gov.sg/v1/environment/rainfall",
+        "wbgt": "https://api-open.data.gov.sg/v2/real-time/api/wbgt"
+    }
+    
+    results = {}
+    try:
+        # 1. Get Temperature (Station S109 is typically central/Ang Mo Kio)
+        t_data = requests.get(urls["temp"]).json()
+        results["temp"] = f"{t_data['items'][0]['readings'][0]['value']}°C"
+        
+        # 2. Get PSI (National 24h average)
+        p_data = requests.get(urls["psi"]).json()
+        results["psi"] = p_data['items'][0]['readings']['psi_twenty_four_hour']['national']
+        
+        # 3. Get Rain (Check if any station reports > 0)
+        r_data = requests.get(urls["rain"]).json()
+        any_rain = any(r['value'] > 0 for r in r_data['items'][0]['readings'])
+        results["rain"] = "Likely" if any_rain else "None"
+        
+        # 4. Get WBGT (Heat Stress)
+        w_data = requests.get(urls["wbgt"]).json()
+        results["wbgt"] = w_data['data']['items'][0]['readings'][0]['value']
+        
+    except:
+        # Fallback if the government API is down
+        return {"temp": "N.A", "psi": "N.A", "rain": "N.A", "wbgt": "N.A"}
+        
+    return results
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
@@ -214,7 +253,6 @@ with tab1:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     # 3. Markets & Commodities
-    #st.divider()
     m_live = fetch_live_market_data()
     sg_econ = fetch_sg_economy()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
@@ -340,7 +378,6 @@ with tab5:
 
 # --- THE REST OF YOUR ENGINE FOLLOWS BELOW ---
 # for route in user_top_routes:
-#    ...
 
     # 3. (Optional) Display for the user to confirm
     st.caption(f"Analysis Period: {d_dep.strftime('%B, %Y')}")
@@ -457,14 +494,11 @@ with tab2:
                 status_color = "#dc3545" if "Active" in m or "Maint" in m or "Works" in m else "#28a745"
                 st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">[{t}]</small><br>{m}</div>""", unsafe_allow_html=True)
     
-        #st.divider()
-        #st.caption("📅 **Notice:** Nationwide NetLink Trust System Upgrade scheduled for **Apr 23–30, 2026**. Activation blackout applies.")
-    
         # Footer Announcement for gold 10 clarity
         st.info("📅 **Upcoming:** Nationwide NetLink Trust System Upgrade scheduled for April 23–30, 2026. No new activations during this window.")
 
         # --- SECTION: GLOBAL LINK MONITOR (NEW) ---
-        st.write("---") # Visual separator inside expander
+        #st.write("---") # Visual separator inside expander
         st.write("**🌍 Global Route Health & Path Status**")
         
         # Link mapping for March 29, 2026 findings
@@ -586,13 +620,13 @@ with tab2:
             reason = "Capitalize on high premium." if is_mature else "RTS Link 2026 upside; Low entry vs Nat Avg."
         
             # Environment Data (Sun, 29 Mar 2026 - Evening Update)
-            env = {
-                "temp": "29.0°C", 
-                "psi": 52 if is_north else 41, 
-                "rain": "70%", 
-                "wind": "8 km/h NE", 
-                "wbgt": 31 if is_north else 29
-            }
+            #env = {
+                #"temp": "29.0°C", 
+                #"psi": 52 if is_north else 41, 
+                #"rain": "70%", 
+                #"wind": "8 km/h NE", 
+                #"wbgt": 31 if is_north else 29
+            #}
             
             # Hydration Logic (Base + Heat Surcharge)
             water = round(((weight * 35) / 1000) + (0.45 if env['wbgt'] >= 31 else 0.25), 1)
