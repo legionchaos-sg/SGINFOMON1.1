@@ -528,38 +528,49 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
 
-        # --- PART 1: MRT SERVICE STATUS ---
-        st.markdown("#### 🚆 Train Service Status")
-        rail_data = [
-            {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar)."},
-            {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19."},
-            {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "R151 7th-gen trains in operation."}
-        ]
+       # 1. THE ENGINE: Gemini grabs the 'Pulse' once every 30 mins
+@st.cache_data(ttl=1800) 
+def get_sg_transport_pulse():
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    prompt = """
+    Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
+    Return ONLY a Python dictionary with two keys: 
+    'rail': list of {'line', 'status', 'delay', 'msg'}
+    'incidents': list of [time, type, desc]
+    """
+    try:
+        response = model.generate_content(prompt)
+        # We parse the AI's "brain" into your variables
+        return eval(response.text.replace("```python", "").replace("```", "").strip())
+    except:
+        # Fallback to your original static data if the internet fails
+        return {
+            "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
+            "incidents": [("00:00", "System", "No active incidents detected.")]
+        }
+
+# 2. THE UI: Use the data fetched above
+with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
     
-        for r in rail_data:
-            r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
-            c1, c2, c3 = st.columns([2, 1, 1])
-            c1.markdown(f"**{r['line']}**")
-            c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
-            c3.write(f"`{r['delay']}`")
-            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+    pulse_data = get_sg_transport_pulse() # 👈 This is the 'Dynamic' part
     
-        # --- PART 3: FIFO INCIDENT LOG (COMBINED) ---
-        #st.divider()
-        st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
-        incidents = [
-            ("17:05", "Event", "MetaSprint Triathlon: Full closure East Coast Park Svc Rd."),
-            ("16:30", "Event", "Chingay @ Punggol: Punggol Field Walk closed (LP 13-24)."),
-            ("00:33", "Road", "PIE (Tuas) at Clementi Rd Exit: EXIT CLOSED (Road Works)."),
-            ("00:08", "Road", "CTE Tunnel (AYE) at Havelock: EXIT CLOSED (Road Works).")
-        ]
-        for t, cat, msg in incidents:
-            st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
-    
-        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")
+    # --- PART 1: MRT SERVICE STATUS ---
+    st.markdown("#### 🚆 Train Service Status")
+    for r in pulse_data['rail']:
+        r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
+        c1, c2, c3 = st.columns([2, 1, 1])
+        c1.markdown(f"**{r['line']}**")
+        c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
+        c3.write(f"`{r['delay']}`")
+        st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
+
+    # --- PART 2: FIFO INCIDENT LOG ---
+    st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
+    for time, category, desc in pulse_data['incidents']:
+        st.write(f"**{time}** | `{category}` | {desc}")
 
         #---------Traffic indicents reported
-
+        st.markdown("#### ⚠️ Recent Train or Traffic Incidents (FIFO)")
         # No spinner needed as this takes < 1 second
         incidents = get_fast_incidents()
         
