@@ -528,26 +528,27 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
 
-       # 1. THE ENGINE: Gemini grabs the 'Pulse' once every 30 mins
-@st.cache_data(ttl=1800) 
-def get_sg_transport_pulse():
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    prompt = """
-    Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
-    Return ONLY a Python dictionary with two keys: 
-    'rail': list of {'line', 'status', 'delay', 'msg'}
-    'incidents': list of [time, type, desc]
-    """
-    try:
-        response = model.generate_content(prompt)
-        # We parse the AI's "brain" into your variables
-        return eval(response.text.replace("```python", "").replace("```", "").strip())
-    except:
-        # Fallback to your original static data if the internet fails
-        return {
-            "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
-            "incidents": [("00:00", "System", "No active incidents detected.")]
-        }
+    # 1. THE ENGINE: Gemini grabs the 'Pulse' once every 30 mins FOR TRAIN
+       
+    @st.cache_data(ttl=1800) 
+    def get_sg_transport_pulse():
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = """
+        Search for current Singapore MRT disruptions and major road incidents (PIE, CTE, AYE) from the last 2 hours.
+        Return ONLY a Python dictionary with two keys: 
+        'rail': list of {'line', 'status', 'delay', 'msg'}
+        'incidents': list of [time, type, desc]
+        """
+        try:
+            response = model.generate_content(prompt)
+            # We parse the AI's "brain" into your variables
+            return eval(response.text.replace("```python", "").replace("```", "").strip())
+        except:
+            # Fallback to your original static data if the internet fails
+            return {
+                "rail": [{"line": "NSL / EWL", "status": "🟢 Normal", "delay": "None", "msg": "Smooth flow."}],
+                "incidents": [("00:00", "System", "No active incidents detected.")]
+            }
 
 # 2. THE UI: Use the data fetched above
 with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
