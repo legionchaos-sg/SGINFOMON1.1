@@ -536,27 +536,27 @@ with tab2:
     #-----------------HDB National Resale  --- UI RENDER (Add this to your Dashboard) ---
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
 
-    def render_market_tab():
-    stats, meta = fetch_hdb_pulse()
-    
-    if stats:
-        # Header with compact styling
-        st.markdown(f"""
-            <div style="background-color:{meta['color']}; padding:2px 10px; border-radius:5px; display:inline-block;">
-                <span style="color:white; font-size:12px; font-weight:bold;">{meta['status']}</span>
-            </div>
-            <span style="font-size:10px; color:gray; margin-left:8px;">Live Feed: {meta['time']}</span>
-        """, unsafe_allow_html=True)
+        def render_market_tab():
+        stats, meta = fetch_hdb_pulse()
         
-        # Metrics Row
-        cols = st.columns(3)
-        for i, (label, data) in enumerate(stats.items()):
-            cols[i].metric(label, f"${data['price']/1000:.1f}k", f"{data['delta']:+.1f}%")
+        if stats:
+            # Header with compact styling
+            st.markdown(f"""
+                <div style="background-color:{meta['color']}; padding:2px 10px; border-radius:5px; display:inline-block;">
+                    <span style="color:white; font-size:12px; font-weight:bold;">{meta['status']}</span>
+                </div>
+                <span style="font-size:10px; color:gray; margin-left:8px;">Live Feed: {meta['time']}</span>
+            """, unsafe_allow_html=True)
             
-        st.markdown("---")
-        st.caption("Data source: HDB Real-time API v2 (Data.gov.sg). Baselines anchored to Mar 2026 Flash Reports.")
-    else:
-        st.error("Connection to HDB Data Mall timed out. Retrying...")
+            # Metrics Row
+            cols = st.columns(3)
+            for i, (label, data) in enumerate(stats.items()):
+                cols[i].metric(label, f"${data['price']/1000:.1f}k", f"{data['delta']:+.1f}%")
+                
+            st.markdown("---")
+            st.caption("Data source: HDB Real-time API v2 (Data.gov.sg). Baselines anchored to Mar 2026 Flash Reports.")
+        else:
+            st.error("Connection to HDB Data Mall timed out. Retrying...")
       
 
 # ==========================================
