@@ -126,7 +126,7 @@ def get_latest_coe():
 
 st.cache_data(ttl=300) # Cache for 5 mins to avoid hitting rate limits
 def debug_hdb_api(town):
-    if town is None;
+    if town is None:
         town = "bishan"
     # Ensure ID is clean and query is stripped
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
