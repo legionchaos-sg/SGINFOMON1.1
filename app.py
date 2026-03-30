@@ -561,7 +561,7 @@ with tab2:
             if alert_text and "No major" not in alert_text:
                 st.write("") # Spacer
                 # If 'accident' or 'closed' is in the text, we use a warning box
-                if any(word in alert_text.lower() for word in ["accident", "closed", "heavy", "works"]):
+                    if any(word in alert_text.lower() for word in ["accident", "closed", "heavy", "works"]):
                     st.error(f"🚨 **Traffic Alert:** {alert_text}")
                 else:
                     st.info(f"ℹ️ **Note:** {alert_text}")
