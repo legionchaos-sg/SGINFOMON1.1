@@ -498,10 +498,12 @@ with tab2:
  
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
+        st.write("CODE TO COME IN .")
         
 
     #-----------------HDB National Resale 
     with st.expander("📊 National HDB Resale Sentiments (Mar 2026)", expanded=False):
+        st.write("CODE TO COME IN .")
     
 
 # ==========================================
