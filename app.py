@@ -533,7 +533,8 @@ with tab2:
     
         if is_connected:
             st.success(status_msg)
-            
+
+            #NEED TO MORDIFY THE QUOTE HERE FROM JAN TILL CURRENT TO GET THE AVG
             # Now proceed with your 2026 calculations
             df_ntl['resale_price'] = pd.to_numeric(df_ntl['resale_price'], errors='coerce')
             df_2026 = df_ntl[df_ntl['month'].str.contains('2026', na=False)]
