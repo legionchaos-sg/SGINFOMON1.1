@@ -513,40 +513,45 @@ with tab2:
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
     
-        st.cache_data(ttl=300) # Cache for 5 mins to avoid hitting rate limits
-
-            # --- 1. INITIALIZE (Prevents the Line 533 Crash) ---
-            df_debug = pd.DataFrame() 
+    # 1. INITIALIZE (Prevents the Line 533 Crash)
+    df_debug = pd.DataFrame() 
+    
+    # 2. SAFETY CHECK: Ensure 'town' exists before calling the API
+    if 'town' not in locals() and 'town' not in globals():
+        town = "WOODLANDS" # Default fallback for the API call
+        
+    # 3. FETCH DATA 
+    # (Note: st.cache_data should be on the function definition, not here)
+    df_debug = debug_hdb_api(town)
+    
+    # 4. 2026 CALCULATION LOGIC
+    if not df_debug.empty:
+        # Ensure price is numeric and month is a string for filtering
+        df_debug['resale_price'] = pd.to_numeric(df_debug['resale_price'], errors='coerce')
+        df_debug['month'] = df_debug['month'].astype(str)
+    
+        # Filter for the year 2026
+        df_2026 = df_debug[df_debug['month'].str.contains('2026', na=False)]
+    
+        if not df_2026.empty:
+            # Calculate National Avg for 3RM, 4RM, 5RM
+            avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
             
-            # --- 2. FETCH DATA ---
-            # Ensure 'town' is defined (e.g., town = "WOODLANDS")
-            df_debug = debug_hdb_api(town)
-            
-            # --- 3. 2026 CALCULATION LOGIC ---
-            if not df_debug.empty:
-                # Ensure price is numeric and month is a string
-                df_debug['resale_price'] = pd.to_numeric(df_debug['resale_price'], errors='coerce')
-                df_debug['month'] = df_debug['month'].astype(str)
-            
-                # Filter for any month in 2026
-                df_2026 = df_debug[df_debug['month'].str.contains('2026', na=False)]
-            
-                if not df_2026.empty:
-                    # Calculate National Avg for 3RM, 4RM, 5RM
-                    avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
-                    
-                    avg_3rm = avg_stats.get('3 ROOM', 0)
-                    avg_4rm = avg_stats.get('4 ROOM', 0)
-                    avg_5rm = avg_stats.get('5 ROOM', 0)
-            
-                    # Display results on your dashboard
-                    st.subheader("📊 2026 National Market Snapshot")
-                    c1, c2, c3 = st.columns(3)
-                    c1.metric("Avg 3-RM", f"${avg_3rm:,.0f}")
-                    c2.metric("Avg 4-RM", f"${avg_4rm:,.0f}")
-                    c3.metric("Avg 5-RM", f"${avg_5rm:,.0f}")
-                else:
-                    st.info("📅 No resale records found for 2026 yet in this dataset.")
+            # Use .get() to avoid errors if a specific room type is missing
+            avg_3rm = avg_stats.get('3 ROOM', 0)
+            avg_4rm = avg_stats.get('4 ROOM', 0)
+            avg_5rm = avg_stats.get('5 ROOM', 0)
+    
+            # Display results on your dashboard
+            st.subheader("📊 2026 National Market Snapshot")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Avg 3-RM", f"${avg_3rm:,.0f}")
+            c2.metric("Avg 4-RM", f"${avg_4rm:,.0f}")
+            c3.metric("Avg 5-RM", f"${avg_5rm:,.0f}")
+        else:
+            st.info("📅 No resale records found for 2026 yet in this dataset.")
+    else:
+        st.warning("⚠️ Could not retrieve HDB data. The API may be rate-limited.")
          
                 
         
