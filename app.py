@@ -126,6 +126,8 @@ def get_latest_coe():
 
 st.cache_data(ttl=300) # Cache for 5 mins to avoid hitting rate limits
 def debug_hdb_api(town):
+    if not town:
+        town = "bishan"
     # Ensure ID is clean and query is stripped
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&q={town_query.strip()}"
@@ -546,7 +548,7 @@ with tab2:
     
         # 2. YOUR DEBUG FUNCTION CALL
         # Ensure 'town' is defined from your main search input
-        town = "bishan"
+        
         df_debug = debug_hdb_api(town) 
         
         if not df_debug.empty:
