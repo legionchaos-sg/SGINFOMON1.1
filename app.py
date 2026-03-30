@@ -537,11 +537,14 @@ with tab2:
     # --- 3. Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
       st.caption("🔍 *pending code")
+      if 'town' not in locals() or not town:
+          town = "WOODLANDS"
 
     #-----------------HDB National Resale  
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=False):
         if st.button("♻️ Force Clear Cache"):
             debug_hdb_api.clear(town)
+            
             st.success("Cache Cleared! The next run will pull fresh data from the API.")
             # Optional: Trigger a rerun to apply the clear immediately
             st.rerun() 
