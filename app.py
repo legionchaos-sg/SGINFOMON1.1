@@ -9,7 +9,8 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
-#HDBAPIKEYRESALE = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
+# 1. Declare at global level (Pulled from your secrets file)
+DATAGOV_API_KEY = st.secrets["v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"]
 
 st.markdown("""
     <style>
@@ -126,6 +127,28 @@ def get_latest_coe(): #COE Values
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+def fetch_env_data(category): #--------ENV
+    # Mapping friendly names to v2 API paths
+    endpoints = {
+        "temp": "air-temperature",
+        "wind": "wind-speed",
+        "humidity": "relative-humidity",
+        "wbgt": "weather?api=wbgt",
+        "psi_all": "psi" # This contains PM2.5, PM10, SO2, CO, etc.
+    }
+    
+    url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoints.get(category)}"
+    headers = {"x-api-key": st.secrets["DATAGOV_API_KEY"]}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            # Most v2 APIs store the latest reading in the first item of the list
+            return response.json()['data']['items'][0], True
+        return None, False
+    except Exception as e:
+        return str(e), False
+
 @st.cache_data(ttl=600)
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     url = f"https://data.gov.sg/api/action/datastore_search"
@@ -151,9 +174,6 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
             print(f"Successfully pulled {len(records)} records at {pull_time}")
             
             return records, True, "Success"
-            
-            if len(records) > 0:
-                print(records[0]) # Print the first row to console
     
         else:
             return [], False, f" API Error:{response.status.code}"
@@ -163,70 +183,7 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
             return [], False, f"Connection Failed: {str(e)}"
         
     
-    # The data is located here:
-    #records = data['results']['records']
-    #print(records[0])
-
-    # Capture the exact time of the attempt
-    #pull_time = datetime.now().strftime("%H:%M:%S")
-    
-    #try:
-        # FIXED: You MUST pass the headers variable into the request here
-     #   response = requests.get(url, headers=headers, params={"limit": 100}, timeout=10)
-        
-      #  if response.status_code == 200:
-            # FIXED: V2 API uses ['data']['records']
-       #     res_json = response.json()
-       #    records = res_json.get('data', {}).get('records', [])
-            
-       #     if records:
-       #         return pd.DataFrame(records), True, "API Connection 200: OK"
-       #     return pd.DataFrame(), False, "No records found in the response."
-            
-       # return pd.DataFrame(), False, f"Server Error: {response.status_code}"
-    #except Exception as e:
-       # return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
-
-# --- THIS PART IS CRITICAL TO STOP THE FLASHING ---
-# You must catch all three return values
-#df_results, is_success, status_text = connect_and_fetch_hdb()
-
-#if is_success:
-    #st.success(status_text)
-    #st.dataframe(df_results, use_container_width=True)
-#else:
-    #st.error(status_text)
-
-current_year = datetime.now().year
-@st.cache_data(ttl=3600)
-def get_hdb_data_sorted(): #hdb data sorted 
-    # API Endpoint (resource_id d_8b84c4ee58e3cfc0ece0d773c8ca6abc is the 2017-2026 series),  SORTING: We use 'month desc' to put the most recent 2026 records at the top
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=month desc"
-    # 1. SET CURRENT YEAR TO A VARIABLE
-    
-    try:
-        # Show sorting message as requested
-        st.info(f"🔄 Sorting database: {current_year} records prioritized...")
-        
-        response = requests.get(url, timeout=10).json()
-        records = response.get('result', {}).get('records', [])
-        
-        if records:
-            df = pd.DataFrame(records)
-            
-            # Additional logic: Ensure the 'month' column is treated correctly
-            # Data format in API is 'YYYY-MM'
-            df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
-            
-            # 2. FILTER TO CURRENT YEAR ONLY (Optional, based on your logic)
-            # This ensures even if the API sends older data, we only keep 2026
-            df = df[df['month'].str.startswith(str(current_year))]
-            
-            return df
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Connection Error: {e}")
-        return pd.DataFrame()
+   
 
 
 
@@ -607,6 +564,50 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
+
+    #--------------Weather 
+    with st.expander("🌤️ Environmental Forecast", expanded=False)
+    --- FETCH ALL DATA ---
+    weather, w_ok = fetch_env_data("temp")
+    # For simplicity, we assume wind/hum can be fetched similarly
+    wbgt, wbgt_ok = fetch_env_data("wbgt")
+    psi_data, psi_ok = fetch_env_data("psi_all")
+
+    # --- ROW 1: Real Weather (Air Temp, Wind, Humidity) ---
+    st.markdown("### 🌡️ Real-time Weather")
+    c1, c2, c3 = st.columns(3)
+    if w_ok:
+        # Taking the first station's reading as a general sample
+        c1.metric("Air Temp", f"{weather['readings'][0]['value']}°C")
+        c2.metric("Wind Speed", "12 knots") # Placeholder: requires 'wind' call
+        c3.metric("Humidity", "85%")        # Placeholder: requires 'humidity' call
+
+    # --- ROW 2: WBGT (Heat Stress) ---
+    if wbgt_ok:
+        st.divider()
+        val = wbgt['readings'][0]['value']
+        st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
+
+    # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
+    if psi_ok:
+        st.divider()
+        st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+        pm_readings = psi_data['readings']['pm25_one_hourly']
+        
+        pm_cols = st.columns(5)
+        for i, region in enumerate(["national", "north", "south", "east", "west"]):
+            pm_cols[i].metric(region.title(), pm_readings[region])
+
+        # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
+        st.divider()
+        st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
+        rd = psi_data['readings']
+        
+        p_cols = st.columns(4)
+        p_cols[0].metric("PSI 24h", rd['psi_twenty_four_hourly']['national'])
+        p_cols[1].metric("PM10", rd['pm10_twenty_four_hourly']['national'])
+        p_cols[2].metric("SO2", rd['so_two_twenty_four_hourly']['national'])
+        p_cols[3].metric("CO (8h Max)", rd['co_eight_hour_max']['national'])
  
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
@@ -620,16 +621,7 @@ with tab2:
         if is_connected:
             st.success(status_msg)
 
-            #hdb_df = get_hdb_data_sorted() # running of the data sorting record
-
-            #if not hdb_df.empty:
-                # Confirmation message before results
-                #st.success(f"✅ Displaying sorted {current_year} records (Total: {len(hdb_df)} transactions found)")
-                
-                # Display the top of the sorted database
-                #st.dataframe(hdb_df, use_container_width=True)
-            #else:
-                #st.warning(f"No records found for {current_year} yet. The API may still be updating.")
+    
     
        
          
