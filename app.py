@@ -126,33 +126,28 @@ def get_latest_coe(): #COE Values
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-
 @st.cache_data(ttl=600)
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
-    dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
+    #dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search"
 
     # Define your query parameters
+    # 2. Use the HDB Resource ID
     params = {
-        "resource_id": dataset_id,
-        "limit": 100  # Number of records to fetch
+        "resource_id": "d_8b84c4ee58e3cfc0ece0d773c8ca6abc",
+        "limit": 100
     }
-    
-    response = requests.get(url, params=params)
-    data = response.json()
 
-    response = requests.get(url, headers=headers, params=params)
-    data = response.json()
+    # 3. NO HEADERS. DO NOT USE THE API KEY HERE.
+    response = requests.get(url, params=params)
     
-    # Check the new v2 error fields
-    if "errorMsg" in data and data["errorMsg"]:
-        st.error(f"Data.gov.sg says: {data['errorMsg']} (Code: {data.get('code')})")
-        return [], False, data['errorMsg']
-    
-    # If it passed, the records are inside 'data' -> 'records'
-    if "data" in data and data["data"] is not None:
-        records = data["data"].get("records", [])
+    if response.status_code == 200:
+        data = response.json()
+        # 4. LEGACY API uses ['result']['records']
+        records = data['result']['records']
         return records, True, "Success"
+    else:
+        return [], False, f"Error: {response.status_code}"
     
     # The data is located here:
     records = data['data']['records']
