@@ -579,11 +579,11 @@ with tab2:
         if w_ok:
 
             with st.expander("🔍 Debug: Weather API Structure"):
-            # This shows the 'Top Level' keys
-            st.write("Top Level Keys:", weather.keys())
-        
-            # This shows the actual content
-            st.json(weather)
+                # This shows the 'Top Level' keys
+                st.write("Top Level Keys:", weather.keys())
+            
+                # This shows the actual content
+                st.json(weather)
 
             
             # 1. Access the readings for Temperature correctly
