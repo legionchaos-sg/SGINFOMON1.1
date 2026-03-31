@@ -142,10 +142,20 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     pull_time = datetime.now().strftime("%H:%M:%S")
     
     try:
-        response = requests.get(url, timeout=10)
+        # 2. FIXED: Actually pass the headers into the get request
+        # Added params to ensure you get the newest 2026 data first
+        response = requests.get(url, headers=headers, params={"limit": 100}, timeout=10)
+        
         if response.status_code == 200:
-            records = response.json().get('result', {}).get('records', [])
+            # 3. FIXED: V2 API nests data under 'data' -> 'records'
+            data_payload = response.json().get('data', {})
+            records = data_payload.get('records', [])
+            
+            if not records:
+                return pd.DataFrame(), False, "Connection OK, but 0 records returned."
+                
             return pd.DataFrame(records), True, "API Connection 200: OK"
+            
         return pd.DataFrame(), False, f"Server Error: {response.status_code}"
     except Exception as e:
         return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
