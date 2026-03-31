@@ -577,6 +577,15 @@ with tab2:
         c1, c2, c3 = st.columns(3)
         
         if w_ok:
+
+            with st.expander("🔍 Debug: Weather API Structure"):
+            # This shows the 'Top Level' keys
+            st.write("Top Level Keys:", weather.keys())
+        
+            # This shows the actual content
+            st.json(weather)
+
+            
             # 1. Access the readings for Temperature correctly
             # 'weather' here is already the first item: data['items'][0]
             temp_readings = weather.get('readings', [])
