@@ -618,7 +618,8 @@ with tab2:
             
             pm_cols = st.columns(5)
             for i, region in enumerate(["national", "north", "south", "east", "west"]):
-                pm_cols[i].metric(region.title(), pm_readings[region])
+                val = pm_readings.get(region, "N/A")
+                pm_cols[i].metric(region.title(), val)
     
             # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
             st.divider()
