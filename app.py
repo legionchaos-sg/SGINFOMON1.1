@@ -622,6 +622,7 @@ with tab2:
         
         # Convert to DataFrame
         df_weather = pd.DataFrame(weather_rows)
+        st.dataframe(df_weather, hide_index=True)
         
         # Apply "Gold 10" Styling (Left Aligned)
         styled_weather = df_weather.style.set_properties(**{'text-align': 'left'})
