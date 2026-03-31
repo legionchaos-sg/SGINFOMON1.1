@@ -131,7 +131,6 @@ def get_latest_coe(): #COE Values
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/records" 
-        f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/records"
     
 
     # Define your query parameters
