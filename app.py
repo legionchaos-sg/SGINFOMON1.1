@@ -140,6 +140,8 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     
     response = requests.get(url, params=params)
     data = response.json()
+    if "message" in data:
+    st.error(f"API Error: {data['message']}")
 
     st.write("API Response Keys:", data.keys())
     
@@ -169,13 +171,13 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
 
 # --- THIS PART IS CRITICAL TO STOP THE FLASHING ---
 # You must catch all three return values
-df_results, is_success, status_text = connect_and_fetch_hdb()
+#df_results, is_success, status_text = connect_and_fetch_hdb()
 
-if is_success:
-    st.success(status_text)
-    st.dataframe(df_results, use_container_width=True)
-else:
-    st.error(status_text)
+#if is_success:
+    #st.success(status_text)
+    #st.dataframe(df_results, use_container_width=True)
+#else:
+    #st.error(status_text)
 
 current_year = datetime.now().year
 @st.cache_data(ttl=3600)
