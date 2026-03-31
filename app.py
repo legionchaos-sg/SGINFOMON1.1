@@ -628,7 +628,7 @@ with tab2:
         styled_weather = df_weather.style.set_properties(**{'text-align': 'left'})
         
         # Display Table
-        st.table(styled_weather, hide_index=True, use_container_width=True)
+        st.dataframee(styled_weather, hide_index=True, use_container_width=True)
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
