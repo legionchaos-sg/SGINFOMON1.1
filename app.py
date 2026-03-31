@@ -625,10 +625,10 @@ with tab2:
         #st.dataframe(df_weather, hide_index=True)
         
         # Apply "Gold 10" Styling (Left Aligned)
-        styled_weather = df_weather.style.set_properties(**{'text-align': 'left': hide_index=True})
+        styled_weather = df_weather.style.set_properties(**{'text-align': 'left'})
         
         # Display Table
-        st.table(styled_weather)
+        st.table(styled_weather, hide_index=Ture, use_container_width=True)
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
