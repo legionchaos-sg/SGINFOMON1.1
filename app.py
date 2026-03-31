@@ -140,6 +140,8 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     
     response = requests.get(url, params=params)
     data = response.json()
+
+    st.write("API Response Keys:", data.keys())
     
     # The data is located here:
     records = data['data']['records']
@@ -148,22 +150,22 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     # Capture the exact time of the attempt
     pull_time = datetime.now().strftime("%H:%M:%S")
     
-    try:
+    #try:
         # FIXED: You MUST pass the headers variable into the request here
-        response = requests.get(url, headers=headers, params={"limit": 100}, timeout=10)
+     #   response = requests.get(url, headers=headers, params={"limit": 100}, timeout=10)
         
-        if response.status_code == 200:
+      #  if response.status_code == 200:
             # FIXED: V2 API uses ['data']['records']
-            res_json = response.json()
-            records = res_json.get('data', {}).get('records', [])
+       #     res_json = response.json()
+       #    records = res_json.get('data', {}).get('records', [])
             
-            if records:
-                return pd.DataFrame(records), True, "API Connection 200: OK"
-            return pd.DataFrame(), False, "No records found in the response."
+       #     if records:
+       #         return pd.DataFrame(records), True, "API Connection 200: OK"
+       #     return pd.DataFrame(), False, "No records found in the response."
             
-        return pd.DataFrame(), False, f"Server Error: {response.status_code}"
-    except Exception as e:
-        return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
+       # return pd.DataFrame(), False, f"Server Error: {response.status_code}"
+    #except Exception as e:
+       # return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
 
 # --- THIS PART IS CRITICAL TO STOP THE FLASHING ---
 # You must catch all three return values
