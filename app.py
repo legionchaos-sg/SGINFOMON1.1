@@ -141,7 +141,7 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     response = requests.get(url, params=params)
     data = response.json()
     if "message" in data:
-    st.error(f"API Error: {data['message']}")
+        st.error(f"API Error: {data['message']}")
 
     st.write("API Response Keys:", data.keys())
     
