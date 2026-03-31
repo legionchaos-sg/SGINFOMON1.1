@@ -606,6 +606,9 @@ with tab2:
                     for i, reg in enumerate(["national", "north", "south", "east", "west"]):
                         val = pm_readings.get(reg, "N/A")
                         pm_cols[i].metric(reg.title(), val)
+
+            except Exception as e: # <--- Matches the 'try' indentation
+                st.warning("Air quality data currently unavailable.")
             
             st.divider()
             st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
