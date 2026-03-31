@@ -611,8 +611,8 @@ with tab2:
         with st.expander("View Station Breakdown"):
             st.dataframe(df_stations.rename(columns={'station_id': 'Station', 'value': 'Temp (°C)'}))
     
-    except Exception as e:
-        st.error(f"Could not calculate island average: {e}")
+except Exception as e:
+    st.error(f"Could not calculate island average: {e}")
         
        
         
