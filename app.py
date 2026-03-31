@@ -630,11 +630,11 @@ with tab2:
         st.table(styled_weather)    
     
         # --- ROW 2: WBGT (Heat Stress) ---
-        if wbgt_ok:
-            st.json(readings)
-            st.divider()
-            val = wbgt['readings'][0]['value']
-            st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
+        #if wbgt_ok:
+        #    st.json(readings)
+        #    st.divider()
+        #    val = wbgt['readings'][0]['value']
+        #    st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
     
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
