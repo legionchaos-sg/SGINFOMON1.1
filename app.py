@@ -644,11 +644,11 @@ with tab2:
                 # Debug tip: st.write(psi_data) to see the actual keys
             
             p_cols = st.columns(4)
-            p_cols[0].metric("PSI 24h", rd['psi_twenty_four_hourly']['national'])
-            p_cols[1].metric("PM10", rd['pm10_twenty_four_hourly']['national'])
-            p_cols[2].metric("SO2", rd['so_two_twenty_four_hourly']['national'])
-            p_cols[3].metric("CO (8h Max)", rd['co_eight_hour_max']['national'])
- 
+            p_cols[0].metric("PSI 24h", rd.get('psi_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[1].metric("PM10", rd.get('pm10_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[2].metric("SO2", rd.get('so_two_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[3].metric("CO (8h)", rd.get('co_eight_hour_max', {}).get('national', 'N/A'))
+             
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
       st.caption("🔍 *pending code")
