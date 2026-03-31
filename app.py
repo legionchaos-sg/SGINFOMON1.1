@@ -140,10 +140,19 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     
     response = requests.get(url, params=params)
     data = response.json()
-    if "message" in data:
-        st.error(f"API Error: {data['message']}")
 
-    st.write("API Response Keys:", data.keys())
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+    
+    # Check the new v2 error fields
+    if "errorMsg" in data and data["errorMsg"]:
+        st.error(f"Data.gov.sg says: {data['errorMsg']} (Code: {data.get('code')})")
+        return [], False, data['errorMsg']
+    
+    # If it passed, the records are inside 'data' -> 'records'
+    if "data" in data and data["data"] is not None:
+        records = data["data"].get("records", [])
+        return records, True, "Success"
     
     # The data is located here:
     records = data['data']['records']
