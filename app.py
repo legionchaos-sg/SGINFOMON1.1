@@ -630,7 +630,7 @@ with tab2:
         st.table(styled_weather)
     
         # --- SG AIR QUALITY --- this side is good 
-        if psi_ok:
+        #if psi_ok:
             readings = psi_data.get('readings', {})
             st.markdown("### 📊 SG Air Quality")
             
