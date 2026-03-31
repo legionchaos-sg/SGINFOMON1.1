@@ -578,6 +578,7 @@ with tab2:
         st.markdown("### 🌡️ Real-time Weather")
         c1, c2, c3 = st.columns(3)
         if w_ok:
+            st.json(readings)
             # Taking the first station's reading as a general sample
             c1.metric("Air Temp", f"{weather['readings'][0]['value']}°C")
             c2.metric("Wind Speed", "12 knots") # Placeholder: requires 'wind' call
@@ -585,13 +586,14 @@ with tab2:
     
         # --- ROW 2: WBGT (Heat Stress) ---
         if wbgt_ok:
+            st.json(readings)
             st.divider()
             val = wbgt['readings'][0]['value']
             st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
     
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
-
+            st.json(readings)
             try:
                 # In v2, psi_data is data['items'][0] from our fetch function
                 readings = psi_data.get('readings', {})
