@@ -567,7 +567,7 @@ with tab2:
 
     #--------------Weather 
     with st.expander("🌤️ Environmental Forecast", expanded=False):
-        --- FETCH ALL DATA ---
+        #--- FETCH ALL DATA ---
         weather, w_ok = fetch_env_data("temp")
         # For simplicity, we assume wind/hum can be fetched similarly
         wbgt, wbgt_ok = fetch_env_data("wbgt")
