@@ -593,42 +593,49 @@ with tab2:
     
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
-            
-            # 1. Define readings safely first
             readings = psi_data.get('readings', {})
-            
-            # 2. Show the "Map" of the data so we can see the correct keys
-            # This will help us find why you were getting N/A
-            with st.expander("🛠️ Debug: View Raw API Keys"):
-                st.json(readings) 
         
-                try:
-                    # 3. Use a more flexible way to find PM2.5
-                    # It tries 'pm25_one_hourly', then 'pm25', then 'pm25_sub_index'
-                    pm_readings = readings.get('pm25_one_hourly', 
-                                  readings.get('pm25', 
-                                  readings.get('pm25_sub_index', {})))
-                    
-                    if pm_readings:
-                        st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
-                        pm_cols = st.columns(5)
-                        for i, reg in enumerate(["national", "north", "south", "east", "west"]):
-                            val = pm_readings.get(reg, "N/A")
-                            pm_cols[i].metric(reg.title(), val)
-                    
-                    # 4. Pollutants using the safe 'get' helper
-                    st.divider()
-                    st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
-                    p_cols = st.columns(4)
-                    
-                    # This nested get is the 'Gold 10' safety standard
-                    p_cols[0].metric("PSI 24h", readings.get('psi_twenty_four_hourly', {}).get('national', 'N/A'))
-                    p_cols[1].metric("PM10", readings.get('pm10_twenty_four_hourly', {}).get('national', 'N/A'))
-                    p_cols[2].metric("SO2", readings.get('so_two_twenty_four_hourly', {}).get('national', 'N/A'))
-                    p_cols[3].metric("CO (8h)", readings.get('co_eight_hour_max', {}).get('national', 'N/A'))
+            # 1. --- REGIONAL TABLE (PSI, PM10, PM2.5) ---
+            st.markdown("### 📊 Regional Air Quality (24-hr)")
             
-                except Exception as e:
-                    st.warning(f"Note: Some air quality metrics are currently unavailable.")
+            # Extract the three main sub-indices
+            psi_map = readings.get('psi_twenty_four_hourly', {})
+            pm10_map = readings.get('pm10_sub_index', {}) # Using sub_index as requested
+            pm25_map = readings.get('pm25_twenty_four_hourly', {})
+            
+            # Define the regions we want to show
+            regions = ["national", "central", "north", "south", "east", "west"]
+            
+            # Create the data list for the table
+            table_data = []
+            for reg in regions:
+                table_data.append({
+                    "Region": reg.title(),
+                    "PSI": psi_map.get(reg, "N/A"),
+                    "PM10": pm10_map.get(reg, "N/A"),
+                    "PM2.5": pm25_map.get(reg, "N/A")
+                })
+            
+            # Convert to DataFrame and display
+            df = pd.DataFrame(table_data)
+            st.dataframe(df, hide_index=True, use_container_width=True)
+        
+            st.divider()
+        
+            # 2. --- ADDITIONAL POLLUTANTS (SO2, CO) ---
+            st.markdown("### 🧪 Trace Pollutants (National/Central)")
+            c1, c2 = st.columns(2)
+            
+            # SO2 and CO usually provide a single key or 'national'/'central'
+            # We check 'national' first, then 'central' as a backup
+            so2_val = readings.get('so2_twenty_four_hourly', {}).get('national', 
+                      readings.get('so2_twenty_four_hourly', {}).get('central', 'N/A'))
+            
+            co_val = readings.get('co_eight_hour_max', {}).get('national', 
+                     readings.get('co_eight_hour_max', {}).get('central', 'N/A'))
+        
+            c1.metric("SO2 (24hr)", so2_val)
+            c2.metric("CO (8hr Max)", co_val)
             
             st.divider()
             st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
