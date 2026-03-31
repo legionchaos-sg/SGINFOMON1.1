@@ -615,8 +615,8 @@ with tab2:
                     "Region": reg.title(),
                     "PSI (4hr)": psi_map.get(reg, "N/A"),
                     "PM10": pm10_map.get(reg, "N/A"),
-                    "PM2.5 (4hr)": pm25_map.get(reg, "N/A")
-                    "SO2 (4hr)": so2_map.get(reg, "N/A")
+                    "PM2.5 (4hr)": pm25_map.get(reg, "N/A"),
+                    "SO2 (4hr)": so2_map.get(reg, "N/A"),
                     "CO (8hr)": co_map.get(reg, "N/A")
                     
                 })
