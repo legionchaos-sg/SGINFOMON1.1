@@ -603,6 +603,23 @@ with tab2:
             st.divider()
             st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
             rd = psi_data['readings']
+
+            # Safely navigate to the readings
+            # In some v2 responses, it is ['readings'], in others it's within the item list
+            try:
+                readings = psi_data['readings']
+                pm_readings = readings['pm25_one_hourly']
+                
+                st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+                pm_cols = st.columns(5)
+                # Match the API's exact keys: national, north, south, east, west
+                for i, region in enumerate(["national", "north", "south", "east", "west"]):
+                    val = pm_readings.get(region, "N/A")
+                    pm_cols[i].metric(region.title(), val)
+                    
+            except KeyError as e:
+                st.error(f"Data structure mismatch: {e}")
+                # Debug tip: st.write(psi_data) to see the actual keys
             
             p_cols = st.columns(4)
             p_cols[0].metric("PSI 24h", rd['psi_twenty_four_hourly']['national'])
