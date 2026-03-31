@@ -10,7 +10,7 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 
 # 1. Declare at global level (Pulled from your secrets file)
-DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"]
+DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
 DATAGOV_API_KEY = st.secrets["DATAGOV_KEY"]
 
 st.markdown("""
