@@ -566,7 +566,7 @@ with tab2:
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
 
     #--------------Weather 
-    with st.expander("🌤️ Environmental Forecast", expanded=False)
+    with st.expander("🌤️ Environmental Forecast", expanded=False):
         --- FETCH ALL DATA ---
         weather, w_ok = fetch_env_data("temp")
         # For simplicity, we assume wind/hum can be fetched similarly
