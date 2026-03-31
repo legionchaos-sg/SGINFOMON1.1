@@ -567,47 +567,47 @@ with tab2:
 
     #--------------Weather 
     with st.expander("🌤️ Environmental Forecast", expanded=False)
-    --- FETCH ALL DATA ---
-    weather, w_ok = fetch_env_data("temp")
-    # For simplicity, we assume wind/hum can be fetched similarly
-    wbgt, wbgt_ok = fetch_env_data("wbgt")
-    psi_data, psi_ok = fetch_env_data("psi_all")
-
-    # --- ROW 1: Real Weather (Air Temp, Wind, Humidity) ---
-    st.markdown("### 🌡️ Real-time Weather")
-    c1, c2, c3 = st.columns(3)
-    if w_ok:
-        # Taking the first station's reading as a general sample
-        c1.metric("Air Temp", f"{weather['readings'][0]['value']}°C")
-        c2.metric("Wind Speed", "12 knots") # Placeholder: requires 'wind' call
-        c3.metric("Humidity", "85%")        # Placeholder: requires 'humidity' call
-
-    # --- ROW 2: WBGT (Heat Stress) ---
-    if wbgt_ok:
-        st.divider()
-        val = wbgt['readings'][0]['value']
-        st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
-
-    # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
-    if psi_ok:
-        st.divider()
-        st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
-        pm_readings = psi_data['readings']['pm25_one_hourly']
-        
-        pm_cols = st.columns(5)
-        for i, region in enumerate(["national", "north", "south", "east", "west"]):
-            pm_cols[i].metric(region.title(), pm_readings[region])
-
-        # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
-        st.divider()
-        st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
-        rd = psi_data['readings']
-        
-        p_cols = st.columns(4)
-        p_cols[0].metric("PSI 24h", rd['psi_twenty_four_hourly']['national'])
-        p_cols[1].metric("PM10", rd['pm10_twenty_four_hourly']['national'])
-        p_cols[2].metric("SO2", rd['so_two_twenty_four_hourly']['national'])
-        p_cols[3].metric("CO (8h Max)", rd['co_eight_hour_max']['national'])
+        --- FETCH ALL DATA ---
+        weather, w_ok = fetch_env_data("temp")
+        # For simplicity, we assume wind/hum can be fetched similarly
+        wbgt, wbgt_ok = fetch_env_data("wbgt")
+        psi_data, psi_ok = fetch_env_data("psi_all")
+    
+        # --- ROW 1: Real Weather (Air Temp, Wind, Humidity) ---
+        st.markdown("### 🌡️ Real-time Weather")
+        c1, c2, c3 = st.columns(3)
+        if w_ok:
+            # Taking the first station's reading as a general sample
+            c1.metric("Air Temp", f"{weather['readings'][0]['value']}°C")
+            c2.metric("Wind Speed", "12 knots") # Placeholder: requires 'wind' call
+            c3.metric("Humidity", "85%")        # Placeholder: requires 'humidity' call
+    
+        # --- ROW 2: WBGT (Heat Stress) ---
+        if wbgt_ok:
+            st.divider()
+            val = wbgt['readings'][0]['value']
+            st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
+    
+        # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
+        if psi_ok:
+            st.divider()
+            st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+            pm_readings = psi_data['readings']['pm25_one_hourly']
+            
+            pm_cols = st.columns(5)
+            for i, region in enumerate(["national", "north", "south", "east", "west"]):
+                pm_cols[i].metric(region.title(), pm_readings[region])
+    
+            # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
+            st.divider()
+            st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
+            rd = psi_data['readings']
+            
+            p_cols = st.columns(4)
+            p_cols[0].metric("PSI 24h", rd['psi_twenty_four_hourly']['national'])
+            p_cols[1].metric("PM10", rd['pm10_twenty_four_hourly']['national'])
+            p_cols[2].metric("SO2", rd['so_two_twenty_four_hourly']['national'])
+            p_cols[3].metric("CO (8h Max)", rd['co_eight_hour_max']['national'])
  
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
