@@ -45,6 +45,7 @@ if "g10_target_fix" not in st.session_state:
 
 # --- DATA ENGINES ---
 
+
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
 def fetch_sg_economy(): # --- NEW: SG ECONOMY DATA ENGINE ---
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
@@ -574,47 +575,36 @@ with tab2:
         wd_raw, wd_ok = fetch_env_data("wind-direction")
         rh_raw, rh_ok = fetch_env_data("relative-humidity")
         fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
-
-    # 1. Setup the 2026 Variable
-    current_year = datetime.now().year
-    
-    st.title(f"🇸🇬 Island-wide Weather Report ({current_year})")
-    
-    # 2. Call the real-time API (No date parameter = latest available)
-    API_URL = "https://api-open.data.gov.sg/v2/real-time/api/air-temperature"
-    
-    try:
-        response = requests.get(API_URL)
-        data = response.json()
         
-        # 3. Extract readings from the JSON structure
-        # The API returns a list of stations and their current values
-        latest_record = data['data']['records'][0]
-        readings = latest_record['readings']
+        # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
+        # We map your specific locations to the API's Station names/Area names
+        locations = [
+            "Woodlands", "Ang Mo Kio", "Changi", "Bedok", 
+            "Outram", "Redhill", "Clementi", "Jurong"
+        ]
         
-        # 4. Convert to Dataframe for easy averaging
-        df_stations = pd.DataFrame(readings)
+        def get_reading(raw_data, loc_name):
+            """Safely extracts value for a location from real-time sensor APIs"""
+            if not raw_data: return "N/A"
+            readings = raw_data.get('readings', [{}])[0].get('data', [])
+            # Find station name that matches our location
+            for r in readings:
+                # Note: API might use 'S104' etc, so we match metadata if needed 
+                # For simplicity, we search for the location name in the station list
+                if loc_name.lower() in str(r.get('stationId', '')).lower():
+                    return r.get('value', "N/A")
+            return "N/A"
         
-        # Calculate the Island-wide Mean
-        island_avg = df_stations['value'].mean()
-        max_temp = df_stations['value'].max()
-        min_temp = df_stations['value'].min()
-    
-        # 5. Display the "Overall" Metrics
-        st.subheader(f"Current Island-wide Status")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("AVERAGE", f"{island_avg:.1f}°C")
-        c2.metric("HOTTEST SPOT", f"{max_temp:.1f}°C")
-        c3.metric("COOLEST SPOT", f"{min_temp:.1f}°C")
-    
-        # 6. Show the breakdown by station
-        with st.expander("View Station Breakdown"):
-            st.dataframe(df_stations.rename(columns={'station_id': 'Station', 'value': 'Temp (°C)'}))
-    
-except Exception as e:
-    st.error(f"Could not calculate island average: {e}")
-        
-       
+        def get_forecast(raw_data, loc_name):
+            """Extracts forecast string for a specific area"""
+            if not raw_data: return "N/A"
+            # v2 Forecasts are in items[0]['forecasts']
+            items = raw_data.get('items', [])
+            if items:
+                for f in items[0].get('forecasts', []):
+                    if f['area'].lower() == loc_name.lower():
+                        return f['forecast']
+            return "N/A"
         
         # --- 3. BUILD THE TABLE for row 1---
         st.markdown("### 🌦️ Regional Weather Watch")
@@ -641,7 +631,7 @@ except Exception as e:
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
-        #if psi_ok: << can be deleted if really is ok 
+        #if psi_ok:
         readings = psi_data.get('readings', {})
         st.markdown("### 📊 SG Air Quality")
             
