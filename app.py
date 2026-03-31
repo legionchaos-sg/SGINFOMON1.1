@@ -661,8 +661,8 @@ with tab2:
                 
                 st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
                 pm_cols = st.columns(5)
-                # Match the API's exact keys: national, north, south, east, west
-                for i, region in enumerate(["national", "north", "south", "east", "west"]):
+                # Match the API's exact keys: north, south, east, west
+                for i, region in enumerate(["north", "south", "east", "west"]):
                     val = pm_readings.get(region, "N/A")
                     pm_cols[i].metric(region.title(), val)
                     
