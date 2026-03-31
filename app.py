@@ -619,6 +619,16 @@ with tab2:
             # Convert to DataFrame and display
             df = pd.DataFrame(table_data)
             st.dataframe(df, hide_index=True, use_container_width=True)
+
+            # 2. Apply styling to left-align all text/numbers - left indent for the values
+            styled_df = df.style.set_properties(**{
+                'text-align': 'left',
+                'white-space': 'pre-wrap'
+            }).set_table_styles([
+                dict(selector='th', props=[('text-align', 'left')]) # Also aligns headers
+            ])
+
+            st.table(styled_df)
         
             st.divider()
         
