@@ -9,7 +9,7 @@ from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
 import yfinance as yf
 
-
+HDBAPIKEYRESALE = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
 
 st.markdown("""
     <style>
@@ -126,11 +126,12 @@ def get_latest_coe(): #COE Values
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
-HDBAPIKEYRESALE = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
+
 @st.cache_data(ttl=600)
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
-    url = f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/initiate-download"
+    url = f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/records" 
+    
 
     # NEW: Authentication Header
     headers = {
@@ -142,23 +143,31 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     pull_time = datetime.now().strftime("%H:%M:%S")
     
     try:
-        # 2. FIXED: Actually pass the headers into the get request
-        # Added params to ensure you get the newest 2026 data first
+        # FIXED: You MUST pass the headers variable into the request here
         response = requests.get(url, headers=headers, params={"limit": 100}, timeout=10)
         
         if response.status_code == 200:
-            # 3. FIXED: V2 API nests data under 'data' -> 'records'
-            data_payload = response.json().get('data', {})
-            records = data_payload.get('records', [])
+            # FIXED: V2 API uses ['data']['records']
+            res_json = response.json()
+            records = res_json.get('data', {}).get('records', [])
             
-            if not records:
-                return pd.DataFrame(), False, "Connection OK, but 0 records returned."
-                
-            return pd.DataFrame(records), True, "API Connection 200: OK"
+            if records:
+                return pd.DataFrame(records), True, "API Connection 200: OK"
+            return pd.DataFrame(), False, "No records found in the response."
             
         return pd.DataFrame(), False, f"Server Error: {response.status_code}"
     except Exception as e:
         return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
+
+# --- THIS PART IS CRITICAL TO STOP THE FLASHING ---
+# You must catch all three return values
+df_results, is_success, status_text = connect_and_fetch_hdb()
+
+if is_success:
+    st.success(status_text)
+    st.dataframe(df_results, use_container_width=True)
+else:
+    st.error(status_text)
 
 current_year = datetime.now().year
 @st.cache_data(ttl=3600)
