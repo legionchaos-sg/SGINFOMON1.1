@@ -137,7 +137,7 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
         "limit": 1000
     }
 
-    tRY: 
+    try: 
     # 3. NO HEADERS. DO NOT USE THE API KEY HERE.
     response = requests.get(url, params=params)
     
