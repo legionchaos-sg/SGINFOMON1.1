@@ -604,7 +604,7 @@ with tab2:
             pm25_map = readings.get('pm25_twenty_four_hourly', {})
             
             # Define the regions we want to show
-            regions = ["national", "central", "north", "south", "east", "west"]
+            regions = ["central", "north", "south", "east", "west"]
             
             # Create the data list for the table
             table_data = []
