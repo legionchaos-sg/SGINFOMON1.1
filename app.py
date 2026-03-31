@@ -139,7 +139,7 @@ def fetch_env_data(category): #--------ENV
     }
     
     url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoints.get(category)}"
-    headers = {"x-api-key": st.secrets["DATAGOV_API_KEY"]}
+    headers = {"x-api-key": st.secrets["DATAGOV_KEY"]}
     
     try:
         response = requests.get(url, headers=headers)
@@ -567,7 +567,7 @@ with tab2:
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
 
     #--------------Weather 
-    with st.expander("🌤️ Environmental Forecast", expanded=False):
+    with st.expander("🌤️ Environmental Forecast", expanded=True):
         #--- FETCH ALL DATA ---
         weather, w_ok = fetch_env_data("temp")
         # For simplicity, we assume wind/hum can be fetched similarly
