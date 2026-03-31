@@ -595,13 +595,15 @@ with tab2:
         if psi_ok:
             readings = psi_data.get('readings', {})
         
-            # 1. --- REGIONAL TABLE (PSI, PM10, PM2.5) ---
-            st.markdown("### 📊 Regional Air Quality (24-hr)")
+            # 1. --- Envrionmental AIR Qaulity (PSI, PM10, PM2.5) ---
+            st.markdown("### 📊 SG Air Quality")
             
             # Extract the three main sub-indices
             psi_map = readings.get('psi_twenty_four_hourly', {})
             pm10_map = readings.get('pm10_sub_index', {}) # Using sub_index as requested
             pm25_map = readings.get('pm25_twenty_four_hourly', {})
+            so2_map = readings.get('so2_twenty_four_hourly', {})
+            co_map = readings.get ('co_eight_hour_max', {})
             
             # Define the regions we want to show
             regions = ["central", "north", "south", "east", "west"]
@@ -611,9 +613,12 @@ with tab2:
             for reg in regions:
                 table_data.append({
                     "Region": reg.title(),
-                    "PSI": psi_map.get(reg, "N/A"),
+                    "PSI (4hr)": psi_map.get(reg, "N/A"),
                     "PM10": pm10_map.get(reg, "N/A"),
-                    "PM2.5": pm25_map.get(reg, "N/A")
+                    "PM2.5 (4hr)": pm25_map.get(reg, "N/A")
+                    "SO2 (4hr)": so2_map.get(reg, "N/A")
+                    "CO (8hr)": co_map.get(reg, "N/A")
+                    
                 })
             
             # Convert to DataFrame and display
