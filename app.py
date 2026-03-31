@@ -41,9 +41,9 @@ if "g10_target_fix" not in st.session_state:
 
 # --- DATA ENGINES ---
 
-# --- NEW: SG ECONOMY DATA ENGINE ---
+
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
-def fetch_sg_economy():
+def fetch_sg_economy(): # --- NEW: SG ECONOMY DATA ENGINE ---
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
     try:
         # Using a reliable financial API or SingStat API
@@ -59,7 +59,7 @@ def fetch_sg_economy():
         return {"cpi_val": 100.7, "cpi_delta": 0.0, "inf_val": 1.4, "inf_delta": 0.0}
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic():
+def fetch_fuel_logic(): #Fuel Prices
     """
     Simulates Gemini-driven pull from Motorist.sg & Price Kaki (Actual Mar 2026 Data)
     Trends: Petrol decreased slightly on Mar 26; Diesel increased (Caltex +$0.20).
@@ -81,7 +81,7 @@ def fetch_fuel_logic():
     return averages, trends, brands
 
 @st.cache_data(ttl=300)
-def fetch_live_forex():
+def fetch_live_forex(): #Forex rates
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
     for label, sym in fx_tickers.items():
@@ -95,7 +95,7 @@ def fetch_live_forex():
     return fx_results
 
 @st.cache_data(ttl=300)
-def fetch_live_market_data():
+def fetch_live_market_data(): #Comodities rates
     tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Brent": "BZ=F"}
     results = {}
     for label, sym in tickers.items():
@@ -106,7 +106,7 @@ def fetch_live_market_data():
         except: results[label] = (0.0, 0.0)
     return results
 
-def get_upcoming_holiday():
+def get_upcoming_holiday(): #upcoming holidays
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
     holidays_2026 = [("Hari Raya Puasa", date(2026, 3, 21)), ("Good Friday", date(2026, 4, 3)), ("Labour Day", date(2026, 5, 1))]
@@ -115,7 +115,7 @@ def get_upcoming_holiday():
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
-def get_latest_coe():
+def get_latest_coe(): #COE Values
     # Dynamically pulling March 2026 Round 2 Results
     return [
         {"cat": "Cat A", "p": 111890, "ch": 3670, "q": 1264, "b": 1895},
@@ -125,7 +125,7 @@ def get_latest_coe():
     ]
 
 @st.cache_data(ttl=600)
-def connect_and_fetch_hdb():
+def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search?resource_id="+ dataset_id
 
@@ -140,6 +140,37 @@ def connect_and_fetch_hdb():
         return pd.DataFrame(), False, f"Server Error: {response.status_code}"
     except Exception as e:
         return pd.DataFrame(), False, f"Connection Failed: {str(e)}"
+
+current_year = datetime.now().year
+@st.cache_data(ttl=3600)
+def get_hdb_data_sorted(): #hdb data sorted 
+    # API Endpoint (resource_id d_8b84c4ee58e3cfc0ece0d773c8ca6abc is the 2017-2026 series),  SORTING: We use 'month desc' to put the most recent 2026 records at the top
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=1000&sort=month desc"
+    # 1. SET CURRENT YEAR TO A VARIABLE
+    
+    try:
+        # Show sorting message as requested
+        st.info(f"🔄 Sorting database: {current_year} records prioritized...")
+        
+        response = requests.get(url, timeout=10).json()
+        records = response.get('result', {}).get('records', [])
+        
+        if records:
+            df = pd.DataFrame(records)
+            
+            # Additional logic: Ensure the 'month' column is treated correctly
+            # Data format in API is 'YYYY-MM'
+            df['resale_price'] = pd.to_numeric(df['resale_price'], errors='coerce')
+            
+            # 2. FILTER TO CURRENT YEAR ONLY (Optional, based on your logic)
+            # This ensures even if the API sends older data, we only keep 2026
+            df = df[df['month'].str.startswith(str(current_year))]
+            
+            return df
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Connection Error: {e}")
+        return pd.DataFrame()
 
 
 
@@ -521,35 +552,28 @@ with tab2:
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
  
-    # --- 3. Rail and Road Service---
+    # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
       st.caption("🔍 *pending code")
 
     #-----------------HDB National Resale
     with st.expander("📊 **National HDB Resale Sentiments**", expanded=True):
     
-        # THIS IS THE PART THAT WAS MISSING: You must call the function!
-        df_ntl, is_connected, status_msg = connect_and_fetch_hdb()
+        df_ntl, is_connected, status_msg = connect_and_fetch_hdb()   # Running of the function to connect to API and status
     
         if is_connected:
             st.success(status_msg)
 
-            #NEED TO MORDIFY THE QUOTE HERE FROM JAN TILL CURRENT TO GET THE AVG
-            # Now proceed with your 2026 calculations
-            df_ntl['resale_price'] = pd.to_numeric(df_ntl['resale_price'], errors='coerce')
-            df_2026 = df_ntl[df_ntl['month'].str.contains('2026', na=False)]
-            
-            if not df_2026.empty:
-                avg_stats = df_2026.groupby('flat_type')['resale_price'].mean()
-                st.markdown("### 🏆 NTL AVERAGE SALE PRICE (2026)")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("3-ROOM", f"${avg_stats.get('3 ROOM', 0):,.0f}")
-                c2.metric("4-ROOM", f"${avg_stats.get('4 ROOM', 0):,.0f}")
-                c3.metric("5-ROOM", f"${avg_stats.get('5 ROOM', 0):,.0f}")
+            hdb_df = get_hdb_data_sorted() # running of the data sorting record
+
+            if not hdb_df.empty:
+                # Confirmation message before results
+                st.success(f"✅ Displaying sorted {current_year} records (Total: {len(hdb_df)} transactions found)")
+                
+                # Display the top of the sorted database
+                st.dataframe(hdb_df, use_container_width=True)
             else:
-                st.info("📅 Connection OK, but no 2026 records found yet. Government data usually lags by 4-6 weeks.")
-        else:
-            st.error(status_msg)
+                st.warning(f"No records found for {current_year} yet. The API may still be updating.")
     
        
          
