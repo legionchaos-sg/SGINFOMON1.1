@@ -612,7 +612,9 @@ with tab2:
             
             st.divider()
             st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
-            pm_readings = psi_data['readings']['pm25_one_hourly']
+            # To this (The 'Safe' way):
+            readings = psi_data.get('readings', {})
+            pm_readings = readings.get('pm25_one_hourly', {})
             
             pm_cols = st.columns(5)
             for i, region in enumerate(["national", "north", "south", "east", "west"]):
