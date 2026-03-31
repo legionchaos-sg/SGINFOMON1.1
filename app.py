@@ -592,7 +592,7 @@ with tab2:
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
 
-            try:
+        try:
             # In v2, psi_data is data['items'][0] from our fetch function
             readings = psi_data.get('readings', {})
             
