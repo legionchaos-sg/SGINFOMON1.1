@@ -592,14 +592,7 @@ with tab2:
             c2.metric("Wind Speed", "12 knots") 
             c3.metric("Humidity", "85%")
     
-        # --- ROW 2: WBGT (Heat Stress) ---
-        if wbgt_ok:
-            st.json(readings)
-            st.divider()
-            val = wbgt['readings'][0]['value']
-            st.metric("Wet Bulb Globe Temp (WBGT)", f"{val}°C")
-    
-        # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
+        # --- SG AIR QUALITY --- this side is good 
         if psi_ok:
             readings = psi_data.get('readings', {})
         
