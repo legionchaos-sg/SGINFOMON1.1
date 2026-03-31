@@ -573,33 +573,65 @@ with tab2:
         psi_data, psi_ok = fetch_env_data("psi_all")
         
         # --- ROW 1: SG Weather (Air Temp, Wind, Humidity) ---
-        st.markdown("### 🌡️ SG Environmental Watch")
-        c1, c2, c3 = st.columns(3)
-        
-        if w_ok:
+        # --- 1. FETCH ALL WEATHER DATA ---
+            t_raw, t_ok = fetch_env_data("air-temperature")
+            ws_raw, ws_ok = fetch_env_data("wind-speed")
+            wd_raw, wd_ok = fetch_env_data("wind-direction")
+            rh_raw, rh_ok = fetch_env_data("relative-humidity")
+            fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
+            
+            # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
+            # We map your specific locations to the API's Station names/Area names
+            locations = [
+                "Woodlands", "Ang Mo Kio", "Changi", "Bedok", 
+                "Outram", "Redhill", "Clementi", "Jurong"
+            ]
+            
+            def get_reading(raw_data, loc_name):
+                """Safely extracts value for a location from real-time sensor APIs"""
+                if not raw_data: return "N/A"
+                readings = raw_data.get('readings', [{}])[0].get('data', [])
+                # Find station name that matches our location
+                for r in readings:
+                    # Note: API might use 'S104' etc, so we match metadata if needed 
+                    # For simplicity, we search for the location name in the station list
+                    if loc_name.lower() in str(r.get('stationId', '')).lower():
+                        return r.get('value', "N/A")
+                return "N/A"
+            
+            def get_forecast(raw_data, loc_name):
+                """Extracts forecast string for a specific area"""
+                if not raw_data: return "N/A"
+                # v2 Forecasts are in items[0]['forecasts']
+                items = raw_data.get('items', [])
+                if items:
+                    for f in items[0].get('forecasts', []):
+                        if f['area'].lower() == loc_name.lower():
+                            return f['forecast']
+                return "N/A"
 
-            with st.expander("🔍 Debug: Weather API Structure"):
-                # This shows the 'Top Level' keys
-                st.write("Top Level Keys:", weather.keys())
+            # --- 3. BUILD THE TABLE ---
+            st.markdown("### 🌦️ Regional Weather Watch")
             
-                # This shows the actual content
-                st.json(weather)
-
+            weather_rows = []
+            for loc in locations:
+                weather_rows.append({
+                    "Location": loc,
+                    "Temp (°C)": get_reading(t_raw, loc),
+                    "Wind (kt)": get_reading(ws_raw, loc),
+                    "Dir (°)": get_reading(wd_raw, loc),
+                    "Humidity (%)": get_reading(rh_raw, loc),
+                    "Forecast": get_forecast(fc_raw, loc)
+                })
             
-            # 1. Access the readings for Temperature correctly
-            # 'weather' here is already the first item: data['items'][0]
-            temp_readings = weather.get('readings', [])
+            # Convert to DataFrame
+            df_weather = pd.DataFrame(weather_rows)
             
-            if temp_readings:
-                # Taking the first station's reading (e.g., Ang Mo Kio or Changi)
-                current_temp = temp_readings[0].get('value', 'N/A')
-                c1.metric("Air Temp", f"{current_temp}°C")
-            else:
-                c1.metric("Air Temp", "N/A")
-                
-            # 2. Placeholders (or add your fetch calls for these)
-            c2.metric("Wind Speed", "12 knots") 
-            c3.metric("Humidity", "85%")
+            # Apply "Gold 10" Styling (Left Aligned)
+            styled_weather = df_weather.style.set_properties(**{'text-align': 'left'})
+            
+            # Display Table
+            st.table(styled_weather)
     
         # --- ROW 2: WBGT (Heat Stress) ---
         if wbgt_ok:
