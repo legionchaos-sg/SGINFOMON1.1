@@ -131,13 +131,21 @@ def get_latest_coe(): #COE Values
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/records" 
+        f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/records"
     
 
-    # NEW: Authentication Header
-    headers = {
-        "x-api-key": HDBAPIKEYRESALE,
-        "Content-Type": "application/json"
+    # Define your query parameters
+    params = {
+        "resource_id": dataset_id,
+        "limit": 100  # Number of records to fetch
     }
+    
+    response = requests.get(url, params=params)
+    data = response.json()
+    
+    # The data is located here:
+    records = data['result']['records']
+    print(records[0])
 
     # Capture the exact time of the attempt
     pull_time = datetime.now().strftime("%H:%M:%S")
