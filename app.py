@@ -593,24 +593,42 @@ with tab2:
     
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
-            st.json(readings)
-            try:
-                # In v2, psi_data is data['items'][0] from our fetch function
-                readings = psi_data.get('readings', {})
-                
-                # --- PM2.5 Regional ---
-                # The key in v2 is usually 'pm25_one_hourly'
-                pm_readings = readings.get('pm25_one_hourly', {})
-                
-                if pm_readings:
-                    st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
-                    pm_cols = st.columns(5)
-                    for i, reg in enumerate(["national", "north", "south", "east", "west"]):
-                        val = pm_readings.get(reg, "N/A")
-                        pm_cols[i].metric(reg.title(), val)
+            if psi_ok:
+    # 1. Define readings safely first
+    readings = psi_data.get('readings', {})
+    
+    # 2. Show the "Map" of the data so we can see the correct keys
+    # This will help us find why you were getting N/A
+    with st.expander("🛠️ Debug: View Raw API Keys"):
+        st.json(readings) 
 
-            except Exception as e: # <--- Matches the 'try' indentation
-                st.warning("Air quality data currently unavailable.")
+        try:
+            # 3. Use a more flexible way to find PM2.5
+            # It tries 'pm25_one_hourly', then 'pm25', then 'pm25_sub_index'
+            pm_readings = readings.get('pm25_one_hourly', 
+                          readings.get('pm25', 
+                          readings.get('pm25_sub_index', {})))
+            
+            if pm_readings:
+                st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+                pm_cols = st.columns(5)
+                for i, reg in enumerate(["national", "north", "south", "east", "west"]):
+                    val = pm_readings.get(reg, "N/A")
+                    pm_cols[i].metric(reg.title(), val)
+            
+            # 4. Pollutants using the safe 'get' helper
+            st.divider()
+            st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
+            p_cols = st.columns(4)
+            
+            # This nested get is the 'Gold 10' safety standard
+            p_cols[0].metric("PSI 24h", readings.get('psi_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[1].metric("PM10", readings.get('pm10_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[2].metric("SO2", readings.get('so_two_twenty_four_hourly', {}).get('national', 'N/A'))
+            p_cols[3].metric("CO (8h)", readings.get('co_eight_hour_max', {}).get('national', 'N/A'))
+    
+        except Exception as e:
+            st.warning(f"Note: Some air quality metrics are currently unavailable.")
             
             st.divider()
             st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
