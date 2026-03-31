@@ -619,16 +619,6 @@ with tab2:
             # Convert to DataFrame and display
             df = pd.DataFrame(table_data)
             st.dataframe(df, hide_index=True, use_container_width=True)
-
-            # 2. Apply styling to left-align all text/numbers - left indent for the values
-            styled_df = df.style.set_properties(**{
-                'text-align': 'left',
-                'white-space': 'pre-wrap'
-            }).set_table_styles([
-                dict(selector='th', props=[('text-align', 'left')]) # Also aligns headers
-            ])
-
-            st.table(styled_df)
         
             st.divider()
         
@@ -648,15 +638,6 @@ with tab2:
             c2.metric("CO (8hr Max)", co_val)
             
             st.divider()
-            st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
-            # To this (The 'Safe' way):
-            readings = psi_data.get('readings', {})
-            pm_readings = readings.get('pm25_one_hourly', {})
-            
-            pm_cols = st.columns(5)
-            for i, region in enumerate(["national", "north", "south", "east", "west"]):
-                val = pm_readings.get(region, "N/A")
-                pm_cols[i].metric(region.title(), val)
     
             # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
             st.divider()
