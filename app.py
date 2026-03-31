@@ -591,8 +591,24 @@ with tab2:
     
         # --- ROW 3: PM2.5 Regional (National, N, S, E, W) ---
         if psi_ok:
+
+            try:
+            # In v2, psi_data is data['items'][0] from our fetch function
+            readings = psi_data.get('readings', {})
+            
+            # --- PM2.5 Regional ---
+            # The key in v2 is usually 'pm25_one_hourly'
+            pm_readings = readings.get('pm25_one_hourly', {})
+            
+            if pm_readings:
+                st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+                pm_cols = st.columns(5)
+                for i, reg in enumerate(["national", "north", "south", "east", "west"]):
+                    val = pm_readings.get(reg, "N/A")
+                    pm_cols[i].metric(reg.title(), val)
+            
             st.divider()
-            st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
+            st.markdown("### 🌫️ PM2.5 Island(µg/m³)")
             pm_readings = psi_data['readings']['pm25_one_hourly']
             
             pm_cols = st.columns(5)
