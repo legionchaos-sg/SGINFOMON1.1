@@ -659,7 +659,8 @@ with tab2:
             })
             
         # Convert to DataFrame and display
-        st.dataframe(styled_weather, hide_index=True, use_container_width=True)     
+        df = pd.dataframe(table.data)
+        st.dataframe(df, styled_weather, hide_index=True, use_container_width=false)     
         
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
