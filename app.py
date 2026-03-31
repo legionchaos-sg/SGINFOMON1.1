@@ -631,21 +631,21 @@ with tab2:
     
         # --- SG AIR QUALITY --- this side is good 
         #if psi_ok:
-            readings = psi_data.get('readings', {})
-            st.markdown("### 📊 SG Air Quality")
+        readings = psi_data.get('readings', {})
+        st.markdown("### 📊 SG Air Quality")
             
-            # Extract the three main sub-indices
-            psi_map = readings.get('psi_twenty_four_hourly', {})
-            pm10_map = readings.get('pm10_sub_index', {}) # Using sub_index as requested
-            pm25_map = readings.get('pm25_twenty_four_hourly', {})
-            so2_map = readings.get('so2_twenty_four_hourly', {})
-            co_map = readings.get ('co_eight_hour_max', {})
+        # Extract the three main sub-indices
+        psi_map = readings.get('psi_twenty_four_hourly', {})
+        pm10_map = readings.get('pm10_sub_index', {}) # Using sub_index as requested
+        pm25_map = readings.get('pm25_twenty_four_hourly', {})
+        so2_map = readings.get('so2_twenty_four_hourly', {})
+        co_map = readings.get ('co_eight_hour_max', {})
             
-            # Define the regions we want to show
-            regions = ["central", "north", "south", "east", "west"]
+        # Define the regions we want to show
+        regions = ["central", "north", "south", "east", "west"]
             
-            # Create the data list for the table
-            table_data = []
+        # Create the data list for the table
+        table_data = []
             for reg in regions:
                 table_data.append({
                     "Region": reg.title(),
@@ -654,15 +654,11 @@ with tab2:
                     "PM2.5 (4hr)": pm25_map.get(reg, "N/A"),
                     "SO2 (4hr)": so2_map.get(reg, "N/A"),
                     "CO (8hr)": co_map.get(reg, "N/A")
-                    
                 })
             
-            # Convert to DataFrame and display
-            df = pd.DataFrame(table_data)
-            st.dataframe(df, hide_index=True, use_container_width=True)
-        
-            st.divider()
-             
+        # Convert to DataFrame and display
+        df = pd.DataFrame(table_data)
+        st.dataframe(df, hide_index=True, use_container_width=True)     
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
       st.caption("🔍 *pending code")
