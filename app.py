@@ -128,14 +128,13 @@ def get_latest_coe(): #COE Values
 
 @st.cache_data(ttl=600)
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
-    #dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
     url = f"https://data.gov.sg/api/action/datastore_search"
 
     # Define your query parameters
     # 2. Use the HDB Resource ID
     params = {
         "resource_id": "d_8b84c4ee58e3cfc0ece0d773c8ca6abc",
-        "limit": 100
+        "limit": 1000
     }
 
     # 3. NO HEADERS. DO NOT USE THE API KEY HERE.
@@ -150,7 +149,7 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
         return [], False, f"Error: {response.status_code}"
     
     # The data is located here:
-    records = data['data']['records']
+    records = data['results']['records']
     print(records[0])
 
     # Capture the exact time of the attempt
