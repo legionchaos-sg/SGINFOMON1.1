@@ -659,7 +659,7 @@ with tab2:
             })
             
         # Convert to DataFrame and display
-        df = pd.dataframe(table.data)
+        df = pd.DataFrame(table.data)
         st.dataframe(df, styled_weather, hide_index=True, use_container_width=false)     
         
     # --------------Rail and Road Service---
