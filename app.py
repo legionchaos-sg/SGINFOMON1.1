@@ -568,21 +568,29 @@ with tab2:
 
     #--------------Weather 
     with st.expander("🌤️ Environmental Forecast", expanded=True):
-        #--- FETCH ALL DATA ---
         weather, w_ok = fetch_env_data("temp")
-        # For simplicity, we assume wind/hum can be fetched similarly
         wbgt, wbgt_ok = fetch_env_data("wbgt")
         psi_data, psi_ok = fetch_env_data("psi_all")
-    
-        # --- ROW 1: Real Weather (Air Temp, Wind, Humidity) ---
-        st.markdown("### 🌡️ Real-time Weather")
+        
+        # --- ROW 1: SG Weather (Air Temp, Wind, Humidity) ---
+        st.markdown("### 🌡️ SG Environmental Watch")
         c1, c2, c3 = st.columns(3)
+        
         if w_ok:
-            st.json(readings)
-            # Taking the first station's reading as a general sample
-            c1.metric("Air Temp", f"{weather['readings'][0]['value']}°C")
-            c2.metric("Wind Speed", "12 knots") # Placeholder: requires 'wind' call
-            c3.metric("Humidity", "85%")        # Placeholder: requires 'humidity' call
+            # 1. Access the readings for Temperature correctly
+            # 'weather' here is already the first item: data['items'][0]
+            temp_readings = weather.get('readings', [])
+            
+            if temp_readings:
+                # Taking the first station's reading (e.g., Ang Mo Kio or Changi)
+                current_temp = temp_readings[0].get('value', 'N/A')
+                c1.metric("Air Temp", f"{current_temp}°C")
+            else:
+                c1.metric("Air Temp", "N/A")
+                
+            # 2. Placeholders (or add your fetch calls for these)
+            c2.metric("Wind Speed", "12 knots") 
+            c3.metric("Humidity", "85%")
     
         # --- ROW 2: WBGT (Heat Stress) ---
         if wbgt_ok:
@@ -626,50 +634,6 @@ with tab2:
             st.dataframe(df, hide_index=True, use_container_width=True)
         
             st.divider()
-        
-            # 2. --- ADDITIONAL POLLUTANTS (SO2, CO) ---
-            st.markdown("### 🧪 Trace Pollutants (National/Central)")
-            c1, c2 = st.columns(2)
-            
-            # SO2 and CO usually provide a single key or 'national'/'central'
-            # We check 'national' first, then 'central' as a backup
-            so2_val = readings.get('so2_twenty_four_hourly', {}).get('national', 
-                      readings.get('so2_twenty_four_hourly', {}).get('central', 'N/A'))
-            
-            co_val = readings.get('co_eight_hour_max', {}).get('national', 
-                     readings.get('co_eight_hour_max', {}).get('central', 'N/A'))
-        
-            c1.metric("SO2 (24hr)", so2_val)
-            c2.metric("CO (8hr Max)", co_val)
-            
-            st.divider()
-    
-            # --- ROW 4: PSI & Pollutants (PM10, SO2, CO) ---
-            st.divider()
-            st.markdown("### 🧪 Air Pollutants (24-hr Mean)")
-            rd = psi_data['readings']
-
-            # Safely navigate to the readings
-            # In some v2 responses, it is ['readings'], in others it's within the item list
-            try:
-                readings = psi_data['readings']
-                pm_readings = readings['pm25_one_hourly']
-                
-                st.markdown("### 🌫️ PM2.5 Regional (µg/m³)")
-                pm_cols = st.columns(5)
-                # Match the API's exact keys: north, south, east, west
-                for i, region in enumerate(["north", "south", "east", "west"]):
-                    val = pm_readings.get(region, "N/A")
-                    pm_cols[i].metric(region.title(), val)
-                    
-            except KeyError as e:
-                st.error(f"Data structure mismatch: {e}")
-                # Debug tip: st.write(psi_data) to see the actual keys
-            
-            p_cols = st.columns(3)
-            p_cols[0].metric("PM10", rd.get('pm10_twenty_four_hourly', {}).get('national', 'N/A'))
-            p_cols[1].metric("SO2", rd.get('so_two_twenty_four_hourly', {}).get('national', 'N/A'))
-            p_cols[2].metric("CO (8h)", rd.get('co_eight_hour_max', {}).get('national', 'N/A'))
              
     # --------------Rail and Road Service---
     with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
