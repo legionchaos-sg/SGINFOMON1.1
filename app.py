@@ -573,16 +573,16 @@ with tab2:
         if is_connected:
             st.success(status_msg)
 
-            hdb_df = get_hdb_data_sorted() # running of the data sorting record
+            #hdb_df = get_hdb_data_sorted() # running of the data sorting record
 
-            if not hdb_df.empty:
+            #if not hdb_df.empty:
                 # Confirmation message before results
-                st.success(f"✅ Displaying sorted {current_year} records (Total: {len(hdb_df)} transactions found)")
+                #st.success(f"✅ Displaying sorted {current_year} records (Total: {len(hdb_df)} transactions found)")
                 
                 # Display the top of the sorted database
-                st.dataframe(hdb_df, use_container_width=True)
-            else:
-                st.warning(f"No records found for {current_year} yet. The API may still be updating.")
+                #st.dataframe(hdb_df, use_container_width=True)
+            #else:
+                #st.warning(f"No records found for {current_year} yet. The API may still be updating.")
     
        
          
