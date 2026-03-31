@@ -130,7 +130,7 @@ HDBAPIKEYRESALE = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec4952
 @st.cache_data(ttl=600)
 def connect_and_fetch_hdb(): #HDB API connection  and confirmed status 
     dataset_id = "d_8b84c4ee58e3cfc0ece0d773c8ca6abc"
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id="+ dataset_id
+    url = f"https://api-production.data.gov.sg/v2/public/api/datasets/{dataset_id}/initiate-download"
 
     # NEW: Authentication Header
     headers = {
