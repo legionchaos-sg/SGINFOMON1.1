@@ -141,19 +141,22 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     response = requests.get(url, params=params)
     
     if response.status_code == 200:
-        data = response.json()
-        # 4. LEGACY API uses ['result']['records']
-        records = data['result']['records']
+        # 2. Capture the time and print (DO THIS BEFORE RETURNING)
+        pull_time = datetime.now().strftime("%H:%M:%S")
+        print(f"Successfully pulled {len(records)} records at {pull_time}")
+        
+        if len(records) > 0:
+            print(records[0]) # Print the first row to console
+        
+        # 3. NOW exit the function with the data
         return records, True, "Success"
-    else:
-        return [], False, f"Error: {response.status_code}"
     
     # The data is located here:
-    records = data['results']['records']
-    print(records[0])
+    #records = data['results']['records']
+    #print(records[0])
 
     # Capture the exact time of the attempt
-    pull_time = datetime.now().strftime("%H:%M:%S")
+    #pull_time = datetime.now().strftime("%H:%M:%S")
     
     #try:
         # FIXED: You MUST pass the headers variable into the request here
