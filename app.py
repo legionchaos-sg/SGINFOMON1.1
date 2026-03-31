@@ -138,29 +138,29 @@ def connect_and_fetch_hdb(): #HDB API connection  and confirmed status
     }
 
     try: 
-    # 3. NO HEADERS. DO NOT USE THE API KEY HERE.
-    response = requests.get(url, params=params)
+        # 3. NO HEADERS. DO NOT USE THE API KEY HERE.
+        response = requests.get(url, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # 2. Capture the time and print (DO THIS BEFORE RETURNING)
+            records = data['result']['records']
+            pull_time = datetime.now().strftime("%H:%M:%S")
+            
+            print(f"Successfully pulled {len(records)} records at {pull_time}")
+            
+            return records, True, "Success"
+            
+            if len(records) > 0:
+                print(records[0]) # Print the first row to console
     
-    if response.status_code == 200:
-        data = response.json()
-        
-        # 2. Capture the time and print (DO THIS BEFORE RETURNING)
-        records = data['result']['records']
-        pull_time = datetime.now().strftime("%H:%M:%S")
-        
-        print(f"Successfully pulled {len(records)} records at {pull_time}")
-        
-        return records, True, "Success"
-        
-        if len(records) > 0:
-            print(records[0]) # Print the first row to console
-
-    else:
-        return [], False, f" API Error:{response.status.code}"
-
-except Exception as e:
-        # Handle connection issues
-        return [], False, f"Connection Failed: {str(e)}"
+        else:
+            return [], False, f" API Error:{response.status.code}"
+    
+    except Exception as e:
+            # Handle connection issues
+            return [], False, f"Connection Failed: {str(e)}"
         
     
     # The data is located here:
