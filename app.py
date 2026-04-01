@@ -570,65 +570,60 @@ with tab2:
     with st.expander("🌤️ Environmental Forecast", expanded=True):
 
         # --- 1. FETCH ALL WEATHER DATA ---
-        t_raw, t_ok = fetch_env_data("air-temperature")
-        ws_raw, ws_ok = fetch_env_data("wind-speed")
-        wd_raw, wd_ok = fetch_env_data("wind-direction")
-        rh_raw, rh_ok = fetch_env_data("relative-humidity")
-        fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
+        #t_raw, t_ok = fetch_env_data("air-temperature")
+        #ws_raw, ws_ok = fetch_env_data("wind-speed")
+        #wd_raw, wd_ok = fetch_env_data("wind-direction")
+        #rh_raw, rh_ok = fetch_env_data("relative-humidity")
+        #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
+        24hrok = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
         
         # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
-        # We map your specific locations to the API's Station names/Area names
+        # 1. Your requested location list
         locations = [
-            "Woodlands", "Ang Mo Kio", "Changi", "Bedok", 
-            "Outram", "Redhill", "Clementi", "Jurong"
+            "North (Woodlands)", "East (Changi)", 
+            "South (Outram)", "South (Jurong)"
         ]
         
-        def get_reading(raw_data, loc_name):
-            """Safely extracts value for a location from real-time sensor APIs"""
-            if not raw_data: return "N/A"
-            readings = raw_data.get('readings', [{}])[0].get('data', [])
-            # Find station name that matches our location
-            for r in readings:
-                # Note: API might use 'S104' etc, so we match metadata if needed 
-                # For simplicity, we search for the location name in the station list
-                if loc_name.lower() in str(r.get('stationId', '')).lower():
-                    return r.get('value', "N/A")
-            return "N/A"
+        # 2. Extract and Map the Data
+        if 24hrok:
+            st.markdown("### 🌦️ Regional 24-Hour Forecast")
+            
+            # Access the latest record's 'general' and 'periods' data, Note: 2026 API uses ['data']['records'][0] structure
+            latest_record = 24hrok.get('data', {}).get('records', [{}])[0]
+            
+            general = latest_record.get('general', {})
+            # Get the current time period forecast (e.g., Morning or Afternoon)
+            periods = latest_record.get('periods', [{}])[0]
+            reg_forecasts = periods.get('regions', {})
         
-        def get_forecast(raw_data, loc_name):
-            """Extracts forecast string for a specific area"""
-            if not raw_data: return "N/A"
-            # v2 Forecasts are in items[0]['forecasts']
-            items = raw_data.get('items', [])
-            if items:
-                for f in items[0].get('forecasts', []):
-                    if f['area'].lower() == loc_name.lower():
-                        return f['forecast']
-            return "N/A"
+            # Helper to clean the key for the API (e.g., "North (Woodlands)" -> "north")
+            def get_region_key(loc_str):
+                if "North" in loc_str: return "north"
+                if "East" in loc_str: return "east"
+                if "South" in loc_str: return "south"
+                if "West" in loc_str: return "west"
+                return "central"
         
-        # --- 3. BUILD THE TABLE for row 1---
-        st.markdown("### 🌦️ Regional Weather Watch")
+            # 3. Build Table Rows
+            table_data = []
+            for loc in locations:
+                region_key = get_region_key(loc)
+                # Pull the specific forecast text for that region
+                forecast_text = reg_forecasts.get(region_key, {}).get('text', "N/A")
+                
+                table_data.append({
+                    "Location / Estate": loc,
+                    "Forecast": forecast_text,
+                    "Temp Range": f"{general.get('temperature', {}).get('low', 'N/A')}°C - {general.get('temperature', {}).get('high', 'N/A')}°C",
+                    "Wind": f"{general.get('wind', {}).get('direction', 'N/A')} {general.get('wind', {}).get('speed', {}).get('high', 'N/A')} km/h",
+                    "Humidity": f"{general.get('relative_humidity', {}).get('low', 'N/A')}% - {general.get('relative_humidity', {}).get('high', 'N/A')}%"
+                })
         
-        weather_rows = []
-        for loc in locations:
-            weather_rows.append({
-                "Location": loc,
-                "Temp (°C)": get_reading(t_raw, loc),
-                "Wind (kt)": get_reading(ws_raw, loc),
-                "Dir (°)": get_reading(wd_raw, loc),
-                "Humidity (%)": get_reading(rh_raw, loc),
-                "Forecast": get_forecast(fc_raw, loc)
-            })
-        
-        # Convert to DataFrame
-        df_weather = pd.DataFrame(weather_rows)
-        #st.dataframe(df_weather, hide_index=True)
-        
-        # Apply "Gold 10" Styling (Left Aligned)
-        styled_weather = df_weather.style.set_properties(**{'text-align': 'left'})
-        
-        # Display Table
-        st.dataframe(styled_weather, hide_index=True, use_container_width=True)
+            # 4. Display as Table
+            df_final = pd.DataFrame(table_data)
+            st.table(df_final.style.set_properties(**{'text-align': 'left'}))
+        else:
+            st.error("24-Hour Forecast data currently unavailable.")
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
