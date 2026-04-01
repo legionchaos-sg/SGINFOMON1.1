@@ -578,7 +578,7 @@ with tab2:
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-   Try:
+   try:
        if ok_24h and forecast_24h:
             items = forecast_24h.get('items', [])
             if items:
