@@ -578,57 +578,72 @@ with tab2:
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-   Try
-    if ok_24h:
-        st.markdown("### 🌦️ Regional Weather Watch (24H)")
+   Try:
+       if ok_24h and forecast_24h:
+            items = forecast_24h.get('items', [])
+            if items:
+                latest = items[0]
+                # ... (Rest of your mapping logic for Woodlands/Changi/etc) ...
+                st.success("Data Mapped") 
+            else:
+                st.warning("Data found but items list is empty.")
+        else:
+            st.warning("Regional data currently unavailable.")
+
+# Line 625 should now work perfectly:
+except Exception as e:
+    st.error(f"Mapping Error: {e}")
+   
+    #if ok_24h:
+    #    st.markdown("### 🌦️ Regional Weather Watch (24H)")
     
         # Accessing the NEA 2026 v2 Nested Structure
         # items -> [0] -> periods -> [0] -> regions
-        items = forecast_24h.get('items', [])
-        if items:
-            latest = items[0]
-            general = latest.get('general', {})
-            periods = latest.get('periods', [{}])[0]
-            reg_forecasts = periods.get('regions', {})
+     #   items = forecast_24h.get('items', [])
+     #   if items:
+     #       latest = items[0]
+     #       general = latest.get('general', {})
+     #       periods = latest.get('periods', [{}])[0]
+     #       reg_forecasts = periods.get('regions', {})
 
             # Your 4 specific locations
-            locations = [
-                "North (Woodlands)", "East (Changi)", 
-                "South (Outram)", "South (Jurong)"
-            ]
+     #       locations = [
+     #           "North (Woodlands)", "East (Changi)", 
+     #           "South (Outram)", "South (Jurong)"
+     #       ]
 
-            table_data = []
-            for loc in locations:
-                # Logic: Pull the first word (North/East/South) to match API keys
-                key = loc.split(" ")[0].lower() 
+     #       table_data = []
+     #       for loc in locations:
+     #           # Logic: Pull the first word (North/East/South) to match API keys
+     #           key = loc.split(" ")[0].lower() 
             
-                table_data.append({
-                    "Location": loc,
-                    "Forecast": reg_forecasts.get(key, "N/A"),
-                    "Temp Range": f"{general.get('temperature', {}).get('low')}°C - {general.get('temperature', {}).get('high')}°C",
-                    "Wind": f"{general.get('wind', {}).get('direction')} {general.get('wind', {}).get('speed', {}).get('high')}km/h"
-                })
+     #           table_data.append({
+     #               "Location": loc,
+     #               "Forecast": reg_forecasts.get(key, "N/A"),
+     #               "Temp Range": f"{general.get('temperature', {}).get('low')}°C - {general.get('temperature', {}).get('high')}°C",
+     #               "Wind": f"{general.get('wind', {}).get('direction')} {general.get('wind', {}).get('speed', {}).get('high')}km/h"
+     #           })
 
             # --- 3. THE DRAWING STEP ---
-            df_regional = pd.DataFrame(table_data)
+     #       df_regional = pd.DataFrame(table_data)
         
             # Applying the 'Gold 10' styling (10pt font, left align)
-            styled_regional = df_regional.style.set_properties(**{
-                'text-align': 'left',
-                'font-size': '10pt'
-            })
+     #       styled_regional = df_regional.style.set_properties(**{
+     #           'text-align': 'left',
+     #           'font-size': '10pt'
+     #       })
         
             # DRAW THE TABLE (Fixes the "did not draw" issue)
-            st.table(styled_regional) 
-    else:
-        st.warning("Regional data currently unavailable. Refreshing...")
+     #       st.table(styled_regional) 
+    #else:
+    #    st.warning("Regional data currently unavailable. Refreshing...")
 
-   except Exception as e:
-            st.error(f"Mapping Error: {e}")
-            with st.expander("🛠️ Debug Raw Data"):
-                st.json(forecast_24h)
-    else:
-        st.warning("Regional data currently unavailable. Refreshing...")
+   #except Exception as e:
+            #st.error(f"Mapping Error: {e}")
+            #with st.expander("🛠️ Debug Raw Data"):
+                #st.json(forecast_24h)
+    #else:
+        #st.warning("Regional data currently unavailable. Refreshing...")
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
