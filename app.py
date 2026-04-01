@@ -585,7 +585,7 @@ with tab2:
         ]
         
         # 2. Extract and Map the Data
-        if 24hr_ok:
+        if api_24hrok:
             st.markdown("### 🌦️ Regional 24-Hour Forecast")
             
             # Access the latest record's 'general' and 'periods' data, Note: 2026 API uses ['data']['records'][0] structure
