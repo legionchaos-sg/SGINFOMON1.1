@@ -575,7 +575,7 @@ with tab2:
         #wd_raw, wd_ok = fetch_env_data("wind-direction")
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
-        24hrok = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
+        24hr_ok = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
         
         # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
         # 1. Your requested location list
@@ -585,11 +585,11 @@ with tab2:
         ]
         
         # 2. Extract and Map the Data
-        if 24hrok:
+        if 24hr_ok:
             st.markdown("### 🌦️ Regional 24-Hour Forecast")
             
             # Access the latest record's 'general' and 'periods' data, Note: 2026 API uses ['data']['records'][0] structure
-            latest_record = 24hrok.get('data', {}).get('records', [{}])[0]
+            latest_record = 24hr_ok.get('data', {}).get('records', [{}])[0]
             
             general = latest_record.get('general', {})
             # Get the current time period forecast (e.g., Morning or Afternoon)
