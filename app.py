@@ -586,9 +586,9 @@ with tab2:
                 # ... (Rest of your mapping logic for Woodlands/Changi/etc) ...
                 st.success("Data Mapped") 
             else:
-                st.warning("Data found but items list is empty.")
-        else:
-            st.warning("Regional data currently unavailable.")
+                st.warning("Data found but items list is empty
+       else:
+           st.warning("Regional data currently unavailable.")
 
 # Line 625 should now work perfectly:
    except Exception as e:
