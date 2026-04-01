@@ -568,41 +568,36 @@ with tab2:
 
     #--------------Weather Main
     with st.expander("🌤️ Environmental Forecast", expanded=True):
-
         # --- 1. FETCH ALL WEATHER DATA ---
         #t_raw, t_ok = fetch_env_data("air-temperature")
         #ws_raw, ws_ok = fetch_env_data("wind-speed")
         #wd_raw, wd_ok = fetch_env_data("wind-direction")
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
-       forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
+        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-
     # --- 2. THE TABLE LOGIC ---
     # --- 1. ACCESS THE API DATA FIELDS ---
-        try:
-            # Navigate: data -> records (first item)
-            record = forecast_24h['data']['records'][0]
-            
-            # Navigate: periods (first item) -> regions
-            # This contains 'north', 'south', 'east', 'west', 'central'
-            regional_data = record.get('periods', [{}])[0].get('regions', {})
-            
-            # Navigate: general info (Temperature and Wind)
-            general = record.get('general', {})
-            high_temp = general.get('temperature', {}).get('high', 'N/A')
-            low_temp  = general.get('temperature', {}).get('low', 'N/A')
-            wind_spd  = general.get('wind', {}).get('speed', {}).get('high', 'N/A')
-            wind_dir  = general.get('wind', {}).get('direction', 'N/A')
+    try:
+    # Navigate: data -> records (first item)
+        record = forecast_24h['data']['records'][0]
+        # Navigate: periods (first item) -> regions
+        # This contains 'north', 'south', 'east', 'west', 'central'
+        regional_data = record.get('periods', [{}])[0].get('regions', {})
+        # Navigate: general info (Temperature and Wind)
+        general = record.get('general', {})
+        high_temp = general.get('temperature', {}).get('high', 'N/A')
+        low_temp  = general.get('temperature', {}).get('low', 'N/A')
+        wind_spd  = general.get('wind', {}).get('speed', {}).get('high', 'N/A')
+        wind_dir  = general.get('wind', {}).get('direction', 'N/A')
+        # --- 2. PULL SPECIFIC WOODLANDS/NORTH DATA ---
+        woodlands_forecast = regional_data.get('north', 'No Data')
         
-            # --- 2. PULL SPECIFIC WOODLANDS/NORTH DATA ---
-            woodlands_forecast = regional_data.get('north', 'No Data')
-        
-        except (KeyError, IndexError, TypeError) as e:
-            st.error(f"Gold 10 Alert: API Field Mismatch - {e}")
-            woodlands_forecast = "Unavailable"
-            high_temp = low_temp = "N/A"
+    except (KeyError, IndexError, TypeError) as e:
+        st.error(f"Gold 10 Alert: API Field Mismatch - {e}")
+        woodlands_forecast = "Unavailable"
+        high_temp = low_temp = "N/A"
 
 
 
