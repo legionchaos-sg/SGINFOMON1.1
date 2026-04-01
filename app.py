@@ -579,19 +579,19 @@ with tab2:
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
    # --- THE CORRECTED BLOCK (Line 590) ---
-if ok_24h:
-    try:
-        items = forecast_24h.get('items', [])
-        if items:
-            # ... Your mapping for Woodlands, Changi, etc ...
-            st.success("Data Mapped")
-        else: # <--- Line 590: MUST align vertically with 'if items:'
-            st.warning("No items found in the 24-hour forecast.")
-            
-    except Exception as e:
-        st.error(f"Error: {e}")
-else: # <--- This else aligns with the very first 'if ok_24h:'
-    st.warning("Regional data currently unavailable.")
+    if ok_24h:
+        try:
+            items = forecast_24h.get('items', [])
+            if items:
+                # ... Your mapping for Woodlands, Changi, etc ...
+                st.success("Data Mapped")
+            else: # <--- Line 590: MUST align vertically with 'if items:'
+                st.warning("No items found in the 24-hour forecast.")
+                
+        except Exception as e:
+            st.error(f"Error: {e}")
+    else: # <--- This else aligns with the very first 'if ok_24h:'
+        st.warning("Regional data currently unavailable.")
    
     #if ok_24h:
     #    st.markdown("### 🌦️ Regional Weather Watch (24H)")
