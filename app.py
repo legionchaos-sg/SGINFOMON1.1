@@ -576,36 +576,43 @@ with tab2:
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
         forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
-        
-    # Collection ID 1459 = Realtime Weather Readings across Singapore
-    collection_id = 1459
-    url = f"https://api-production.data.gov.sg/v2/public/api/collections/{collection_id}/metadata"
+
+    # URL for real-time temperature (includes station metadata)
+    url = "https://api-open.data.gov.sg/v2/real-time/api/weather?api=air-temperature"
     
     try:
         response = requests.get(url)
-        
         if response.status_code == 200:
-            metadata = response.json()
+            data = response.json()
             
-            # Displaying the main metadata fields in your dashboard
-            st.subheader("📋 Collection Metadata")
-            st.write(f"**Name:** {metadata.get('name')}")
-            st.write(f"**Description:** {metadata.get('description')}")
+            # Pulling the Station List from the JSON
+            # Path: data -> station_metadata
+            stations = data.get('data', {}).get('station_metadata', [])
             
-            # Drill down into available datasets
-            datasets = metadata.get('datasets', [])
-            st.write(f"**Available Datasets:** {len(datasets)}")
-            
-            # Show as a clean table
-            df_meta = [{"Dataset": d['name'], "Format": d['format']} for d in datasets]
-            st.table(df_meta)
-            
+            if stations:
+                st.subheader("📍 Weather Station Metadata")
+                st.write(f"Found {len(stations)} active stations across Singapore.")
+                
+                # Convert to a Table for easy reading
+                df_stations = pd.DataFrame(stations)
+                
+                # Clean up the column names for your "Gold 10" display
+                df_stations.columns = ['Station ID', 'Station Name', 'Latitude', 'Longitude']
+                
+                st.dataframe(df_stations.sort_values('Station Name'), hide_index=True)
+                
+                # Highlight Woodlands for the user
+                woodlands_info = df_stations[df_stations['Station Name'].str.contains('Woodlands', case=False)]
+                if not woodlands_info.empty:
+                    st.success(f"✅ Found Woodlands Station: {woodlands_info.iloc[0]['Station ID']}")
+            else:
+                st.warning("Metadata found, but station list is empty.")
         else:
-            st.error(f"Failed to fetch metadata. Status code: {response.status_code}")
+            st.error(f"API Error: {response.status_code}")
     
     except Exception as e:
-        st.error(f"Gold 10 Error: {e}")
-
+        st.error(f"Gold 10 Connection Error: {e}")
+    
 
 
 
