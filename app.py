@@ -578,6 +578,7 @@ with tab2:
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
+    Try
     if ok_24h:
         st.markdown("### 🌦️ Regional Weather Watch (24H)")
     
