@@ -139,7 +139,8 @@ def fetch_env_data(category): #--------ENV
         "psi_all": "psi" # This contains PM2.5, PM10, SO2, CO, etc.
     }
     
-    url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoints.get(category)}"
+    #url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoints.get(category)}"
+    url = f"https://api-open.data.gov.sg/v2/real-time/api/{twenty-four-hr-forecast}"
     headers = {"x-api-key": st.secrets["DATAGOV_KEY"]}
     
     try:
