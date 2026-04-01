@@ -591,7 +591,7 @@ with tab2:
             st.warning("Regional data currently unavailable.")
 
 # Line 625 should now work perfectly:
-except Exception as e:
+   except Exception as e:
     st.error(f"Mapping Error: {e}")
    
     #if ok_24h:
