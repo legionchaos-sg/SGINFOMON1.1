@@ -578,7 +578,7 @@ with tab2:
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-    Try
+Try
     if ok_24h:
         st.markdown("### 🌦️ Regional Weather Watch (24H)")
     
@@ -623,7 +623,7 @@ with tab2:
     else:
         st.warning("Regional data currently unavailable. Refreshing...")
 
-    except Exception as e:
+except Exception as e:
             st.error(f"Mapping Error: {e}")
             with st.expander("🛠️ Debug Raw Data"):
                 st.json(forecast_24h)
