@@ -575,70 +575,52 @@ with tab2:
         #wd_raw, wd_ok = fetch_env_data("wind-direction")
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
-        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
-        
-        # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
-        # 1. Your requested location list
-        locations = [
-            "North (Woodlands)", "East (Changi)", 
-            "South (Outram)", "South (Jurong)"
-        ]
-        
-        # 2. Extract and Map the Data
-        if ok_24h and forecast_24h:
-            st.markdown("### 🌦️ Regional 24-Hour Forecast")
+       forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
+
+    # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
+    if ok_24h:
+        st.markdown("### 🌦️ Regional Weather Watch (24H)")
     
-            # Structure: items is a LIST. We need the first element [0].
-            items = forecast_24h.get('items', [])
-            if items:
-                latest = items[0]
-                general = latest.get('general', {})
-                # Periods contains the regional text forecasts
-                periods = latest.get('periods', [{}])[0]
-                reg_forecasts = periods.get('regions', {})
+        # Accessing the NEA 2026 v2 Nested Structure
+        # items -> [0] -> periods -> [0] -> regions
+        items = forecast_24h.get('items', [])
+        if items:
+            latest = items[0]
+            general = latest.get('general', {})
+            periods = latest.get('periods', [{}])[0]
+            reg_forecasts = periods.get('regions', {})
 
-                locations = [
-                    "North (Woodlands)", "East (Changi)", 
-                    "South (Outram)", "South (Jurong)"
-                ]
+            # Your 4 specific locations
+            locations = [
+                "North (Woodlands)", "East (Changi)", 
+                "South (Outram)", "South (Jurong)"
+            ]
 
-                table_data = []
-                for loc in locations:
-                    # Match location string to API keys: 'north', 'south', 'east', 'west', 'central'
-                    key = loc.split(" ")[0].lower() 
+            table_data = []
+            for loc in locations:
+                # Logic: Pull the first word (North/East/South) to match API keys
+                key = loc.split(" ")[0].lower() 
             
-                    table_data.append({
-                        "Location / Estate": loc,
-                        "Forecast": reg_forecasts.get(key, "N/A"),
-                        "Temp Range": f"{general.get('temperature', {}).get('low')}°C - {general.get('temperature', {}).get('high')}°C",
-                        "Wind": f"{general.get('wind', {}).get('direction')} {general.get('wind', {}).get('speed', {}).get('high')} km/h",
-                        "Humidity": f"{general.get('relative_humidity', {}).get('low')}% - {general.get('relative_humidity', {}).get('high')}%"
-                    })
+                table_data.append({
+                    "Location": loc,
+                    "Forecast": reg_forecasts.get(key, "N/A"),
+                    "Temp Range": f"{general.get('temperature', {}).get('low')}°C - {general.get('temperature', {}).get('high')}°C",
+                    "Wind": f"{general.get('wind', {}).get('direction')} {general.get('wind', {}).get('speed', {}).get('high')}km/h"
+                })
 
-                df_final = pd.DataFrame(table_data)
-                # Apply your 10pt-style left alignment
-                st.table(df_final.style.set_properties(**{'text-align': 'left'}))
+            # --- 3. THE DRAWING STEP ---
+            df_regional = pd.DataFrame(table_data)
         
-            # 3. Build Table Rows
-            #table_data = []
-            #for loc in locations:
-            #    region_key = get_region_key(loc)
-            #    # Pull the specific forecast text for that region
-            #    forecast_text = reg_forecasts.get(region_key, {}).get('text', "N/A")
-                
-            #    table_data.append({
-            #        "Location / Estate": loc,
-            #        "Forecast": forecast_text,
-            #        "Temp Range": f"{general.get('temperature', {}).get('low', 'N/A')}°C - {general.get('temperature', {}).get('high', 'N/A')}°C",
-            #        "Wind": f"{general.get('wind', {}).get('direction', 'N/A')} {general.get('wind', {}).get('speed', {}).get('high', 'N/A')} km/h",
-            #        "Humidity": f"{general.get('relative_humidity', {}).get('low', 'N/A')}% - {general.get('relative_humidity', {}).get('high', 'N/A')}%"
-            #    })
+            # Applying the 'Gold 10' styling (10pt font, left align)
+            styled_regional = df_regional.style.set_properties(**{
+                'text-align': 'left',
+                'font-size': '10pt'
+            })
         
-            # 4. Display as Table
-            #df_final = pd.DataFrame(table_data)
-            #st.table(df_final.style.set_properties(**{'text-align': 'left'}))
-        #else:
-        #    st.error("24-Hour Forecast data currently unavailable.")
+            # DRAW THE TABLE (Fixes the "did not draw" issue)
+            st.table(styled_regional) 
+    else:
+        st.warning("Regional data currently unavailable. Refreshing...")
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
