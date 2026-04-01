@@ -589,7 +589,7 @@ with tab2:
             st.markdown("### 🌦️ Regional 24-Hour Forecast")
             
             # Access the latest record's 'general' and 'periods' data, Note: 2026 API uses ['data']['records'][0] structure
-            latest_record = api_24hrok.get('data', {}).get('records', [{}])[0]
+            latest_record = api_24hrok.get('items', {}).get('records', [{}])[0]
             
             general = latest_record.get('general', {})
             # Get the current time period forecast (e.g., Morning or Afternoon)
