@@ -580,50 +580,29 @@ with tab2:
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
 
     # --- 2. THE TABLE LOGIC ---
-    if ok_24h and forecast_24h:
-        # 2026 API uses 'items' or 'data.records'. We check both:
-        records = forecast_24h.get('items', forecast_24h.get('data', {}).get('records', []))
+    # --- 1. ACCESS THE API DATA FIELDS ---
+        try:
+            # Navigate: data -> records (first item)
+            record = forecast_24h['data']['records'][0]
+            
+            # Navigate: periods (first item) -> regions
+            # This contains 'north', 'south', 'east', 'west', 'central'
+            regional_data = record.get('periods', [{}])[0].get('regions', {})
+            
+            # Navigate: general info (Temperature and Wind)
+            general = record.get('general', {})
+            high_temp = general.get('temperature', {}).get('high', 'N/A')
+            low_temp  = general.get('temperature', {}).get('low', 'N/A')
+            wind_spd  = general.get('wind', {}).get('speed', {}).get('high', 'N/A')
+            wind_dir  = general.get('wind', {}).get('direction', 'N/A')
         
-        if records:
-            latest = records[0]
-            general = latest.get('general', {})
-            # Periods contains the regional forecasts (Morning/Afternoon/Night)
-            periods = latest.get('periods', [{}])[0]
-            # Check both 'regions' and 'region_forecast' keys
-            reg_forecasts = periods.get('regions', periods.get('region_forecast', {}))
-    
-            locations = [
-                "North", "East", 
-                "South", "West"
-            ]
-    
-            table_data = []
-            for loc in locations:
-                # Extract 'north', 'south', etc.
-                key = loc.split(" ")[0].lower() 
-                
-                # API might return a string or a dict with a 'text' key
-                f_val = reg_forecasts.get(key, "N/A")
-                forecast_text = f_val.get('text', f_val) if isinstance(f_val, dict) else f_val
-    
-                table_data.append({
-                    "Location": loc,
-                    "Forecast": forecast_text,
-                    "Temp Range": f"{general.get('temperature', {}).get('low', '24')} - {general.get('temperature', {}).get('high', '34')}°C",
-                    "Wind": f"{general.get('wind', {}).get('direction', 'N')} {general.get('wind', {}).get('speed', {}).get('high', '15')}km/h"
-                })
-    
-            # --- DRAWING THE TABLE ---
-            df_regional = pd.DataFrame(table_data)
-            st.table(df_regional.style.set_properties(**{
-                'text-align': 'left', 
-                'font-size': '10pt'
-            }))
-        else:
-            st.warning("API returned success, but records are empty.")
-    else:
-        # If this still shows, check your 'fetch_env_data' function's URL
-        st.warning("Regional data currently unavailable. Refreshing...")
+            # --- 2. PULL SPECIFIC WOODLANDS/NORTH DATA ---
+            woodlands_forecast = regional_data.get('north', 'No Data')
+        
+        except (KeyError, IndexError, TypeError) as e:
+            st.error(f"Gold 10 Alert: API Field Mismatch - {e}")
+            woodlands_forecast = "Unavailable"
+            high_temp = low_temp = "N/A"
 
 
 
