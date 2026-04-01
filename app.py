@@ -577,21 +577,51 @@ with tab2:
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
-    # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-   # --- THE CORRECTED BLOCK (Line 590) ---
-    if ok_24h:
-        try:
-            items = forecast_24h.get('items', [])
-            if items:
-                # ... Your mapping for Woodlands, Changi, etc ...
-                st.success("Data Mapped")
-            else: # <--- Line 590: MUST align vertically with 'if items:'
-                st.warning("No items found in the 24-hour forecast.")
+   # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
+    if ok_24h and forecast_24h:
+        # 2026 API uses 'items' or 'data.records'. We check both:
+        records = forecast_24h.get('items', forecast_24h.get('data', {}).get('records', []))
+        
+        if records:
+            latest = records[0]
+            general = latest.get('general', {})
+            # Periods contains the regional forecasts (Morning/Afternoon/Night)
+            periods = latest.get('periods', [{}])[0]
+            # Check both 'regions' and 'region_forecast' keys
+            reg_forecasts = periods.get('regions', periods.get('region_forecast', {}))
+    
+            locations = [
+                "North (Woodlands)", "East (Changi)", 
+                "South (Outram)", "South (Jurong)"
+            ]
+    
+            table_data = []
+            for loc in locations:
+                # Extract 'north', 'south', etc.
+                key = loc.split(" ")[0].lower() 
                 
-        except Exception as e:
-            st.error(f"Error: {e}")
-    else: # <--- This else aligns with the very first 'if ok_24h:'
-        st.warning("Regional data currently unavailable.")
+                # API might return a string or a dict with a 'text' key
+                f_val = reg_forecasts.get(key, "N/A")
+                forecast_text = f_val.get('text', f_val) if isinstance(f_val, dict) else f_val
+    
+                table_data.append({
+                    "Location": loc,
+                    "Forecast": forecast_text,
+                    "Temp Range": f"{general.get('temperature', {}).get('low', '24')} - {general.get('temperature', {}).get('high', '34')}°C",
+                    "Wind": f"{general.get('wind', {}).get('direction', 'N')} {general.get('wind', {}).get('speed', {}).get('high', '15')}km/h"
+                })
+
+        # --- DRAWING THE TABLE ---
+        df_regional = pd.DataFrame(table_data)
+        st.table(df_regional.style.set_properties(**{
+            'text-align': 'left', 
+            'font-size': '10pt'
+        }))
+    else:
+        st.warning("API returned success, but records are empty.")
+else:
+    # If this still shows, check your 'fetch_env_data' function's URL
+    st.warning("Regional data currently unavailable. Refreshing...")
    
     #if ok_24h:
     #    st.markdown("### 🌦️ Regional Weather Watch (24H)")
