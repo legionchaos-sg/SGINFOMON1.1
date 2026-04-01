@@ -578,21 +578,20 @@ with tab2:
        forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
 
     # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
+   # --- THE CORRECTED BLOCK (Line 590) ---
+if ok_24h:
     try:
-       if ok_24h and forecast_24h:
-            items = forecast_24h.get('items', [])
-            if items:
-                latest = items[0]
-                # ... (Rest of your mapping logic for Woodlands/Changi/etc) ...
-                st.success("Data Mapped") 
-            else:
-                st.warning("Data found but items list is empty
-       else:
-           st.warning("Regional data currently unavailable.")
-
-# Line 625 should now work perfectly:
-   except Exception as e:
-    st.error(f"Mapping Error: {e}")
+        items = forecast_24h.get('items', [])
+        if items:
+            # ... Your mapping for Woodlands, Changi, etc ...
+            st.success("Data Mapped")
+        else: # <--- Line 590: MUST align vertically with 'if items:'
+            st.warning("No items found in the 24-hour forecast.")
+            
+    except Exception as e:
+        st.error(f"Error: {e}")
+else: # <--- This else aligns with the very first 'if ok_24h:'
+    st.warning("Regional data currently unavailable.")
    
     #if ok_24h:
     #    st.markdown("### 🌦️ Regional Weather Watch (24H)")
