@@ -575,7 +575,7 @@ with tab2:
         #wd_raw, wd_ok = fetch_env_data("wind-direction")
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
-        24hr_ok = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
+        api_24hrok = fetch_env_data("twenty-four-hr-forecast") #to pull tmp/wind and dir/humi/forecast
         
         # --- 2. DEFINE YOUR REGIONS & MAPPINGS ---
         # 1. Your requested location list
@@ -589,7 +589,7 @@ with tab2:
             st.markdown("### 🌦️ Regional 24-Hour Forecast")
             
             # Access the latest record's 'general' and 'periods' data, Note: 2026 API uses ['data']['records'][0] structure
-            latest_record = 24hr_ok.get('data', {}).get('records', [{}])[0]
+            latest_record = api_24hrok.get('data', {}).get('records', [{}])[0]
             
             general = latest_record.get('general', {})
             # Get the current time period forecast (e.g., Morning or Afternoon)
@@ -598,10 +598,10 @@ with tab2:
         
             # Helper to clean the key for the API (e.g., "North (Woodlands)" -> "north")
             def get_region_key(loc_str):
-                if "North" in loc_str: return "north"
-                if "East" in loc_str: return "east"
-                if "South" in loc_str: return "south"
-                if "West" in loc_str: return "west"
+                if "North" in loc_str: return "North"
+                if "East" in loc_str: return "East"
+                if "South" in loc_str: return "South"
+                if "West" in loc_str: return "West"
                 return "central"
         
             # 3. Build Table Rows
