@@ -131,6 +131,7 @@ def get_latest_coe(): #COE Values
 
 def fetch_env_data(category): #--------ENV
     # Mapping friendly names to v2 API paths
+    "Category": ""twenty-four-hr-forecast"
     endpoints = {
         "temp": "air-temperature",
         "wind": "wind-speed",
@@ -140,7 +141,7 @@ def fetch_env_data(category): #--------ENV
     }
     
     #url = f"https://api-open.data.gov.sg/v2/real-time/api/{endpoints.get(category)}"
-    url = f"https://api-open.data.gov.sg/v2/real-time/api/{twenty-four-hr-forecast}"
+    url = f"https://api-open.data.gov.sg/v2/real-time/api/{category}"
     headers = {"x-api-key": st.secrets["DATAGOV_KEY"]}
     
     try:
