@@ -621,6 +621,13 @@ with tab2:
             st.table(styled_regional) 
     else:
         st.warning("Regional data currently unavailable. Refreshing...")
+
+except Exception as e:
+        st.error(f"Mapping Error: {e}")
+        with st.expander("🛠️ Debug Raw Data"):
+            st.json(forecast_24h)
+else:
+    st.warning("Regional data currently unavailable. Refreshing...")
     
         # --- SG AIR QUALITY --- this side is good
         psi_data, psi_ok = fetch_env_data("psi_all")
