@@ -593,8 +593,8 @@ with tab2:
             reg_forecasts = periods.get('regions', periods.get('region_forecast', {}))
     
             locations = [
-                "North (Woodlands)", "East (Changi)", 
-                "South (Outram)", "South (Jurong)"
+                "North", "East", 
+                "South", "West"
             ]
     
             table_data = []
