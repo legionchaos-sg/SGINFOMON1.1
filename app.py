@@ -3,7 +3,8 @@ import feedparser, requests, pytz
 import pandas as pd
 import numpy as np
 import requests
-import datetime 
+import datetime
+import json
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -575,29 +576,35 @@ with tab2:
         #rh_raw, rh_ok = fetch_env_data("relative-humidity")
         #fc_raw, fc_ok = fetch_env_data("two-hr-forecast")
         forecast_24h, ok_24h = fetch_env_data("twenty-four-hr-forecast")
-
-    # --- 2. TABLE 1: REGIONAL WEATHER WATCH ---
-    # --- 2. THE TABLE LOGIC ---
-    # --- 1. ACCESS THE API DATA FIELDS ---
-    try:
-    # Navigate: data -> records (first item)
-        record = forecast_24h['data']['records'][0]
-        # Navigate: periods (first item) -> regions
-        # This contains 'north', 'south', 'east', 'west', 'central'
-        regional_data = record.get('periods', [{}])[0].get('regions', {})
-        # Navigate: general info (Temperature and Wind)
-        general = record.get('general', {})
-        high_temp = general.get('temperature', {}).get('high', 'N/A')
-        low_temp  = general.get('temperature', {}).get('low', 'N/A')
-        wind_spd  = general.get('wind', {}).get('speed', {}).get('high', 'N/A')
-        wind_dir  = general.get('wind', {}).get('direction', 'N/A')
-        # --- 2. PULL SPECIFIC WOODLANDS/NORTH DATA ---
-        woodlands_forecast = regional_data.get('north', 'No Data')
         
-    except (KeyError, IndexError, TypeError) as e:
-        st.error(f"Gold 10 Alert: API Field Mismatch - {e}")
-        woodlands_forecast = "Unavailable"
-        high_temp = low_temp = "N/A"
+    # Collection ID 1459 = Realtime Weather Readings across Singapore
+    collection_id = 1459
+    url = f"https://api-production.data.gov.sg/v2/public/api/collections/{collection_id}/metadata"
+    
+    try:
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            metadata = response.json()
+            
+            # Displaying the main metadata fields in your dashboard
+            st.subheader("📋 Collection Metadata")
+            st.write(f"**Name:** {metadata.get('name')}")
+            st.write(f"**Description:** {metadata.get('description')}")
+            
+            # Drill down into available datasets
+            datasets = metadata.get('datasets', [])
+            st.write(f"**Available Datasets:** {len(datasets)}")
+            
+            # Show as a clean table
+            df_meta = [{"Dataset": d['name'], "Format": d['format']} for d in datasets]
+            st.table(df_meta)
+            
+        else:
+            st.error(f"Failed to fetch metadata. Status code: {response.status_code}")
+    
+    except Exception as e:
+        st.error(f"Gold 10 Error: {e}")
 
 
 
