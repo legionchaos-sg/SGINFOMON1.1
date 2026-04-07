@@ -556,7 +556,7 @@ with tab2:
        st.table(df.style.set_properties(**{
            'text-align': 'left',
            'font-size': '10pt',
-           'color': '#333'
+           'color': 'white'
        }))
         
        if st.button("Manual Refresh"):
