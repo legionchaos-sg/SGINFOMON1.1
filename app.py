@@ -626,28 +626,28 @@ with tab2:
                     return 'color: #FF0000; font-weight: bold;' # Bright Red
             return 'color: white;'
 
-# --- 4. DISPLAY TABLE ---
-# We format the 'Daily Change' to string AFTER the color logic is applied via 'format'
-styled_df = df_west.style.map(color_change, subset=['Daily Change']).format({
-    'Daily Change': '{:+.2f}%'
-}).set_properties(**{
-    'text-align': 'left',
-    'font-size': '10pt'
-})
-
-st.table(styled_df)
-
-if st.button("Refresh All"):
-    st.rerun()
-        
-        # --- 3. DISPLAY (Using 10pt Font for Gold 10) ---
-        st.table(df_west.style.set_properties(**{
+        # --- 4. DISPLAY TABLE ---
+        # We format the 'Daily Change' to string AFTER the color logic is applied via 'format'
+        styled_df = df_west.style.map(color_change, subset=['Daily Change']).format({
+            'Daily Change': '{:+.2f}%'
+        }).set_properties(**{
             'text-align': 'left',
             'font-size': '10pt'
-        }))
+        })
         
-        if st.button("Refresh Western Feed"):
+        st.table(styled_df)
+        
+        if st.button("Refresh All"):
             st.rerun()
+                
+                # --- 3. DISPLAY (Using 10pt Font for Gold 10) ---
+                st.table(df_west.style.set_properties(**{
+                    'text-align': 'left',
+                    'font-size': '10pt'
+                }))
+                
+                if st.button("Refresh Western Feed"):
+                    st.rerun()
 
        
 
