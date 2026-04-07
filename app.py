@@ -547,17 +547,16 @@ with tab2:
  
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
-    st.title()
-    market_df = get_market_data()
-
-    # Styling the table for 10pt font as per your settings
-    st.table(market_df.style.set_properties(**{
-        'text-align': 'left',
-        'font-size': '10pt'
-    }))
+        market_df = get_market_data()
     
-    if st.button("Refresh Rates"):
-        st.rerun()
+        # Styling the table for 10pt font as per your settings
+        st.table(market_df.style.set_properties(**{
+            'text-align': 'left',
+            'font-size': '10pt'
+        }))
+        
+        if st.button("Refresh Rates"):
+            st.rerun()
             
     # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
