@@ -506,7 +506,7 @@ with tab2:
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
 
     #--------------Weather Main
-    with st.expander("Weather, expanded=False): 
+    with st.expander("Weather", expanded=False): 
       st.caption("🔍 *pending code")
         
     # --------------Rail and Road Service---
