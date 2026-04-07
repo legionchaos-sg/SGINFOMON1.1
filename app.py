@@ -612,34 +612,16 @@ with tab2:
             })
         
         df_west = pd.DataFrame(western_data)
-
-        # --- 3. COLORING LOGIC ---
-        def color_change(val):
-            """
-            Green for positive, Red for negative, 
-            White/Grey for zero or N/A.
-            """
-            if isinstance(val, float):
-                if val > 0:
-                    return 'color: #00FF00; font-weight: bold;' # Bright Green
-                elif val < 0:
-                    return 'color: #FF0000; font-weight: bold;' # Bright Red
-            return 'color: white;'
-
-        # --- 4. DISPLAY TABLE ---
-        # We format the 'Daily Change' to string AFTER the color logic is applied via 'format'
-        styled_df = df_west.style.map(color_change, subset=['Daily Change']).format({
-            'Daily Change': '{:+.2f}%'
-        }).set_properties(**{
+        
+        # --- 3. DISPLAY (Using 10pt Font for Gold 10) ---
+        st.table(df_west.style.set_properties(**{
             'text-align': 'left',
             'font-size': '10pt'
-        })
+        }))
         
-        st.table(styled_df)
-        
-        if st.button("Refresh All"):
+        if st.button("Refresh Western Feed"):
             st.rerun()
-                
+
        
 
        
