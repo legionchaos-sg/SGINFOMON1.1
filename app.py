@@ -136,42 +136,34 @@ markets = {
     "Malaysia": "^KLSE"
 }
 
-def get_market_data():
-    results = []
-    
-    for country, ticker_symbol in markets.items():
-        ticker = yf.Ticker(ticker_symbol)
+def fetch_market_rate(ticker):
+    """Fetches data using a direct browser-like request to bypass blocks"""
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
         
-        # Get latest trading data
-        # 'fast_info' or 'info' provides real-time snapshots
-        try:
-            data = ticker.history(period="1d", interval="1m")
-            
-            if not data.empty:
-                current_price = data['Close'].iloc[-1]
-                prev_close = ticker.info.get('regularMarketPreviousClose', current_price)
-                change = current_price - prev_close
-                pct_change = (change / prev_close) * 100
-                
-                # Check if market is active (if no new data in last 15 mins)
-                last_update = data.index[-1]
-                now = datetime.now(last_update.tzinfo)
-                time_diff = (now - last_update).total_seconds() / 60
-                
-                status = "🟢 LIVE" if time_diff < 15 else "TEST: MARKET CLOSED"
-                
-                results.append({
-                    "Region": country,
-                    "Index": current_price,
-                    "Change %": f"{pct_change:+.2f}%",
-                    "Status": status
-                })
-            else:
-                results.append({"Region": country, "Index": "N/A", "Change %": "N/A", "Status": "TEST: MARKET CLOSED"})
-        except:
-            results.append({"Region": country, "Index": "Error", "Change %": "Error", "Status": "OFFLINE"})
-            
-    return pd.DataFrame(results)
+        # Digging into the JSON structure
+        result = data['chart']['result'][0]
+        current_price = result['indicators']['quote'][0]['close'][-1]
+        prev_close = result['meta']['previousClose']
+        
+        # Check if market is active (compare last trade time to now)
+        last_trade_time = result['meta']['regularMarketTime']
+        now_ts = datetime.now().timestamp()
+        
+        # If no trade in last 20 mins, it's closed
+        is_open = (now_ts - last_trade_time) < 1200 
+        
+        status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
+        change_pct = ((current_price - prev_close) / prev_close) * 100
+        
+        return current_price, f"{change_pct:+.2f}%", status
+    except:
+        return None, None, "TEST: MARKET CLOSED"
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -547,16 +539,28 @@ with tab2:
  
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
-        market_df = get_market_data()
-    
-        # Styling the table for 10pt font as per your settings
-        st.table(market_df.style.set_properties(**{
-            'text-align': 'left',
-            'font-size': '10pt'
-        }))
+       table_data = []
+       
+       for name, symbol in markets.items():
+           price, change, status = fetch_market_rate(symbol)
+           table_data.append({
+               "Region": name,
+               "Index Value": f"{price:,.2f}" if price else "N/A",
+               "Change %": change if change else "N/A",
+               "Status": status
+           })
         
-        if st.button("Refresh Rates"):
-            st.rerun()
+       df = pd.DataFrame(table_data)
+        
+       # --- 3. DISPLAY WITH 10PT FONT ---
+       st.table(df.style.set_properties(**{
+           'text-align': 'left',
+           'font-size': '10pt',
+           'color': '#333'
+       }))
+        
+       if st.button("Manual Refresh"):
+           st.rerun()
             
     # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
