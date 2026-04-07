@@ -125,6 +125,54 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
     ]
 
+# --- 1. DEFINE MARKETS ---
+markets = {
+    "Hong Kong": "^HSI",
+    "China (SSE)": "000001.SS",
+    "Taiwan": "^TWII",
+    "Japan": "^N225",
+    "South Korea": "^KS11",
+    "Thailand": "^SET.BK",
+    "Malaysia": "^KLSE"
+}
+
+def get_market_data():
+    results = []
+    
+    for country, ticker_symbol in markets.items():
+        ticker = yf.Ticker(ticker_symbol)
+        
+        # Get latest trading data
+        # 'fast_info' or 'info' provides real-time snapshots
+        try:
+            data = ticker.history(period="1d", interval="1m")
+            
+            if not data.empty:
+                current_price = data['Close'].iloc[-1]
+                prev_close = ticker.info.get('regularMarketPreviousClose', current_price)
+                change = current_price - prev_close
+                pct_change = (change / prev_close) * 100
+                
+                # Check if market is active (if no new data in last 15 mins)
+                last_update = data.index[-1]
+                now = datetime.now(last_update.tzinfo)
+                time_diff = (now - last_update).total_seconds() / 60
+                
+                status = "🟢 LIVE" if time_diff < 15 else "TEST: MARKET CLOSED"
+                
+                results.append({
+                    "Region": country,
+                    "Index": current_price,
+                    "Change %": f"{pct_change:+.2f}%",
+                    "Status": status
+                })
+            else:
+                results.append({"Region": country, "Index": "N/A", "Change %": "N/A", "Status": "TEST: MARKET CLOSED"})
+        except:
+            results.append({"Region": country, "Index": "Error", "Change %": "Error", "Status": "OFFLINE"})
+            
+    return pd.DataFrame(results)
+
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
@@ -497,67 +545,21 @@ with tab2:
 
         st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
  
-    # --- 3. Rail and Road Service---
-    with st.expander("🚇 Local Transport Pulse (Live SG)", expanded=False): 
-        # --- SECTION: EXPRESSWAY SPEED & RISK MONITOR ---
-        st.write("---")
-        st.write("**🛣️ Expressway Flow & Commute Risk (Live SGT)**")
-        
-        # --- PART 1: EXPRESSWAY FLOW & COMMUTE RISK ---
-        st.markdown("#### 🛣️ Expressway Speed & Risk (Live SGT)")
-        
-        # 2026 Findings: LTA TrafficScan Band Data
-        expressways = [
-            {"name": "PIE (Tuas)", "avg_speed": "45-55 km/h", "band": "🟡 Moderate", "risk": 7, "reason": "Clementi Rd Exit CLOSED (Works)."},
-            {"name": "AYE (MCE)", "avg_speed": "75-85 km/h", "band": "🟢 Optimal", "risk": 2, "reason": "Free flowing; no incidents."},
-            {"name": "CTE (SLE)", "avg_speed": "30-40 km/h", "band": "🟠 Slow", "risk": 5, "reason": "Build-up at Havelock Exit (Lane 3 closed)."},
-            {"name": "KPE (TPE)", "avg_speed": "70-80 km/h", "band": "🟢 Optimal", "risk": 3, "reason": "Stable; Nicoll Hwy entrance works active."}
-        ]
-    
-        col1, col2, col3 = st.columns([2, 2, 2])
-        col1.caption("Expressway")
-        col2.caption("Avg Speed")
-        col3.caption("Risk Score")
-    
-        for ex in expressways:
-            r_color = "#28a745" if ex['risk'] < 4 else "#ffc107" if ex['risk'] < 7 else "#dc3545"
-            c1, c2, c3 = st.columns([2, 2, 2])
-            c1.markdown(f"**{ex['name']}**")
-            c2.markdown(f"{ex['avg_speed']}<br><small>{ex['band']}</small>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='background:{r_color}; color:white; border-radius:10px; text-align:center; padding:2px;'><b>{ex['risk']}/10</b></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-10px; margin-bottom:10px;'><i>Insight: {ex['reason']}</i></p>", unsafe_allow_html=True)
-    
-        # --- PART 2: MRT SERVICE STATUS ---
-        st.markdown("#### 🚆 Train Service Status")
-        rail_data = [
-            {"line": "Circle Line (CCL)", "status": "🟡 Advisory", "delay": "+30m", "msg": "Tunnel works (Mountbatten-Paya Lebar)."},
-            {"line": "Sengkang LRT", "status": "🟢 Normal", "delay": "None", "msg": "Inner Loop (Cheng Lim) closure starts Apr 19."},
-            {"line": "NSL / EWL / TEL", "status": "🟢 Normal", "delay": "None", "msg": "R151 7th-gen trains in operation."}
-        ]
-    
-        for r in rail_data:
-            r_col = "#28a745" if "Normal" in r['status'] else "#ffc107"
-            c1, c2, c3 = st.columns([2, 1, 1])
-            c1.markdown(f"**{r['line']}**")
-            c2.markdown(f"<span style='color:{r_col}; font-size:0.85rem;'>● {r['status']}</span>", unsafe_allow_html=True)
-            c3.write(f"`{r['delay']}`")
-            st.markdown(f"<p style='font-size:0.75rem; color:#aaa; margin-top:-5px;'>{r['msg']}</p>", unsafe_allow_html=True)
-    
-        # --- PART 3: FIFO INCIDENT LOG (COMBINED) ---
-        #st.divider()
-        st.markdown("#### ⚠️ Recent Train or Trffic Incidents (FIFO)")
-        incidents = [
-            ("17:05", "Event", "MetaSprint Triathlon: Full closure East Coast Park Svc Rd."),
-            ("16:30", "Event", "Chingay @ Punggol: Punggol Field Walk closed (LP 13-24)."),
-            ("00:33", "Road", "PIE (Tuas) at Clementi Rd Exit: EXIT CLOSED (Road Works)."),
-            ("00:08", "Road", "CTE Tunnel (AYE) at Havelock: EXIT CLOSED (Road Works).")
-        ]
-        for t, cat, msg in incidents:
-            st.markdown(f"<div style='font-size:0.8rem; border-left: 2px solid #555; padding-left:10px; margin-bottom:5px;'><b>{t}</b> | {cat}: {msg}</div>", unsafe_allow_html=True)
-    
-        st.info("📅 **Note:** MRT/Bus hours **EXTENDED** this Thursday (Apr 2, 2026) for Good Friday Eve.")    
+    # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
+    with st.expander("🌏 Asian Market Watch", expanded=False): 
+    st.title()
+    market_df = get_market_data()
 
-    # --- 5. LIVE hdb rESALE ---
+    # Styling the table for 10pt font as per your settings
+    st.table(market_df.style.set_properties(**{
+        'text-align': 'left',
+        'font-size': '10pt'
+    }))
+    
+    if st.button("Refresh Rates"):
+        st.rerun()
+            
+    # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
     with st.expander("🏘️ Integrated Weather & Resale Housing Intelligence", expanded=True):
 
         # --- 1. DYNAMIC INPUTS ---
