@@ -640,15 +640,6 @@ with tab2:
         if st.button("Refresh All"):
             st.rerun()
                 
-                # --- 3. DISPLAY (Using 10pt Font for Gold 10) ---
-                st.table(df_west.style.set_properties(**{
-                    'text-align': 'left',
-                    'font-size': '10pt'
-                }))
-                
-                if st.button("Refresh Western Feed"):
-                    st.rerun()
-
        
 
        
