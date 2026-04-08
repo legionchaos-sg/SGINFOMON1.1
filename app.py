@@ -208,7 +208,13 @@ def fetch_western_rate(ticker):
         last_trade_ts = result['meta']['regularMarketTime']
         
         # Bond yields are shown as 4.332 (4.3%), stocks as 5000.00
-        formatted_price = f"{current_price:.2f}" if ticker != "^TNX" else f"{current_price/10:.3f}%"
+        #formatted_price = f"{current_price:.2f}" if ticker != "^TNX" else f"{current_price/10:.3f}%"
+        if ticker == "^TNX":
+            # If the value is > 10, it's the old 'Index' style. If < 10, it's 'Direct Yield'.
+            actual_yield = current_price / 10 if current_price > 10 else current_price
+            formatted_price = f"{actual_yield:.3f}%"
+        else:
+            formatted_price = f"{current_price:,.2f}"
         
         # Logic: If no trade in last 15 minutes, market is likely closed
         is_open = (datetime.now().timestamp() - last_trade_ts) < 1800
