@@ -121,43 +121,47 @@ def get_upcoming_holiday():
 
 # v2 Real-time API
 def get_latest_coe():
-    url = "https://api-open.data.gov.sg/v2/real-time/api/coe"
+    # Official Dataset ID for COE Results (2026 Version)
+    dataset_id = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
+    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&sort=month desc, bidding_no desc&limit=5"
     
-    # CRITICAL: This header bypasses the 403 Forbidden error
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'x-api-key': DATAGOV_API_KEY
+        'User-Agent': 'Mozilla/5.0',
+        'x-api-key': DATAGOV_API_KEY # Uncomment this if you get a 403 again
     }
     
     try:
-        # Increase timeout to 10 seconds for stability
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code == 200:
-            raw_data = response.json()
-            latest = raw_data['data']['records'][0]
+            data = response.json()
+            records = data['result']['records']
+            
+            # The API returns 1 record per category. 
+            # We filter for the most recent month/round available.
+            latest_month = records[0]['month']
+            latest_round = records[0]['bidding_no']
+            
+            # Filter only the records for the latest round
+            current_results = [r for r in records if r['month'] == latest_month and r['bidding_no'] == latest_round]
             
             live_feed = []
-            for item in latest['prices']:
-                # Calculate change (ch) vs previous round
-                change = item['premium'] - item['prev_premium']
-                
+            for r in current_results:
+                # Standardizing keys for your dashboard
                 live_feed.append({
-                    "cat": f"Cat {item['category']}",
-                    "p": item['premium'],
-                    "ch": change,
-                    "q": item['quota'],
-                    "b": item['bids_received']
+                    "cat": f"Cat {r['category']}",
+                    "p": int(r['premium']),
+                    "ch": int(r['premium']) - int(r.get('prev_premium', r['premium'])),
+                    "q": int(r['quota']),
+                    "b": int(r['bids_received'])
                 })
             
-            # Filter for the main categories A, B, C, E
+            # Sort A to E
+            live_feed.sort(key=lambda x: x['cat'])
             return [x for x in live_feed if x['cat'] in ["Cat A", "Cat B", "Cat C", "Cat E"]]
-            
-        elif response.status_code == 403:
-            st.error("COE API 403: Access Denied. The server is blocking the request.")
-            return []
+
         else:
-            st.error(f"COE API Offline (Error {response.status_code})")
+            st.error(f"API Error {response.status_code}: Access Denied.")
             return []
             
     except Exception as e:
