@@ -820,7 +820,7 @@ with tab3:
 # TAB 4: PMT: COE - HYBRID PREDICTION ENGINE
 # ==========================================
 with tab4:
-    # 1. LIVE GROUND DATA (March 2nd 2026 Actuals)
+    # 1. mANUAL INPUT 
     g10_coe_stats = {
         "Cat A": {"p": 111890, "q": 1264, "b": 1895, "date": "06 Apr 2026"},
         "Cat B": {"p": 115568, "q": 812, "b": 1185, "date": "06 Apr 2026"},
@@ -857,7 +857,7 @@ with tab4:
             <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid #444; text-align:center;">
                 <small>Latest Settled Price</small><br>
                 <strong style="font-size:1.4rem; color:#007bff;">${last_p:,.0f}</strong><br>
-                <small>Next: {g10_coe_stats[v_cat]['date']}</small>
+                <small>Next: {g10_coe_stats[v_cat][get_coe_display_date()]}</small>
             </div>
         """, unsafe_allow_html=True)
 
