@@ -119,7 +119,16 @@ def get_upcoming_holiday():
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
-# v2 Real-time API
+# Manual COE INFROMATION 
+def get_coe_display_date():
+    """
+    Returns the date of the most recent COE bidding close (1st/3rd Wednesday).
+    For April 2026, this reflects the result from today, April 8.
+    """
+    # In a fully automated version, you'd calculate the Wednesday here.
+    # For your current dashboard, we'll anchor it to the latest result:
+    return "08 April 2026"
+    
 def get_latest_coe():
     """
     Official Results for April 2026 Round 1 (Released April 8, 4:00 PM)
@@ -133,29 +142,6 @@ def get_latest_coe():
     ]
 
 # --- DASHBOARD LOGIC ---
-st.subheader("Latest COE Results: April 2026 Round 1")
-data = get_latest_coe()
-
-if data:
-    df = pd.DataFrame(data)
-    
-    # Conditional coloring for 'ch' (Change)
-    def color_ch(val):
-        color = 'red' if val > 0 else 'green'
-        return f'color: {color}; font-weight: bold'
-
-    styled_df = df.style.map(color_ch, subset=['ch']).format({
-        'p': '${:,.0f}',
-        'ch': '+${:,.0f}' if any(x['ch'] > 0 for x in data) else '${:,.0f}',
-        'q': '{:,}',
-        'b': '{:,}'
-    }).set_properties(**{
-        'font-size': '10pt',
-        'text-align': 'left'
-    })
-
-    st.table(styled_df)
-    st.caption("Next Bidding: April 20, 2026 | Results: April 22")
 
 # --- 1. DEFINE MARKETS ---
 markets = {
@@ -348,7 +334,8 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    with st.expander("🚗 COE Bidding Results (Mar 2026 Round 2)", expanded=True):
+    coe_title = f"🚗 COE Bidding Results (Last Closed: {get_coe_display_date()})"
+    with st.expander(coe_title, expanded=True):
         coe_list = get_latest_coe()
         cc = st.columns(4)
         for i, data in enumerate(coe_list):
