@@ -10,6 +10,9 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
+DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
+DATAGOV_API_KEY = st.secrets["DATAGOV_KEY"]
+
 st.markdown("""
     <style>
         /* This kills the invisible top bar */
@@ -123,7 +126,7 @@ def get_latest_coe():
     # CRITICAL: This header bypasses the 403 Forbidden error
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json'
+        'x-api-key': DATAGOV_API_KEY
     }
     
     try:
