@@ -211,7 +211,7 @@ def fetch_western_rate(ticker):
         formatted_price = f"{current_price:.2f}" if ticker != "^TNX" else f"{current_price/10:.3f}%"
         
         # Logic: If no trade in last 15 minutes, market is likely closed
-        is_open = (datetime.now().timestamp() - last_trade_ts) < 900
+        is_open = (datetime.now().timestamp() - last_trade_ts) < 1800
         status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
         
         change_pct = ((current_price - prev_close) / prev_close) * 100
