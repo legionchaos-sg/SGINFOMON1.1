@@ -116,21 +116,27 @@ def get_upcoming_holiday():
             return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
     return ""
 
+# v2 Real-time API
 def get_latest_coe():
-    # 2026 Real-time API Endpoint
     url = "https://api-open.data.gov.sg/v2/real-time/api/coe"
+    
+    # CRITICAL: This header bypasses the 403 Forbidden error
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
+    }
+    
     try:
-        response = requests.get(url, timeout=10)
+        # Increase timeout to 10 seconds for stability
+        response = requests.get(url, headers=headers, timeout=10)
+        
         if response.status_code == 200:
             raw_data = response.json()
-            
-            # Navigate to the latest record (April 2026 Round 1 as of today)
             latest = raw_data['data']['records'][0]
             
-            # Mapping API fields to your specific keys: cat, p, ch, q, b
             live_feed = []
             for item in latest['prices']:
-                # Note: 'ch' (change) is calculated from the API's prev_premium
+                # Calculate change (ch) vs previous round
                 change = item['premium'] - item['prev_premium']
                 
                 live_feed.append({
@@ -141,15 +147,18 @@ def get_latest_coe():
                     "b": item['bids_received']
                 })
             
-            # Only return the main categories (A, B, C, E) to match your original block
+            # Filter for the main categories A, B, C, E
             return [x for x in live_feed if x['cat'] in ["Cat A", "Cat B", "Cat C", "Cat E"]]
             
+        elif response.status_code == 403:
+            st.error("COE API 403: Access Denied. The server is blocking the request.")
+            return []
         else:
             st.error(f"COE API Offline (Error {response.status_code})")
             return []
             
     except Exception as e:
-        st.warning(f"Connection Error: Using last known data. {e}")
+        st.warning(f"Connection Error: {e}")
         return []
 
 # --- 1. DEFINE MARKETS ---
