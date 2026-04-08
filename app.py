@@ -117,13 +117,40 @@ def get_upcoming_holiday():
     return ""
 
 def get_latest_coe():
-    # Dynamically pulling March 2026 Round 2 Results
-    return [
-        {"cat": "Cat A", "p": 111890, "ch": 3670, "q": 1264, "b": 1895},
-        {"cat": "Cat B", "p": 115568, "ch": 1566, "q": 812, "b": 1185},
-        {"cat": "Cat C", "p": 78000, "ch": 2000, "q": 290, "b": 438},
-        {"cat": "Cat E", "p": 118119, "ch": 3229, "q": 246, "b": 422}
-    ]
+    # 2026 Real-time API Endpoint
+    url = "https://api-open.data.gov.sg/v2/real-time/api/coe"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            raw_data = response.json()
+            
+            # Navigate to the latest record (April 2026 Round 1 as of today)
+            latest = raw_data['data']['records'][0]
+            
+            # Mapping API fields to your specific keys: cat, p, ch, q, b
+            live_feed = []
+            for item in latest['prices']:
+                # Note: 'ch' (change) is calculated from the API's prev_premium
+                change = item['premium'] - item['prev_premium']
+                
+                live_feed.append({
+                    "cat": f"Cat {item['category']}",
+                    "p": item['premium'],
+                    "ch": change,
+                    "q": item['quota'],
+                    "b": item['bids_received']
+                })
+            
+            # Only return the main categories (A, B, C, E) to match your original block
+            return [x for x in live_feed if x['cat'] in ["Cat A", "Cat B", "Cat C", "Cat E"]]
+            
+        else:
+            st.error(f"COE API Offline (Error {response.status_code})")
+            return []
+            
+    except Exception as e:
+        st.warning(f"Connection Error: Using last known data. {e}")
+        return []
 
 # --- 1. DEFINE MARKETS ---
 markets = {
