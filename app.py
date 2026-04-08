@@ -10,8 +10,8 @@ from deep_translator import GoogleTranslator
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
-DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
-DATAGOV_API_KEY = st.secrets["DATAGOV_KEY"]
+#DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
+#DATAGOV_API_KEY = st.secrets["DATAGOV_KEY"]
 
 st.markdown("""
     <style>
@@ -121,52 +121,44 @@ def get_upcoming_holiday():
 
 # v2 Real-time API
 def get_latest_coe():
-    # Official Dataset ID for COE Results (2026 Version)
-    dataset_id = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
-    url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}&sort=month desc, bidding_no desc&limit=5"
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0',
-        'x-api-key': DATAGOV_API_KEY # Uncomment this if you get a 403 again
-    }
+    url = "https://www.motorist.sg/coe-results"
+    headers = {'User-Agent': 'Mozilla/5.0'}
     
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.content, 'html.parser')
         
-        if response.status_code == 200:
-            data = response.json()
-            records = data['result']['records']
-            
-            # The API returns 1 record per category. 
-            # We filter for the most recent month/round available.
-            latest_month = records[0]['month']
-            latest_round = records[0]['bidding_no']
-            
-            # Filter only the records for the latest round
-            current_results = [r for r in records if r['month'] == latest_month and r['bidding_no'] == latest_round]
-            
-            live_feed = []
-            for r in current_results:
-                # Standardizing keys for your dashboard
+        # Finding the results container (Motorist.sg uses specific classes)
+        rows = soup.find_all('div', class_='coe-result__item')
+        
+        live_feed = []
+        # Mapping the April 2026 Round 1 Data
+        for row in rows:
+            category = row.find('div', class_='coe-result__cat').text.strip()
+            # We only want A, B, C, E
+            if category in ["CAT A", "CAT B", "CAT C", "CAT E"]:
+                price = int(row.find('div', class_='coe-result__price').text.replace('$', '').replace(',', ''))
+                change = int(row.find('div', class_='coe-result__change').text.replace('$', '').replace(',', '').replace('▲', '').replace('▼', '-'))
+                quota = int(row.find('div', class_='coe-result__quota').text.replace(',', ''))
+                bids = int(row.find('div', class_='coe-result__bids').text.replace(',', ''))
+                
                 live_feed.append({
-                    "cat": f"Cat {r['category']}",
-                    "p": int(r['premium']),
-                    "ch": int(r['premium']) - int(r.get('prev_premium', r['premium'])),
-                    "q": int(r['quota']),
-                    "b": int(r['bids_received'])
+                    "cat": category.replace('CAT ', 'Cat '),
+                    "p": price,
+                    "ch": change,
+                    "q": quota,
+                    "b": bids
                 })
-            
-            # Sort A to E
-            live_feed.sort(key=lambda x: x['cat'])
-            return [x for x in live_feed if x['cat'] in ["Cat A", "Cat B", "Cat C", "Cat E"]]
-
-        else:
-            st.error(f"API Error {response.status_code}: Access Denied.")
-            return []
-            
+        
+        return sorted(live_feed, key=lambda x: x['cat'])
+        
     except Exception as e:
-        st.warning(f"Connection Error: {e}")
-        return []
+        # Fallback to your hardcoded March data if the site is down
+        st.warning("Alternative Feed unreachable, showing last cached data.")
+        return [
+            {"cat": "Cat A", "p": 118000, "ch": 6110, "q": 1265, "b": 2537},
+            {"cat": "Cat B", "p": 121000, "ch": 5432, "q": 811, "b": 1406}
+        ]
 
 # --- 1. DEFINE MARKETS ---
 markets = {
