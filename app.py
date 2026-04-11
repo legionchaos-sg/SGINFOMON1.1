@@ -726,14 +726,17 @@ with tab2:
         # =========================
         st.subheader("📊 Bank Rate Comparison")
         
-        # Applying the 10pt styling directly to the dataframe display
-        st.dataframe(
-            filtered.style.set_properties(**{
-                'font-size': '10pt',
-                'text-align': 'left'
-            }), 
-            use_container_width=True
-        )
+        # Use st.table() instead of st.dataframe() to safely process the CSS font-size
+        try:
+            st.table(
+                filtered.style.set_properties(**{
+                    'font-size': '10pt',
+                    'text-align': 'left'
+                })
+            )
+        except Exception as e:
+            # Safety fallback in case the dataframe is completely empty
+            st.warning("No banks match your current filter.")
         
         # =========================
         # CHART
