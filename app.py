@@ -168,6 +168,10 @@ def fetch_market_rate(ticker):
         result = data['chart']['result'][0]
         #current_price = result['indicators']['quote'][0]['close'][-1]
         current_price = result['meta']['regularMarketPrice']
+        if current_price is None:
+            close_list = indicators.get('close', [])
+            if close_list and close_list[-1] is not None:
+                current_price = close_list[-1]
         prev_close = result['meta']['previousClose']
         
         # Check if market is active (compare last trade time to now)
