@@ -194,8 +194,6 @@ def fetch_market_rate(ticker):
         return None, None, "ERROR"
 
 # --- 1. DEFINE TICKERS ---
-from datetime import datetime, timezone
-
 def fetch_western_rate(ticker):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
     headers = {'User-Agent': 'Mozilla/5.0'}
