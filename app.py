@@ -130,16 +130,45 @@ def get_coe_display_date():
     return "08 April 2026"
     
 def get_latest_coe():
-    """
-    Official Results for April 2026 Round 1 (Released April 8, 4:00 PM)
-    This is the most credible data available for your dashboard.
-    """
-    return [
-        {"cat": "Cat A", "p": 118000, "ch": 6110, "q": 1265, "b": 2537},
-        {"cat": "Cat B", "p": 121000, "ch": 5432, "q": 811, "b": 1406},
-        {"cat": "Cat C", "p": 80001, "ch": 2001, "q": 295, "b": 539},
-        {"cat": "Cat E", "p": 121001, "ch": 2882, "q": 245, "b": 475}
-    ]
+    url = "https://data.gov.sg/api/action/datastore_search"
+    
+    params = {
+        "resource_id": "d_69b3380ad2e51aff3a7dcc84eba52b8a",
+        "limit": 20,
+        "sort": "bidding_no desc"
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+    data = response.json()
+    records = data["result"]["records"]
+
+    latest = {}
+    previous = {}
+
+    for r in records:
+        cat = r["vehicle_class"]
+        premium = int(float(r["premium"]))
+
+        if cat not in latest:
+            latest[cat] = r
+        elif cat not in previous:
+            previous[cat] = r
+
+    output = []
+
+    for cat in latest:
+        curr = int(float(latest[cat]["premium"]))
+        prev = int(float(previous.get(cat, {}).get("premium", curr)))
+
+        output.append({
+            "cat": cat,
+            "p": curr,
+            "ch": curr - prev,
+            "q": int(float(latest[cat]["quota"])),
+            "b": int(float(latest[cat]["bids_received"]))
+        })
+
+    return output
 
 # --- DASHBOARD LOGIC ---
 
