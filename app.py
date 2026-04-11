@@ -194,46 +194,69 @@ def fetch_market_rate(ticker):
         return None, None, "ERROR"
 
 # --- 1. DEFINE TICKERS ---
-western_markets = {
-    "S&P 500": "^GSPC",
-    "Dow Jones": "^DJI",
-    "Nasdaq": "^IXIC",
-    "FTSE 100": "^FTSE",
-    "US 10Y Bond Yield": "^TNX",
-    "Corp Credit (LQD)": "LQD"
-}
+from datetime import datetime, timezone
 
 def fetch_western_rate(ticker):
-    """Direct API call with browser-headers to ensure credibility"""
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
     headers = {'User-Agent': 'Mozilla/5.0'}
-    
+
     try:
         response = requests.get(url, headers=headers, timeout=10)
         data = response.json()
+
         result = data['chart']['result'][0]
-        
-        current_price = result['indicators']['quote'][0]['close'][-1]
-        prev_close = result['meta']['previousClose']
-        last_trade_ts = result['meta']['regularMarketTime']
-        
-        # Bond yields are shown as 4.332 (4.3%), stocks as 5000.00
-        #formatted_price = f"{current_price:.2f}" if ticker != "^TNX" else f"{current_price/10:.3f}%"
+        meta = result.get('meta', {})
+        indicators = result.get('indicators', {}).get('quote', [{}])[0]
+
+        # =========================
+        # ✅ FALLBACK PRICE LOGIC
+        # =========================
+        current_price = meta.get('regularMarketPrice')
+
+        if current_price is None:
+            close_list = indicators.get('close', [])
+            if close_list and close_list[-1] is not None:
+                current_price = close_list[-1]
+
+        if current_price is None:
+            current_price = meta.get('previousClose')
+
+        prev_close = meta.get('previousClose')
+
+        if current_price is None or prev_close is None:
+            return "N/A", "N/A", "NO DATA"
+
+        # =========================
+        # ✅ FORMAT PRICE
+        # =========================
         if ticker == "^TNX":
-            # If the value is > 10, it's the old 'Index' style. If < 10, it's 'Direct Yield'.
+            # Handle bond yield scaling
             actual_yield = current_price / 10 if current_price > 10 else current_price
             formatted_price = f"{actual_yield:.3f}%"
         else:
             formatted_price = f"{current_price:,.2f}"
-        
-        # Logic: If no trade in last 15 minutes, market is likely closed
-        is_open = (datetime.now().timestamp() - last_trade_ts) < 1800
-        status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
-        
+
+        # =========================
+        # ✅ MARKET STATUS (RELIABLE)
+        # =========================
+        market_state = meta.get('marketState', 'CLOSED')
+
+        if market_state == "REGULAR":
+            status = "🟢 LIVE"
+        elif market_state in ["PRE", "POST"]:
+            status = "🟡 EXTENDED"
+        else:
+            status = "🔴 CLOSED"
+
+        # =========================
+        # ✅ CHANGE %
+        # =========================
         change_pct = ((current_price - prev_close) / prev_close) * 100
+
         return formatted_price, f"{change_pct:+.2f}%", status
-    except:
-        return "N/A", "N/A", "TEST: MARKET CLOSED"
+
+    except Exception as e:
+        return "N/A", "N/A", "ERROR"
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
