@@ -640,7 +640,6 @@ with tab2:
  
     # Bank Rates SG---
     with st.expander("🏦 Singapore Bank Interest Rate Dashboard", expanded=False):
-    
         # =========================
         # THE "GOLD 10" LIVE DATA SCRAPER
         # =========================
@@ -721,31 +720,6 @@ with tab2:
             best_fd["Bank"]
         )
         
-        # =========================
-        # TABLE VIEW (10pt Formatting)
-        # =========================
-        st.subheader("📊 Bank Rate Comparison")
-        
-        # Use st.table() instead of st.dataframe() to safely process the CSS font-size
-        try:
-            st.table(
-                filtered.style.set_properties(**{
-                    'font-size': '10pt',
-                    'text-align': 'left'
-                })
-            )
-        except Exception as e:
-            # Safety fallback in case the dataframe is completely empty
-            st.warning("No banks match your current filter.")
-        
-        # =========================
-        # CHART
-        # =========================
-        st.subheader("📈 Visual Comparison")
-        
-        st.bar_chart(
-            filtered.set_index("Bank")[["Savings (%)", "Fixed Deposit (%)"]]
-        )
         
         # =========================
         # INSIGHTS (10pt Formatting)
