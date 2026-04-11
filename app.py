@@ -722,19 +722,6 @@ with tab2:
         )
         
         # =========================
-        # FILTER
-        # =========================
-        st.sidebar.header("🔍 Filter")
-        
-        min_savings = st.sidebar.slider("Min Savings Rate", 0.0, 5.0, 0.0)
-        min_fd = st.sidebar.slider("Min Fixed Deposit Rate", 0.0, 5.0, 0.0)
-        
-        filtered = data[
-            (data["Savings (%)"] >= min_savings) &
-            (data["Fixed Deposit (%)"] >= min_fd)
-        ]
-        
-        # =========================
         # TABLE VIEW (10pt Formatting)
         # =========================
         st.subheader("📊 Bank Rate Comparison")
