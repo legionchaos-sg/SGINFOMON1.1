@@ -194,6 +194,15 @@ def fetch_market_rate(ticker):
         return None, None, "ERROR"
 
 # --- 1. DEFINE TICKERS ---
+western_markets = {
+    "S&P 500": "^GSPC",
+    "Dow Jones": "^DJI",
+    "Nasdaq": "^IXIC",
+    "FTSE 100": "^FTSE",
+    "US 10Y Bond Yield": "^TNX",
+    "Corp Credit (LQD)": "LQD"
+}
+
 def fetch_western_rate(ticker):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
     headers = {'User-Agent': 'Mozilla/5.0'}
