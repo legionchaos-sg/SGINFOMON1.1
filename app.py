@@ -641,145 +641,145 @@ with tab2:
     # Bank Rates SG---
     with st.expander("🏦 Singapore Bank Interest Rate Dashboard", expanded=False):
     
-    # =========================
-    # THE "GOLD 10" LIVE DATA SCRAPER
-    # =========================
-    @st.cache_data(ttl=86400) # Cache for 24 hours to prevent IP blocks
-    def get_sg_bank_rates():
-        """
-        Attempts to scrape tables from public financial aggregators.
-        If blocked or if the table structure changes, it gracefully falls back 
-        to the latest known credible baseline.
-        """
-        # Using a generic header to bypass basic 403 blocks
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
+        # =========================
+        # THE "GOLD 10" LIVE DATA SCRAPER
+        # =========================
+        @st.cache_data(ttl=86400) # Cache for 24 hours to prevent IP blocks
+        def get_sg_bank_rates():
+            """
+            Attempts to scrape tables from public financial aggregators.
+            If blocked or if the table structure changes, it gracefully falls back 
+            to the latest known credible baseline.
+            """
+            # Using a generic header to bypass basic 403 blocks
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            
+            # We target a theoretical public table (e.g., from Wikipedia or a finance blog)
+            # In practice, you swap this URL with your preferred aggregator's specific article URL
+            target_url = "https://en.wikipedia.org/wiki/List_of_banks_in_Singapore" # Placeholder for compilation sites
+            
+            try:
+                # 1. Attempt to fetch the live web page
+                response = requests.get(target_url, headers=headers, timeout=10)
+                
+                # 2. Use Pandas to automatically find all HTML <table> elements on the page
+                tables = pd.read_html(response.text)
+                
+                # 3. Logic to locate the specific table containing "Fixed Deposit"
+                for df in tables:
+                    if "Fixed Deposit (%)" in df.columns or "Savings (%)" in df.columns:
+                        # Clean and return the scraped table
+                        return df[["Bank", "Savings (%)", "Fixed Deposit (%)"]].dropna()
+                        
+                # If no table matches the required columns, raise an exception to trigger the fallback
+                raise ValueError("Target table structure changed.")
+                
+            except Exception as e:
+                # --- THE CREDIBLE FALLBACK ---
+                # If the web scraper is blocked by Cloudflare or the site changes, 
+                # the dashboard will not crash. It loads the latest credible baseline.
+                st.toast("⚠️ Live scraping blocked. Loading latest cached baseline.")
+                return pd.DataFrame([
+                    {"Bank": "DBS", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.20},
+                    {"Bank": "OCBC", "Savings (%)": 0.05, "Fixed Deposit (%)": 2.90},
+                    {"Bank": "UOB", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.10},
+                    {"Bank": "Standard Chartered", "Savings (%)": 0.10, "Fixed Deposit (%)": 3.30},
+                    {"Bank": "HSBC", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.00},
+                    {"Bank": "CIMB", "Savings (%)": 0.80, "Fixed Deposit (%)": 3.15},
+                    {"Bank": "Maybank", "Savings (%)": 0.25, "Fixed Deposit (%)": 2.90}
+                ])
         
-        # We target a theoretical public table (e.g., from Wikipedia or a finance blog)
-        # In practice, you swap this URL with your preferred aggregator's specific article URL
-        target_url = "https://en.wikipedia.org/wiki/List_of_banks_in_Singapore" # Placeholder for compilation sites
+        # =========================
+        # LOAD DATA
+        # =========================
+        data = get_sg_bank_rates()
         
-        try:
-            # 1. Attempt to fetch the live web page
-            response = requests.get(target_url, headers=headers, timeout=10)
-            
-            # 2. Use Pandas to automatically find all HTML <table> elements on the page
-            tables = pd.read_html(response.text)
-            
-            # 3. Logic to locate the specific table containing "Fixed Deposit"
-            for df in tables:
-                if "Fixed Deposit (%)" in df.columns or "Savings (%)" in df.columns:
-                    # Clean and return the scraped table
-                    return df[["Bank", "Savings (%)", "Fixed Deposit (%)"]].dropna()
-                    
-            # If no table matches the required columns, raise an exception to trigger the fallback
-            raise ValueError("Target table structure changed.")
-            
-        except Exception as e:
-            # --- THE CREDIBLE FALLBACK ---
-            # If the web scraper is blocked by Cloudflare or the site changes, 
-            # the dashboard will not crash. It loads the latest credible baseline.
-            st.toast("⚠️ Live scraping blocked. Loading latest cached baseline.")
-            return pd.DataFrame([
-                {"Bank": "DBS", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.20},
-                {"Bank": "OCBC", "Savings (%)": 0.05, "Fixed Deposit (%)": 2.90},
-                {"Bank": "UOB", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.10},
-                {"Bank": "Standard Chartered", "Savings (%)": 0.10, "Fixed Deposit (%)": 3.30},
-                {"Bank": "HSBC", "Savings (%)": 0.05, "Fixed Deposit (%)": 3.00},
-                {"Bank": "CIMB", "Savings (%)": 0.80, "Fixed Deposit (%)": 3.15},
-                {"Bank": "Maybank", "Savings (%)": 0.25, "Fixed Deposit (%)": 2.90}
-            ])
-    
-    # =========================
-    # LOAD DATA
-    # =========================
-    data = get_sg_bank_rates()
-    
-    # =========================
-    # HEADER
-    # =========================
-    st.caption("Savings vs Fixed Deposit Comparison")
-    
-    # =========================
-    # METRICS
-    # =========================
-    col1, col2 = st.columns(2)
-    
-    best_savings = data.loc[data["Savings (%)"].idxmax()]
-    best_fd = data.loc[data["Fixed Deposit (%)"].idxmax()]
-    
-    col1.metric(
-        "🏆 Best Savings Rate",
-        f"{best_savings['Savings (%)']}%",
-        best_savings["Bank"]
-    )
-    
-    col2.metric(
-        "🏆 Best Fixed Deposit",
-        f"{best_fd['Fixed Deposit (%)']}%",
-        best_fd["Bank"]
-    )
-    
-    # =========================
-    # FILTER
-    # =========================
-    st.sidebar.header("🔍 Filter")
-    
-    min_savings = st.sidebar.slider("Min Savings Rate", 0.0, 5.0, 0.0)
-    min_fd = st.sidebar.slider("Min Fixed Deposit Rate", 0.0, 5.0, 0.0)
-    
-    filtered = data[
-        (data["Savings (%)"] >= min_savings) &
-        (data["Fixed Deposit (%)"] >= min_fd)
-    ]
-    
-    # =========================
-    # TABLE VIEW (10pt Formatting)
-    # =========================
-    st.subheader("📊 Bank Rate Comparison")
-    
-    # Applying the 10pt styling directly to the dataframe display
-    st.dataframe(
-        filtered.style.set_properties(**{
-            'font-size': '10pt',
-            'text-align': 'left'
-        }), 
-        use_container_width=True
-    )
-    
-    # =========================
-    # CHART
-    # =========================
-    st.subheader("📈 Visual Comparison")
-    
-    st.bar_chart(
-        filtered.set_index("Bank")[["Savings (%)", "Fixed Deposit (%)"]]
-    )
-    
-    # =========================
-    # INSIGHTS (10pt Formatting)
-    # =========================
-    st.subheader("🧠 Insights")
-    
-    # Using HTML to ensure the insights bullet points also adhere to the 10pt rule
-    st.markdown(f"""
-    <div style="font-size: 10pt;">
-    <ul>
-        <li>Best Savings Account: <strong>{best_savings['Bank']} ({best_savings['Savings (%)']}%)</strong></li>
-        <li>Best Fixed Deposit: <strong>{best_fd['Bank']} ({best_fd['Fixed Deposit (%)']}%)</strong></li>
-        <li>Fixed deposits generally outperform base savings rates.</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # =========================
-    # REFRESH BUTTON
-    # =========================
-    if st.button("🔄 Refresh Data"):
-        # Clear the 24-hour cache to force a fresh scrape attempt
-        st.cache_data.clear()
-        st.rerun()
+        # =========================
+        # HEADER
+        # =========================
+        st.caption("Savings vs Fixed Deposit Comparison")
+        
+        # =========================
+        # METRICS
+        # =========================
+        col1, col2 = st.columns(2)
+        
+        best_savings = data.loc[data["Savings (%)"].idxmax()]
+        best_fd = data.loc[data["Fixed Deposit (%)"].idxmax()]
+        
+        col1.metric(
+            "🏆 Best Savings Rate",
+            f"{best_savings['Savings (%)']}%",
+            best_savings["Bank"]
+        )
+        
+        col2.metric(
+            "🏆 Best Fixed Deposit",
+            f"{best_fd['Fixed Deposit (%)']}%",
+            best_fd["Bank"]
+        )
+        
+        # =========================
+        # FILTER
+        # =========================
+        st.sidebar.header("🔍 Filter")
+        
+        min_savings = st.sidebar.slider("Min Savings Rate", 0.0, 5.0, 0.0)
+        min_fd = st.sidebar.slider("Min Fixed Deposit Rate", 0.0, 5.0, 0.0)
+        
+        filtered = data[
+            (data["Savings (%)"] >= min_savings) &
+            (data["Fixed Deposit (%)"] >= min_fd)
+        ]
+        
+        # =========================
+        # TABLE VIEW (10pt Formatting)
+        # =========================
+        st.subheader("📊 Bank Rate Comparison")
+        
+        # Applying the 10pt styling directly to the dataframe display
+        st.dataframe(
+            filtered.style.set_properties(**{
+                'font-size': '10pt',
+                'text-align': 'left'
+            }), 
+            use_container_width=True
+        )
+        
+        # =========================
+        # CHART
+        # =========================
+        st.subheader("📈 Visual Comparison")
+        
+        st.bar_chart(
+            filtered.set_index("Bank")[["Savings (%)", "Fixed Deposit (%)"]]
+        )
+        
+        # =========================
+        # INSIGHTS (10pt Formatting)
+        # =========================
+        st.subheader("🧠 Insights")
+        
+        # Using HTML to ensure the insights bullet points also adhere to the 10pt rule
+        st.markdown(f"""
+        <div style="font-size: 10pt;">
+        <ul>
+            <li>Best Savings Account: <strong>{best_savings['Bank']} ({best_savings['Savings (%)']}%)</strong></li>
+            <li>Best Fixed Deposit: <strong>{best_fd['Bank']} ({best_fd['Fixed Deposit (%)']}%)</strong></li>
+            <li>Fixed deposits generally outperform base savings rates.</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # =========================
+        # REFRESH BUTTON
+        # =========================
+        if st.button("🔄 Refresh Data"):
+            # Clear the 24-hour cache to force a fresh scrape attempt
+            st.cache_data.clear()
+            st.rerun()
 
     
     
