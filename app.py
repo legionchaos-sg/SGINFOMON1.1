@@ -155,47 +155,43 @@ markets = {
 }
 
 def fetch_market_rate(ticker):
-    """Fetches data using a direct browser-like request to bypass blocks"""
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0'}
+
     try:
         response = requests.get(url, headers=headers, timeout=10)
         data = response.json()
-        
-        # Digging into the JSON structure
+
         result = data['chart']['result'][0]
-        #current_price = result['indicators']['quote'][0]['close'][-1]
-        current_price = result['meta']['regularMarketPrice']
+        meta = result.get('meta', {})
+        indicators = result.get('indicators', {}).get('quote', [{}])[0]
+
+        # ✅ Fallback price logic
+        current_price = meta.get('regularMarketPrice')
+
         if current_price is None:
             close_list = indicators.get('close', [])
             if close_list and close_list[-1] is not None:
                 current_price = close_list[-1]
-        prev_close = result['meta']['previousClose']
-        
-        # Check if market is active (compare last trade time to now)
-        last_trade_time = result['meta']['regularMarketTime']
-        #now_ts = datetime.now().timestamp()
-        now_ts = datetime.now(timezone.utc).timestamp()
-        
-        # If no trade in last 20 mins, it's closed
-        #is_open = (now_ts - last_trade_time) < 1200
-        market_state = result['meta'].get('marketState', 'CLOSED')
 
-        if market_state == "REGULAR":
-            status = "🟢 LIVE"
-        else:
-            status = "🔴 CLOSED"
-        
-        
-        
-        #status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
-        #change_pct = ((current_price - prev_close) / prev_close) * 100
-        
+        if current_price is None:
+            current_price = meta.get('previousClose')
+
+        prev_close = meta.get('previousClose')
+
+        if current_price is None or prev_close is None:
+            return None, None, "NO DATA"
+
+        # ✅ Market status
+        market_state = meta.get('marketState', 'CLOSED')
+        status = "🟢 LIVE" if market_state == "REGULAR" else "🔴 CLOSED"
+
+        change_pct = ((current_price - prev_close) / prev_close) * 100
+
         return current_price, f"{change_pct:+.2f}%", status
-    except:
-        return None, None, "TEST: MARKET CLOSED"
+
+    except Exception as e:
+        return None, None, "ERROR"
 
 # --- 1. DEFINE TICKERS ---
 western_markets = {
