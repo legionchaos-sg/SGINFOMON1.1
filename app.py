@@ -166,18 +166,28 @@ def fetch_market_rate(ticker):
         
         # Digging into the JSON structure
         result = data['chart']['result'][0]
-        current_price = result['indicators']['quote'][0]['close'][-1]
+        #current_price = result['indicators']['quote'][0]['close'][-1]
+        current_price = result['meta']['regularMarketPrice']
         prev_close = result['meta']['previousClose']
         
         # Check if market is active (compare last trade time to now)
         last_trade_time = result['meta']['regularMarketTime']
-        now_ts = datetime.now().timestamp()
+        #now_ts = datetime.now().timestamp()
+        now_ts = datetime.now(timezone.utc).timestamp()
         
         # If no trade in last 20 mins, it's closed
-        is_open = (now_ts - last_trade_time) < 1200 
+        #is_open = (now_ts - last_trade_time) < 1200
+        market_state = result['meta'].get('marketState', 'CLOSED')
+
+        if market_state == "REGULAR":
+            status = "🟢 LIVE"
+        else:
+            status = "🔴 CLOSED"
         
-        status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
-        change_pct = ((current_price - prev_close) / prev_close) * 100
+        
+        
+        #status = "🟢 LIVE" if is_open else "TEST: MARKET CLOSED"
+        #change_pct = ((current_price - prev_close) / prev_close) * 100
         
         return current_price, f"{change_pct:+.2f}%", status
     except:
