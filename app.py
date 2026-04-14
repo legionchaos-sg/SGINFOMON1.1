@@ -704,7 +704,7 @@ with tab2:
        # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS
        # We chain .map() to apply colors to the 'Change %' column specifically
        st.table(
-           df.style.map(change_color, subset=['Change %'])
+           df.style.map(color_change, subset=['Change %'])
            .set_properties(**{
                'text-align': 'left',
                'font-size': '10pt',
