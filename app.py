@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import requests
 import datetime 
+import time
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -183,9 +184,26 @@ def fetch_market_rate(ticker):
             return None, None, "NO DATA"
 
         # ✅ Market status
-        market_state = meta.get('marketState', 'CLOSED')
-        status = "🟢 LIVE" if market_state == "REGULAR" else "🔴 CLOSED"
+        # 1. Pull the data
+        market_state = result['meta'].get('marketState', 'CLOSED').upper()
+        last_trade_ts = result['meta'].get('regularMarketTime', 0)
+        
+        # 2. Check Yahoo's Official Text (Include Pre and Post market)
+        is_text_open = market_state in ["REGULAR", "PRE", "POST"]
+        
+        # 3. The "Heartbeat" Override (If a trade happened in the last 30 mins, it's open)
+        current_time = time.time()
+        is_heartbeat_live = (current_time - last_trade_ts) < 1800 # 1800 seconds = 30 mins
+        
+        # 4. Final Gold 10 Logic: If EITHER is true, the market is LIVE.
+        if is_text_open or is_heartbeat_live:
+            status = "🟢 LIVE"
+        else:
+            status = "🔴 CLOSED"
 
+        change_pct = ((current_price - prev_close) / prev_close) * 100
+
+        return current_price, f"{change_pct:+.2f}%", status
         change_pct = ((current_price - prev_close) / prev_close) * 100
 
         return current_price, f"{change_pct:+.2f}%", status
