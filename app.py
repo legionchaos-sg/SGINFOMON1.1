@@ -264,12 +264,25 @@ def fetch_western_rate(ticker):
         # =========================
         # ✅ MARKET STATUS (RELIABLE)
         # =========================
-        market_state = meta.get('marketState', 'CLOSED')
+        1. Pull data and normalize text to uppercase for safety
+        market_state = result['meta'].get('marketState', 'CLOSED').upper()
+        last_trade_ts = result['meta'].get('regularMarketTime', 0)
+        
+        # 2. The Heartbeat (Are trades actively happening in the last 30 mins?)
+        is_heartbeat_live = (time.time() - last_trade_ts) < 1800 
 
+        # 3. The Hybrid Logic
         if market_state == "REGULAR":
             status = "🟢 LIVE"
-        elif market_state in ["PRE", "POST"]:
+            
+        # Yahoo sometimes uses 'PREPRE' for early morning European sessions
+        elif market_state in ["PRE", "POST", "PREPRE"]: 
             status = "🟡 EXTENDED"
+            
+        # THE OVERRIDE: If Yahoo says it's closed, but trades just happened (FTSE 100 bug)
+        elif is_heartbeat_live:
+            status = "🟢 LIVE" 
+            
         else:
             status = "🔴 CLOSED"
 
