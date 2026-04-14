@@ -264,7 +264,7 @@ def fetch_western_rate(ticker):
         # =========================
         # ✅ MARKET STATUS (RELIABLE)
         # =========================
-        1. Pull data and normalize text to uppercase for safety
+        #1. Pull data and normalize text to uppercase for safety
         market_state = result['meta'].get('marketState', 'CLOSED').upper()
         last_trade_ts = result['meta'].get('regularMarketTime', 0)
         
