@@ -142,6 +142,20 @@ def get_latest_coe():
         {"cat": "Cat E", "p": 121001, "ch": 2882, "q": 245, "b": 475}
     ]
 
+def color_change(val):
+    """
+    Takes a string like '+1.25%' or '-0.50%' and returns the CSS color
+    """
+    try:
+        # Check the first character for + or -
+        if '+' in str(val):
+            return 'color: #00FF00; font-weight: bold;' # Bright Green
+        elif '-' in str(val):
+            return 'color: #FF0000; font-weight: bold;' # Bright Red
+    except:
+        pass
+    return 'color: white;' # Default for N/A or 0.00%
+
 # --- DASHBOARD LOGIC ---
 
 # --- 1. DEFINE MARKETS ---
@@ -202,10 +216,9 @@ def fetch_market_rate(ticker):
             status = "🔴 CLOSED"
 
         change_pct = ((current_price - prev_close) / prev_close) * 100
-
         return current_price, f"{change_pct:+.2f}%", status
+        
         change_pct = ((current_price - prev_close) / prev_close) * 100
-
         return current_price, f"{change_pct:+.2f}%", status
 
     except Exception as e:
@@ -686,15 +699,19 @@ with tab2:
                "Change %": change if change else "N/A",
                "Status": status
            })
-        
-       df = pd.DataFrame(table_data)
-        
-       # --- 3. DISPLAY WITH 10PT FONT ---
-       st.table(df.style.set_properties(**{
-           'text-align': 'left',
-           'font-size': '10pt',
-           'color': 'white'
-       }))
+    
+    df = pd.DataFrame(table_data)
+    
+    # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS
+    # We chain .map() to apply colors to the 'Change %' column specifically
+    st.table(
+        df.style.map(style_change_color, subset=['Change %'])
+        .set_properties(**{
+            'text-align': 'left',
+            'font-size': '10pt',
+            'color': 'white' # This sets the base color for other columns
+        })
+    )
         
        if st.button("Manual Refresh"):
            st.rerun()
