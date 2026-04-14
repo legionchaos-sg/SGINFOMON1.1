@@ -699,19 +699,18 @@ with tab2:
                "Change %": change if change else "N/A",
                "Status": status
            })
-    
-    df = pd.DataFrame(table_data)
-    
-    # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS
-    # We chain .map() to apply colors to the 'Change %' column specifically
-    st.table(
-        df.style.map(style_change_color, subset=['Change %'])
-        .set_properties(**{
-            'text-align': 'left',
-            'font-size': '10pt',
-            'color': 'white' # This sets the base color for other columns
-        })
-    )
+       df = pd.DataFrame(table_data)
+       
+       # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS
+       # We chain .map() to apply colors to the 'Change %' column specifically
+       st.table(
+           df.style.map(style_change_color, subset=['Change %'])
+           .set_properties(**{
+               'text-align': 'left',
+               'font-size': '10pt',
+               'color': 'white' # This sets the base color for other columns
+           })
+       )
         
        if st.button("Manual Refresh"):
            st.rerun()
