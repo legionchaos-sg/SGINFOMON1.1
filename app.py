@@ -307,16 +307,13 @@ def fetch_western_rate(ticker):
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
 # --- CSS TO REMOVE TOP MARGIN ---
-st.markdown("""
+st.markdown(
+    """
     <style>
-           .block-container {
-                padding-top: 1rem;
-                padding-bottom: 0rem;
-                padding-left: 2rem;
-                padding-right: 2rem;
-            }
-            #MainMenu {visibility: hidden;}
-            header {visibility: hidden;}
+    .reportview-container .main .block-container {
+        padding-top: 1rem;
+        font-size: 10pt;
+    }
     </style>
     """, unsafe_allow_html=True)
 
