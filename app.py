@@ -44,6 +44,8 @@ if "active_tab" not in st.session_state:
 if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
 
+# --- DATA ENGINES ---
+
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
 def fetch_sg_economy():
@@ -141,13 +143,18 @@ def get_latest_coe():
     ]
 
 def color_change(val):
-    """Takes a string like '+1.25%' or '-0.50%' and returns the CSS color
-    if isinstance(val, str):
-        if '+' in val:
-            return 'color: #00FF00 !important; font-weight: bold;'
-        elif '-' in val:
-            return 'color: #FF0000 !important; font-weight: bold;'
-    return 'color: white;'
+    """
+    Takes a string like '+1.25%' or '-0.50%' and returns the CSS color
+    """
+    try:
+        # Check the first character for + or -
+        if '+' in str(val):
+            return 'color: #00FF00; font-weight: bold;' # Bright Green
+        elif '-' in str(val):
+            return 'color: #FF0000; font-weight: bold;' # Bright Red
+    except:
+        pass
+    return 'color: white;' # Default for N/A or 0.00%
 
 # --- DASHBOARD LOGIC ---
 
@@ -162,7 +169,6 @@ markets = {
     "Malaysia": "^KLSE"
 }
 
-#aSIA mKT
 def fetch_market_rate(ticker):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -212,8 +218,8 @@ def fetch_market_rate(ticker):
         change_pct = ((current_price - prev_close) / prev_close) * 100
         return current_price, f"{change_pct:+.2f}%", status
         
-        #change_pct = ((current_price - prev_close) / prev_close) * 100
-        #return current_price, f"{change_pct:+.2f}%", status
+        change_pct = ((current_price - prev_close) / prev_close) * 100
+        return current_price, f"{change_pct:+.2f}%", status
 
     except Exception as e:
         return None, None, "ERROR"
@@ -307,13 +313,16 @@ def fetch_western_rate(ticker):
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
 # --- CSS TO REMOVE TOP MARGIN ---
-st.markdown(
-    """
+st.markdown("""
     <style>
-    .reportview-container .main .block-container {
-        padding-top: 1rem;
-        font-size: 10pt;
-    }
+           .block-container {
+                padding-top: 1rem;
+                padding-bottom: 0rem;
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+            #MainMenu {visibility: hidden;}
+            header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -675,6 +684,9 @@ with tab2:
  
     # Bank Rates SG---
    
+
+    
+    
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
        table_data = []
@@ -689,15 +701,16 @@ with tab2:
            })
        df = pd.DataFrame(table_data)
        
-       # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS # We chain .map() to apply colors to the 'Change %' column specifically
-       styled_df = df.style.map(color_change, subset=['Change %']).set_properties(**{
-        'text-align': 'left',
-        'font-size': '10pt'
-       })
-
-       # Display the styled object
-       st.table(styled_df)
-       
+       # 3. DISPLAY WITH 10PT FONT AND CONDITIONAL COLORS
+       # We chain .map() to apply colors to the 'Change %' column specifically
+       st.table(
+           df.style.map(color_change, subset=['Change %'])
+           .set_properties(**{
+               'text-align': 'left',
+               'font-size': '10pt',
+               'color': 'white' # This sets the base color for other columns
+           })
+       )
         
        if st.button("Manual Refresh"):
            st.rerun()
@@ -725,6 +738,11 @@ with tab2:
         
         if st.button("Refresh Western Feed"):
             st.rerun()
+
+       
+
+       
+    
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
