@@ -11,3 +11,5 @@ scikit-learn
 yfinance
 google-genai
 google-generativeai
+prophet
+plotly
