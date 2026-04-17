@@ -192,6 +192,8 @@ def get_live_rate(ticker):
             # 2026 Multi-index fix: Flatten headers
             if isinstance(data.columns, pd.MultiIndex):
                 data.columns = data.columns.get_level_values(0)
+
+            current_rate = float(data['Close'].iloc[-1])
             
             # Return the number directly
             val = data['Close'].iloc[-1]
