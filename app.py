@@ -101,9 +101,6 @@ def fetch_live_forex():
         except: fx_results[label] = (0.0, 0.0)
     return fx_results
 
-import numpy as np
-from prophet import Prophet
-
 def run_models(ticker, step):
     """
     Gold 10 Ensemble Engine:
@@ -142,6 +139,28 @@ def run_models(ticker, step):
     except Exception as e:
         # Fallback to current price if model fails
         return float(yf.download(ticker, period="1d", progress=False)['Close'].iloc[-1])
+
+def generate_recommendation(predicted_val, current_val):
+    """
+    Gold 10 Recommendation Logic:
+    Determines action based on the % change between current and 3rd-day forecast.
+    """
+    if current_val == 0:
+        return "⏳ DATA ERR"
+        
+    change = (predicted_val - current_val) / current_val
+    
+    # 0.5% threshold for "Strong" signals
+    if change > 0.005:
+        return "🚀 STRONG BUY"
+    elif change > 0.001:
+        return "↗️ BUY"
+    elif change < -0.005:
+        return "❄️ STRONG SELL"
+    elif change < -0.001:
+        return "↘️ SELL"
+    else:
+        return "↔️ HOLD / WAIT"
 
 def get_live_rate(ticker):
     """
