@@ -1,6 +1,6 @@
 import streamlit as st
-import feedparser, requests, pytz
 import pandas as pd
+import feedparser, requests, pytz
 import yfinance as yf
 from prophet import Prophet
 import numpy as np
