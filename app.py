@@ -726,30 +726,34 @@ with tab2:
         # 2. Build the Dynamic Table
         prediction_data = []
         for label, ticker in currency_pairs.items():
-            #current_rate = get_live_rate(ticker)
-            current_rate = fetch_live_forex()
-            
-                
-            # Run your Prophet + Chronos-2 models for the dynamic dates
-            # These functions should take the date or 'steps' as input
-            d1_val = run_models(ticker, step=1)
-            d2_val = run_models(ticker, step=2)
-            d3_val = run_models(ticker, step=3)
-
-            # --- THE FIX: Ensure current_rate is a pure number ---
-            if isinstance(raw_rate, (pd.Series, pd.DataFrame)): # If it's a pandas Series
+            raw_rate = get_live_rate(ticker)
+    
+        # 2. Get the forecast
+        d1_val = run_models(ticker, step=1)
+        d2_val = run_models(ticker, step=2)
+        d3_val = run_models(ticker, step=3)
+    
+        # --- THE CRASH PROOF CHECK ---
+        # We convert raw_rate to a float immediately. 
+        # If it's a Series/DataFrame, we grab the first value.
+        try:
+            if hasattr(raw_rate, 'iloc'):
                 current_rate = float(raw_rate.iloc[0])
             else:
                 current_rate = float(raw_rate)
-                
-            prediction_data.append({
-                "Pair": label,
-                "Current": f"{current_rate:.4f}",
-                m_day1: f"{d1_val:.4f}",
-                m_day2: f"{d2_val:.4f}",
-                m_day3: f"{d3_val:.4f}",
-                "Recommendation": generate_recommendation(d3_val, current_rate)
-            })
+        except:
+            current_rate = 0.0
+        # -----------------------------
+    
+        # 3. Add to the list for the table
+        prediction_data.append({
+            "Pair": label,
+            "Current": f"{current_rate:.4f}",
+            m_day1: f"{d1_val:.4f}",
+            m_day2: f"{d2_val:.4f}",
+            m_day3: f"{d3_val:.4f}",
+            "Recommendation": generate_recommendation(d3_val, current_rate)
+        })
 
         if prediction_data:
             df_final = pd.DataFrame(prediction_data)
