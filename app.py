@@ -111,6 +111,12 @@ def run_models(ticker, step):
     try:
         # 1. Fetch historical data (needed for Prophet)
         data = yf.download(ticker, period="60d", interval="1d", progress=False)
+
+        # --- FIX 1: SAFETY CATCH FOR EMPTY DATA (Line 146 Fix) ---
+        if data.empty:
+            # If market is closed, try 1 month to find last valid Friday
+            data = yf.download(ticker, period="1mo", interval="1d", progress=False)
+        
         if data.empty: return 0.0
         
         # 2. Prepare data for Prophet (ds and y columns)
@@ -134,7 +140,7 @@ def run_models(ticker, step):
         # 5. Chronos-2 Style Momentum Logic (Simplified for CPU/Streamlit)
         # We calculate the recent acceleration to 'adjust' the Prophet baseline
         recent_close = df_prophet['y'].iloc[-1]
-        momentum = (recent_close - df_prophet['y'].iloc[-5]) / 5
+        momentum = df_prophet['y'].diff().tail(5).mean()
         chronos_adjustment = recent_close + (momentum * step)
         
         # 6. Weighted Ensemble (Gold 10 Balance)
@@ -143,7 +149,7 @@ def run_models(ticker, step):
         return float(final_val)
     except Exception as e:
         # Fallback to current price if model fails
-        return float(yf.download(ticker, period="1d", progress=False)['Close'].iloc[-1])
+        return float(data['Close'].iloc[-1]) if not data.empty else 0.0
 
 def generate_recommendation(predicted_val, current_val):
     """
