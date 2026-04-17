@@ -718,7 +718,9 @@ with tab2:
         # 2. Build the Dynamic Table
         prediction_data = []
         for label, ticker in currency_pairs.items():
-            current_rate = get_live_rate(ticker)
+            #current_rate = get_live_rate(ticker)
+            current_rate = fetch_live_forex()
+            
                 
             # Run your Prophet + Chronos-2 models for the dynamic dates
             # These functions should take the date or 'steps' as input
