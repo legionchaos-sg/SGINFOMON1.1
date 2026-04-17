@@ -721,11 +721,11 @@ with tab2:
                 "Recommendation": generate_recommendation(d3_val, current_rate)
             })
 
-    if prediction_data:
-        df_final = pd.DataFrame(prediction_data)
+        if prediction_data:
+            df_final = pd.DataFrame(prediction_data)
             st.table(df_final)  # This is the command that actually "shows" the table
-    else:
-        st.warning("Fetching live data... please wait.")
+        else:
+            st.warning("Fetching live data... please wait.")
     
        
  
