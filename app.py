@@ -729,7 +729,7 @@ with tab2:
             d3_val = run_models(ticker, step=3)
 
             # --- THE FIX: Ensure current_rate is a pure number ---
-            if hasattr(raw_rate, 'iloc'): # If it's a pandas Series
+            if isinstance(raw_rate, (pd.Series, pd.DataFrame)): # If it's a pandas Series
                 current_rate = float(raw_rate.iloc[0])
             else:
                 current_rate = float(raw_rate)
