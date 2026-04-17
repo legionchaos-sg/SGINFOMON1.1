@@ -725,39 +725,59 @@ with tab2:
         
         # 2. Build the Dynamic Table
         prediction_data = []
-        for label, ticker in currency_pairs.items():
-            raw_rate = get_live_rate(ticker)
-    
-        # 2. Get the forecast
-        d1_val = run_models(ticker, step=1)
-        d2_val = run_models(ticker, step=2)
-        d3_val = run_models(ticker, step=3)
-    
-        # --- THE CRASH PROOF CHECK ---
-        # We convert raw_rate to a float immediately. 
-        # If it's a Series/DataFrame, we grab the first value.
-        try:
-            if hasattr(raw_rate, 'iloc'):
-                current_rate = float(raw_rate.iloc[0])
-            else:
-                current_rate = float(raw_rate)
-        except:
-            current_rate = 0.0
-        # -----------------------------
-    
-        # 3. Add to the list for the table
-        prediction_data.append({
-            "Pair": label,
-            "Current": f"{current_rate:.4f}",
-            m_day1: f"{d1_val:.4f}",
-            m_day2: f"{d2_val:.4f}",
-            m_day3: f"{d3_val:.4f}",
-            "Recommendation": generate_recommendation(d3_val, current_rate)
-        })
 
+        # Ensure your dictionary is formatted correctly with =X
+        currency_pairs = {
+            "SGD/CNY": "SGDCNY=X",
+            "SGD/JPY": "SGDJPY=X",
+            "SGD/MYR": "SGDMYR=X",
+            "SGD/USD": "SGDUSD=X",
+            "SGD/GBP": "SGDGBP=X"
+        }
+        
+        for label, ticker in currency_pairs.items():
+            try:
+                # 1. Fetch current rate
+                raw_rate = get_live_rate(ticker)
+                
+                # 2. Extract the number safely
+                if hasattr(raw_rate, 'iloc'):
+                    current_rate = float(raw_rate.iloc[0])
+                else:
+                    current_rate = float(raw_rate)
+                    
+                # 3. Skip if no data found to prevent model crash
+                if current_rate == 0:
+                    prediction_data.append({
+                        "Pair": label, "Current": "0.0000", 
+                        m_day1: "-", m_day2: "-", m_day3: "-", 
+                        "Recommendation": "⚠️ NO DATA"
+                    })
+                    continue
+        
+                # 4. Run the models
+                d1_val = run_models(ticker, step=1)
+                d2_val = run_models(ticker, step=2)
+                d3_val = run_models(ticker, step=3)
+        
+                # 5. Add to results
+                prediction_data.append({
+                    "Pair": label,
+                    "Current": f"{current_rate:.4f}",
+                    m_day1: f"{d1_val:.4f}",
+                    m_day2: f"{d2_val:.4f}",
+                    m_day3: f"{d3_val:.4f}",
+                    "Recommendation": generate_recommendation(d3_val, current_rate)
+                })
+        
+            except Exception as e:
+                # If one pair fails (like SGD/MYR), this 'except' prevents the whole app from stopping
+                st.error(f"Error processing {label}: {e}")
+                continue 
+        
+        # Show the final table
         if prediction_data:
-            df_final = pd.DataFrame(prediction_data)
-            st.table(df_final)  # This is the command that actually "shows" the table
+            st.table(pd.DataFrame(prediction_data))
         else:
             st.warning("Fetching live data... please wait.")
     
