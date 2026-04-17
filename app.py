@@ -99,6 +99,22 @@ def fetch_live_forex():
         except: fx_results[label] = (0.0, 0.0)
     return fx_results
 
+def get_live_rate(ticker):
+    """
+    Gold 10 Data Fetcher:
+    Fetches the most recent closing price for a given ticker.
+    """
+    try:
+        # Fetch the last 1 day of data at 1-minute intervals
+        data = yf.download(ticker, period="1d", interval="1m", progress=False)
+        if not data.empty:
+            # Get the very last price from the 'Close' column
+            return float(data['Close'].iloc[-1])
+        return 0.0
+    except Exception as e:
+        print(f"Error fetching {ticker}: {e}")
+        return 0.0
+
 @st.cache_data(ttl=300)
 def fetch_live_market_data():
     tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Brent": "BZ=F"}
@@ -625,7 +641,7 @@ with tab2:
         # 2. Build the Dynamic Table
         prediction_data = []
         for label, ticker in currency_pairs.items():
-            current_rate = fetch_live_forex(ticker)
+            current_rate = get_live_rate(ticker)
                 
             # Run your Prophet + Chronos-2 models for the dynamic dates
             # These functions should take the date or 'steps' as input
