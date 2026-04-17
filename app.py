@@ -599,7 +599,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
-    with st.expander("🌐 Forex Prediction):
+    with st.expander("🌐 Forex Prediction"):
 
     # 1. Get the next 3 market days dynamically
     # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
