@@ -10,6 +10,7 @@ from prophet import Prophet
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
+from yahooquery import Ticker
 import yfinance as yf
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
@@ -167,13 +168,11 @@ def get_live_rate(ticker):
     
     try:
         # Fetch the last 1 day of data at 1-minute intervals
-        data = yf.download(ticker, period="1mo", interval="1d", progress=False)
-        if not data.empty:
-            # Get the very last price from the 'Close' column
-            return float(data['Close'].iloc[-1])
-        return 0.0
-    except Exception as e:
-        print(f"Error fetching {ticker}: {e}")
+        t = Ticker(ticker)
+        # Fetch the most recent price directly
+        price = t.price[ticker]['regularMarketPrice']
+        return float(price)
+    except:
         return 0.0
 
 @st.cache_data(ttl=300)
