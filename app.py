@@ -704,16 +704,7 @@ with tab2:
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction"):
-
-        currency_pairs = {
-        "SGD/THB": "SGDTHB=X",
-        "SGD/JPY": "SGDJPY=X",
-        "SGD/MYR": "SGDMYR=X",
-        "SGD/EUR": "SGDEUR=X",
-        "SGD/CNY": "SGDCNY=X"
-        }
-        # "SGD/USD": "SGDUSD=X",
-        #"SGD/GBP": "SGDGBP=X",
+    
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
         # 'freq=B' ensures we only pick Business Days (Mon-Fri)
@@ -730,12 +721,15 @@ with tab2:
 
         # Ensure your dictionary is formatted correctly with =X
         currency_pairs = {
-            "SGD/CNY": "SGDCNY=X",
-            "SGD/JPY": "SGDJPY=X",
-            "SGD/MYR": "SGDMYR=X",
-            "SGD/USD": "SGDUSD=X",
-            "SGD/GBP": "SGDGBP=X"
+        "SGD/THB": "SGDTHB=X",
+        "SGD/JPY": "SGDJPY=X",
+        "SGD/MYR": "SGDMYR=X",
+        "SGD/EUR": "SGDEUR=X",
+        "SGD/CNY": "SGDCNY=X",
+        "SGD/USD": "SGDUSD=X",
+        "SGD/GBP": "SGDGBP=X",
         }
+        
         
         for label, ticker in currency_pairs.items():
             try:
