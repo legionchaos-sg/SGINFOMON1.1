@@ -599,75 +599,40 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
-    with st.expander("🌐 Internet & Mobile Connectivity (24h Monitor)", expanded=False):
-    
-        # Updated: Mar 29, 2026 | 16:15 SGT
-        providers = ["Singtel", "M1", "Starhub", "SPTel", "Simba"]
-        uptime_scores = [92.4, 98.1, 99.4, 100.0, 97.2] 
-        
-        col_graph, col_outage = st.columns([3, 2])
-        
-        with col_graph:
-            st.write("**Provider Uptime Efficiency (March 2026)**")
-            for prov, score in zip(providers, uptime_scores):
-                bar_color = "#28a745" if score > 98 else "#ffc107" if score > 95 else "#dc3545"
-                st.markdown(f"""<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem;"><span><b>{prov}</b></span><span>{score}%</span></div><div style="background-color: #333; border-radius: 4px; height: 10px; width: 100%;"><div style="background-color: {bar_color}; width: {score}%; height: 100%; border-radius: 4px;"></div></div></div>""", unsafe_allow_html=True)
-            
-            st.markdown("<p style='font-size: 0.7rem; color: #888;'>⚠️ Singtel: Recovery phase after Mar 23 Routing Spike.</p>", unsafe_allow_html=True)
-    
-        with col_outage:
-            st.write("**⚠️ Incident & Maintenance Log**")
-            incidents = [
-                ("Singtel", "Active", "Residual DNS latency reports (Downdetector)."),
-                ("NetLink", "Mar 31", "Sin Ming & Lorong Chuan Fiber Works (0900-1800)."),
-                ("M1", "Today", "Lorong Chuan localized fiber maintenance."),
-                ("Simba", "24h", "5G patchy signal in Geylang / Central areas."),
-                ("Starhub", "N/A", "Stable; no major backbone incidents reported.")
-            ]
-            
-            for p, t, m in incidents:
-                status_color = "#dc3545" if "Active" in m or "Maint" in m or "Works" in m else "#28a745"
-                st.markdown(f"""<div style="font-size:0.8rem; border-left: 3px solid {status_color}; padding-left:8px; margin-bottom:8px;"><b>{p}</b> <small style="color:gray;">[{t}]</small><br>{m}</div>""", unsafe_allow_html=True)
-    
-        #st.divider()
-        #st.caption("📅 **Notice:** Nationwide NetLink Trust System Upgrade scheduled for **Apr 23–30, 2026**. Activation blackout applies.")
-    
-        # Footer Announcement for gold 10 clarity
-        st.info("📅 **Upcoming:** Nationwide NetLink Trust System Upgrade scheduled for April 23–30, 2026. No new activations during this window.")
+    with st.expander("🌐 Forex Prediction):
 
-        # --- SECTION: GLOBAL LINK MONITOR (NEW) ---
-        st.write("---") # Visual separator inside expander
-        st.write("**🌍 Global Route Health & Path Status**")
+    # 1. Get the next 3 market days dynamically
+    # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
+    # 'freq=B' ensures we only pick Business Days (Mon-Fri)
+    business_days = pd.bdate_range(start=datetime.now(), periods=4, freq='B')
+    
+    # Format them for the table headers (e.g., "Mon (20 Apr)")
+    current_day_label = business_days[0].strftime('%a (%d %b)')
+    m_day1 = business_days[1].strftime('%a (%d %b)')
+    m_day2 = business_days[2].strftime('%a (%d %b)')
+    m_day3 = business_days[3].strftime('%a (%d %b)')
+    
+    # 2. Build the Dynamic Table
+    prediction_data = []
+    for label, ticker in currency_pairs.items():
+        current_rate = get_live_rate(ticker)
         
-        # Link mapping for March 29, 2026 findings
-        # Key: Path | Cables | Latency | Status
-        links = [
-            ("🇺🇸 East (USA) - Essential for US-hosted Cloud APIs (Google/AWS).", "Bifrost / Echo", "165ms", "🟢 Optimal", "Direct SG-US link fully operational."),
-            ("🇪🇺 West (Europe) - Essential for pricing from London/Paris/Frankfurt", "SMW-6 / AAE-1", "240ms+", "🔴 High Lag", "Red Sea security risks; routing via detour."),
-            ("🇯🇵 North (Asia) - Essential for China/Japan flight monitoring", "SJC2 / ADC", "85ms", "🟡 Congested", "High load due to regional traffic rerouting."),
-            ("🇦🇺 South (AU) - Essential for Southern Hemisphere data", "Indigo-West / ASC", "60ms", "🟡 Maint", "Indigo-West shallow water repairs (Est. Apr 6)."),
-            ("🌏 Regional", "ALC / SEA-H2X", "25ms", "🟢 Healthy", "ASEAN links stable; ALC ready-for-service 2026.")
-        ]
-
-        # Compact Display for Tablet
-        for path, cable, lat, status, detail in links:
-            # Color indicator logic
-            s_color = "#28a745" if "Optimal" in status or "Healthy" in status else "#ffc107" if "Congested" in status or "Maint" in status else "#dc3545"
-            
-            st.markdown(f"""
-                <div style="font-size:0.8rem; margin-bottom:10px; border-bottom: 1px solid #333; padding-bottom:5px;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="color:{s_color};"><b>{status}</b></span>
-                        <span style="color:gray;">{lat}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; margin-top:2px;">
-                        <span><b>{path}</b> <small>({cable})</small></span>
-                    </div>
-                    <div style="font-size:0.75rem; color:#aaa; font-style:italic;">{detail}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-        st.caption("🔍 *Latency verified via SG-IX Gateway (Live 2026)*")
+        # Run your Prophet + Chronos-2 models for the dynamic dates
+        # These functions should take the date or 'steps' as input
+        d1_val = run_models(ticker, step=1)
+        d2_val = run_models(ticker, step=2)
+        d3_val = run_models(ticker, step=3)
+        
+        prediction_data.append({
+            "Pair": label,
+            "Current": f"{current_rate:.4f}",
+            m_day1: f"{d1_val:.4f}",
+            m_day2: f"{d2_val:.4f}",
+            m_day3: f"{d3_val:.4f}",
+            "Recommendation": generate_recommendation(d3_val, current_rate)
+        })
+    
+       
  
     # Bank Rates SG---
    
