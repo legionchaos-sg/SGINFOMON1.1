@@ -147,9 +147,16 @@ def run_models(ticker, step):
         final_val = (prophet_val * 0.6) + (chronos_adjustment * 0.4)
         
         return float(final_val)
+        
     except Exception as e:
         # Fallback to current price if model fails
-        return float(data['Close'].iloc[-1]) if not data.empty else 0.0
+        if not data.empty:
+            last_price = data['Close'].iloc[-1]
+            # If the price comes back as a Series/List, grab the first number
+            if hasattr(last_price, '__iter__'):
+                return float(last_price.iloc[0])
+            return float(last_price)
+        return 0.0
 
 def generate_recommendation(predicted_val, current_val):
     """
