@@ -183,13 +183,20 @@ def generate_recommendation(predicted_val, current_val):
 
 def get_live_rate(ticker):
     #Gold 10 Data Fetcher, Fetches the most recent closing price for a given ticker.
-    
     try:
-        # Fetch the last 1 day of data at 1-minute intervals
-        t = Ticker(ticker)
-        # Fetch the most recent price directly
-        price = t.price[ticker]['regularMarketPrice']
-        return float(price)
+        # Use 7d to bypass the Friday night market close
+        data = yf.download(ticker, period="7d", interval="1d", progress=False)
+        
+        if not data.empty:
+            # 2026 Multi-index fix: Flatten headers
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = data.columns.get_level_values(0)
+            
+            # Return the number directly
+            val = data['Close'].iloc[-1]
+            return float(val.iloc[0]) if hasattr(val, 'iloc') else float(val)
+            
+        return 0.0
     except:
         return 0.0
 
