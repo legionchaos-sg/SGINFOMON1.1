@@ -163,13 +163,11 @@ def generate_recommendation(predicted_val, current_val):
         return "↔️ HOLD / WAIT"
 
 def get_live_rate(ticker):
-    """
-    Gold 10 Data Fetcher:
-    Fetches the most recent closing price for a given ticker.
-    """
+    #Gold 10 Data Fetcher, Fetches the most recent closing price for a given ticker.
+    
     try:
         # Fetch the last 1 day of data at 1-minute intervals
-        data = yf.download(ticker, period="1d", interval="1m", progress=False)
+        data = yf.download(ticker, period="1mo", interval="1d", progress=False)
         if not data.empty:
             # Get the very last price from the 'Close' column
             return float(data['Close'].iloc[-1])
