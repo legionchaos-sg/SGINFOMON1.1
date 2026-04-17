@@ -117,9 +117,13 @@ def run_models(ticker, step):
         df_prophet = data.reset_index()[['Date', 'Close']]
         df_prophet.columns = ['ds', 'y']
         df_prophet['ds'] = df_prophet['ds'].dt.tz_localize(None) # Remove timezone
+
+        # --- PLACE THE FIX HERE ---
+        # This fills Saturday/Sunday holes with Friday's price
+        df_prophet = df_prophet.set_index('ds').resample('D').mean().fillna(method='ffill').reset_index()
         
         # 3. Fit Prophet Model
-        m = Prophet(daily_seasonality=True, weekly_seasonality=True, yearly_seasonality=False)
+        m = Prophet(daily_seasonality=False, weekly_seasonality=True, yearly_seasonality=False)
         m.fit(df_prophet)
         
         # 4. Predict Future
