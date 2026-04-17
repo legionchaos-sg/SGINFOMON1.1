@@ -601,36 +601,36 @@ with tab2:
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction"):
 
-    # 1. Get the next 3 market days dynamically
-    # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
-    # 'freq=B' ensures we only pick Business Days (Mon-Fri)
-    business_days = pd.bdate_range(start=datetime.now(), periods=4, freq='B')
-    
-    # Format them for the table headers (e.g., "Mon (20 Apr)")
-    current_day_label = business_days[0].strftime('%a (%d %b)')
-    m_day1 = business_days[1].strftime('%a (%d %b)')
-    m_day2 = business_days[2].strftime('%a (%d %b)')
-    m_day3 = business_days[3].strftime('%a (%d %b)')
-    
-    # 2. Build the Dynamic Table
-    prediction_data = []
-    for label, ticker in currency_pairs.items():
-        current_rate = get_live_rate(ticker)
+        # 1. Get the next 3 market days dynamically
+        # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
+        # 'freq=B' ensures we only pick Business Days (Mon-Fri)
+        business_days = pd.bdate_range(start=datetime.now(), periods=4, freq='B')
         
-        # Run your Prophet + Chronos-2 models for the dynamic dates
-        # These functions should take the date or 'steps' as input
-        d1_val = run_models(ticker, step=1)
-        d2_val = run_models(ticker, step=2)
-        d3_val = run_models(ticker, step=3)
+        # Format them for the table headers (e.g., "Mon (20 Apr)")
+        current_day_label = business_days[0].strftime('%a (%d %b)')
+        m_day1 = business_days[1].strftime('%a (%d %b)')
+        m_day2 = business_days[2].strftime('%a (%d %b)')
+        m_day3 = business_days[3].strftime('%a (%d %b)')
         
-        prediction_data.append({
-            "Pair": label,
-            "Current": f"{current_rate:.4f}",
-            m_day1: f"{d1_val:.4f}",
-            m_day2: f"{d2_val:.4f}",
-            m_day3: f"{d3_val:.4f}",
-            "Recommendation": generate_recommendation(d3_val, current_rate)
-        })
+        # 2. Build the Dynamic Table
+        prediction_data = []
+        for label, ticker in currency_pairs.items():
+            current_rate = get_live_rate(ticker)
+            
+            # Run your Prophet + Chronos-2 models for the dynamic dates
+            # These functions should take the date or 'steps' as input
+            d1_val = run_models(ticker, step=1)
+            d2_val = run_models(ticker, step=2)
+            d3_val = run_models(ticker, step=3)
+            
+            prediction_data.append({
+                "Pair": label,
+                "Current": f"{current_rate:.4f}",
+                m_day1: f"{d1_val:.4f}",
+                m_day2: f"{d2_val:.4f}",
+                m_day3: f"{d3_val:.4f}",
+                "Recommendation": generate_recommendation(d3_val, current_rate)
+            })
     
        
  
