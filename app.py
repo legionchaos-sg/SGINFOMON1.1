@@ -710,11 +710,10 @@ with tab2:
         "SGD/JPY": "SGDJPY=X",
         "SGD/MYR": "SGDMYR=X",
         "SGD/EUR": "SGDEUR=X",
-        "SGD/USD": "SGDUSD=X",
-        "SGD/GBP": "SGDGBP=X",
         "SGD/CNY": "SGDCNY=X"
         }
-
+        # "SGD/USD": "SGDUSD=X",
+        #"SGD/GBP": "SGDGBP=X",
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
         # 'freq=B' ensures we only pick Business Days (Mon-Fri)
