@@ -5,6 +5,8 @@ import numpy as np
 import requests
 import datetime 
 import time
+import numpy as np
+from prophet import Prophet
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
 from deep_translator import GoogleTranslator
@@ -98,6 +100,48 @@ def fetch_live_forex():
             fx_results[label] = (curr, ((curr - prev) / prev) * 100)
         except: fx_results[label] = (0.0, 0.0)
     return fx_results
+
+import numpy as np
+from prophet import Prophet
+
+def run_models(ticker, step):
+    """
+    Gold 10 Ensemble Engine:
+    Combines Prophet (60%) and Chronos-2 style momentum (40%)
+    to predict future currency rates.
+    """
+    try:
+        # 1. Fetch historical data (needed for Prophet)
+        data = yf.download(ticker, period="60d", interval="1d", progress=False)
+        if data.empty: return 0.0
+        
+        # 2. Prepare data for Prophet (ds and y columns)
+        df_prophet = data.reset_index()[['Date', 'Close']]
+        df_prophet.columns = ['ds', 'y']
+        df_prophet['ds'] = df_prophet['ds'].dt.tz_localize(None) # Remove timezone
+        
+        # 3. Fit Prophet Model
+        m = Prophet(daily_seasonality=True, weekly_seasonality=True, yearly_seasonality=False)
+        m.fit(df_prophet)
+        
+        # 4. Predict Future
+        future = m.make_future_dataframe(periods=step)
+        forecast = m.predict(future)
+        prophet_val = forecast['yhat'].iloc[-1]
+        
+        # 5. Chronos-2 Style Momentum Logic (Simplified for CPU/Streamlit)
+        # We calculate the recent acceleration to 'adjust' the Prophet baseline
+        recent_close = df_prophet['y'].iloc[-1]
+        momentum = (recent_close - df_prophet['y'].iloc[-5]) / 5
+        chronos_adjustment = recent_close + (momentum * step)
+        
+        # 6. Weighted Ensemble (Gold 10 Balance)
+        final_val = (prophet_val * 0.6) + (chronos_adjustment * 0.4)
+        
+        return float(final_val)
+    except Exception as e:
+        # Fallback to current price if model fails
+        return float(yf.download(ticker, period="1d", progress=False)['Close'].iloc[-1])
 
 def get_live_rate(ticker):
     """
