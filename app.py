@@ -111,7 +111,8 @@ def run_models(ticker, step):
     """
     try:
         # 1. Fetch historical data (needed for Prophet)
-        data = yf.download(ticker, period="60d", interval="1d", progress=False)
+        #data = yf.download(ticker, period="60d", interval="1d", progress=False)
+        data = yf.download(ticker, period="1mo", interval="1d", progress=False)
 
         # --- FIX 1: SAFETY CATCH FOR EMPTY DATA (Line 146 Fix) ---
         if data.empty:
