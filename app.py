@@ -727,6 +727,12 @@ with tab2:
             d1_val = run_models(ticker, step=1)
             d2_val = run_models(ticker, step=2)
             d3_val = run_models(ticker, step=3)
+
+            # --- THE FIX: Ensure current_rate is a pure number ---
+            if hasattr(raw_rate, 'iloc'): # If it's a pandas Series
+                current_rate = float(raw_rate.iloc[0])
+            else:
+                current_rate = float(raw_rate)
                 
             prediction_data.append({
                 "Pair": label,
