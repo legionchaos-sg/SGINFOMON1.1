@@ -586,20 +586,26 @@ with tab1:
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             # 1. Clear previous errors from the screen
             st.empty() 
-            with st.spinner("🤖 AI is reaching out to the servers..."):
-                # 2. Add a 'Timeout' and direct print to catch the silent fail
+            with st.spinner("🤖 AI is connecting to the 2026 live feed..."):
                 try:
-                    # We call the function and EXPECT it to either work or tell us why it didn't
-                    sg_res, gl_res = get_market_intelligence(
-                        m_live['STI'][0], m_live['Gold'][0], m_live['Silver'][0], m_live['Brent'][0]
+                    # 2. Call the analysis
+                    sg_analysis, global_analysis = get_cached_analysis(
+                        m_live['STI'][0], 
+                        m_live['Gold'][0], 
+                        m_live['Silver'][0], 
+                        m_live['Brent'][0]
                     )
                     
-                    st.session_state['sg_analysis'] = sg_res
-                    st.session_state['gl_analysis'] = gl_res
-                    st.rerun() # 3. Force Streamlit to show the new data immediately
+                    # 3. Save to state
+                    st.session_state['sg_analysis'] = sg_analysis
+                    st.session_state['gl_analysis'] = global_analysis
+                    
+                    # 4. CRITICAL: Force a rerun to show the results immediately
+                    st.rerun() 
                     
                 except Exception as e:
-                    st.error(f"⚠️ The AI Button Crashed: {e}")
+                    # 5. If it fails, show the error in RED so we can fix it
+                    st.error(f"❌ AI Analysis Failed: {e}")
             
         
     # 4. Foreign Exchange
