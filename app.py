@@ -53,6 +53,18 @@ if "g10_target_fix" not in st.session_state:
 
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
+def get_ai_response(user_input):
+    try:
+        # 2. Call Gemini 3 Flash (The 2026 high-speed model)
+        response = client.models.generate_content(
+            model="gemini-3-flash", 
+            contents=user_input
+        )
+        return response.text
+    except Exception as e:
+        return f"Error: {e}"
+
+
 def get_dynamic_analysis(sti, gold, brent):
     # Class A: SG Market
     if sti < 5000:
@@ -462,6 +474,18 @@ with tab1:
     st.divider()
     holiday_info = get_upcoming_holiday()
     st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
+
+    # --- SIMPLE UI TEST ---
+    st.title("Gemini 3 Flash Brain")
+    user_query = st.text_input("Ask the market analyst:")
+    
+    if st.button("Generate Analysis"):
+        if user_query:
+            with st.spinner("Thinking..."):
+                answer = get_ai_response(user_query)
+                st.write(answer)
+        else:
+            st.warning("Please enter a query first.")
 
     # Define sources and headers
     news_sources = {
