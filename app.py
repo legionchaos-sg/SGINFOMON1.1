@@ -606,6 +606,40 @@ with tab1:
                 except Exception as e:
                     # 5. If it fails, show the error in RED so we can fix it
                     st.error(f"❌ AI Analysis Failed: {e}")
+
+    # 1. INITIALIZE THE STATE (At the very top of your app)
+if 'sg_analysis' not in st.session_state:
+    st.session_state['sg_analysis'] = ""
+if 'gl_analysis' not in st.session_state:
+    st.session_state['gl_analysis'] = ""
+
+# 2. THE BUTTON (The Action)
+if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
+    with st.spinner("🤖 AI is fetching 2026 data..."):
+        try:
+            # Call your function
+            res_sg, res_gl = get_market_intelligence(
+                m_live['STI'][0], m_live['Gold'][0], m_live['Silver'][0], m_live['Brent'][0]
+            )
+            # SAVE the results so they survive the rerun
+            st.session_state['sg_analysis'] = res_sg
+            st.session_state['gl_analysis'] = res_gl
+            st.rerun() # Force the page to refresh and show the new data
+        except Exception as e:
+            st.error(f"AI Error: {e}")
+
+# 3. THE DISPLAY (This must be OUTSIDE the button block)
+if st.session_state['sg_analysis']: # Only show if there is data
+    st.divider()
+    res_col1, res_col2 = st.columns(2)
+    
+    with res_col1:
+        st.markdown("### 🇸🇬 Singapore Market")
+        st.info(st.session_state['sg_analysis']) # .info makes it stand out
+        
+    with res_col2:
+        st.markdown("### 🌍 Global Overall")
+        st.success(st.session_state['gl_analysis']) # .success for contrast
             
         
     # 4. Foreign Exchange
