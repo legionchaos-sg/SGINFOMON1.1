@@ -584,34 +584,12 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
-            with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
-                sg_analysis, global_analysis = get_cached_analysis(
-                    m_live['STI'][0], 
-                    m_live['Gold'][0], 
-                    m_live['Silver'][0], # Added silver
-                    m_live['Brent'][0]
-                )
-                # Feed all 4 values into the AI
-                sg_analysis, global_analysis = get_market_intelligence(
-                    m_live['STI'][0], 
-                    m_live['Gold'][0], 
-                    m_live['Silver'][0], # Added silver
-                    m_live['Brent'][0]
-            )
-        
-            # Save to session state
-            st.session_state['sg_analysis'] = sg_analysis
-            st.session_state['gl_analysis'] = global_analysis
-
-            #Display logic for the gemini AI 
-            if 'sg_analysis' in st.session_state:
-                res_col1, res_col2 = st.columns(2)
-                with res_col1:
-                    st.markdown("**Singapore Market Sentiment**")
-                    st.info(st.session_state['sg_analysis']) # Using .info for better contrast
-                with res_col2:
-                    st.markdown("**🌍 Global Market Overall**")
-                    st.success(st.session_state['gl_analysis']) # Using .success for clarity
+            response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents="Hello, give me a 1-sentence market update.",
+            # REMOVE THE TOOLS LINE ENTIRELY FOR THIS TEST
+        )
+            
         
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
