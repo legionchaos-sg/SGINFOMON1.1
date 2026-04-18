@@ -54,16 +54,23 @@ if "g10_target_fix" not in st.session_state:
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
 def get_ai_response(user_input):
-    try:
-        # Switch to the preview or latest string
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview", # OR "gemini-flash-latest"
-            contents=user_input
-        )
-        return response.text
-    except Exception as e:
-        return f"Error: {e}"
-
+    # Try the request up to 3 times
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview", 
+                contents=user_input,
+                config={"tools": [{"google_search": {}}]}
+            )
+            return response.text
+        except Exception as e:
+            if "429" in str(e):
+                # Wait 5 seconds and try again
+                time.sleep(5)
+                continue
+            return f"Error: {e}"
+    return "AI is currently busy. Please wait 60 seconds."
+    
 #feed to gemini platfrom 
 def get_market_intelligence(sti, gold, silver, brent):
     try:
