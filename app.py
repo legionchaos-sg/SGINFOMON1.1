@@ -585,10 +585,10 @@ with tab1:
                 try:
                     # 2. Call the analysis
                     sg_analysis, global_analysis = get_cached_analysis(
-                        (m_live['STI'][0], 2),
-                        (m_live['Gold'][0], 2),
-                        (m_live['Silver'][0], 2),
-                        (m_live['Brent'][0], 2)
+                        m_live['STI'][0],
+                        m_live['Gold'][0],
+                        m_live['Silver'][0],
+                        m_live['Brent'][0]
                     )
                     
                     # 3. Save to state
