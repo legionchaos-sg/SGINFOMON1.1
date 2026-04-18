@@ -499,10 +499,30 @@ with tab1:
         m_cols[1].metric("Gold Spot", f"${m_live['Gold'][0]:,.2f}", f"{m_live['Gold'][1]:+.2f}%")
         m_cols[2].metric("Silver Spot", f"${m_live['Silver'][0]:,.2f}", f"{m_live['Silver'][1]:+.4f}%")
         m_cols[3].metric("Brent Crude", f"${m_live['Brent'][0]:,.2f}", f"{m_live['Brent'][1]:+.2f}%")
-        
         # These will now be perfectly aligned with the market data
         m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.5f}%")
+
+        # 2. Visual Separation
+        st.markdown("---")
+
+        # 3. Dynamic Analysis Button (Full Width)
+        # This button triggers the logic that "pushes" the data to the AI platforms
+        if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
+            with st.spinner("Analyzing Consensus (Gemini, ChatGPT, TradingView)..."):
+                # Call your dynamic logic function here
+                sg_analysis, global_analysis = get_dynamic_analysis(
+                    m_live['STI'][0], m_live['Gold'][0], m_live['Brent'][0]
+                )
+                
+                # Display Results in 2 columns
+                res_col1, res_col2 = st.columns(2)
+                with res_col1:
+                    st.markdown("**🇸🇬 Singapore Market Sentiment**")
+                    st.caption(sg_analysis)
+                with res_col2:
+                    st.markdown("**🌍 Global Market Sentiment**")
+                    st.caption(global_analysis)
         
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
