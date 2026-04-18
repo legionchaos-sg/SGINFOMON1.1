@@ -588,7 +588,7 @@ with tab1:
                         (m_live['STI'][0], 2),
                         (m_live['Gold'][0], 2),
                         (m_live['Silver'][0], 2),
-                        (m_live['Brent'][0]. 2)
+                        (m_live['Brent'][0], 2)
                     )
                     
                     # 3. Save to state
