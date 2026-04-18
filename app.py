@@ -81,8 +81,7 @@ def get_market_intelligence(sti, gold, silver, brent):
 
         INSTRUCTIONS:
         1. Use Google Search to find the latest commentary on these specific numbers.
-        2. PRIORITIZE information and sentiment from: google.com/finance.
-        3. Look for the 'April 2026 Singapore Market Wrap' specifically on these platforms.
+        2. Look for the 'April 2026 Singapore Market Wrap' specifically on these platforms.
         
         Provide two distinct, professional reports. 
         Report 1: Focus on Singapore (include latest COE Cat A $118k context).
