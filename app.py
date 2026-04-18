@@ -105,7 +105,23 @@ def get_market_intelligence(sti, gold, silver, brent):
         return f"AI Error: {e}", "Could not fetch global data."
 
 def get_cached_analysis(sti, gold, silver, brent):
-    return get_market_intelligence(sti, gold, silver, brent)
+    prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
+    try:
+        # Try with Search first
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+            config={"tools": [{"google_search": {}}]}
+        )
+        return response.text
+    except Exception as e:
+        # If Search fails (429), return a non-search analysis immediately
+        # This ensures the cache stores DATA, not an ERROR.
+        response_lite = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt + " (Search unavailable, use internal knowledge)"
+        )
+        return response_lite.text
 
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
@@ -569,10 +585,10 @@ with tab1:
                 try:
                     # 2. Call the analysis
                     sg_analysis, global_analysis = get_cached_analysis(
-                        m_live['STI'][0], 
-                        m_live['Gold'][0], 
-                        m_live['Silver'][0], 
-                        m_live['Brent'][0]
+                        (m_live['STI'][0], 2),
+                        (m_live['Gold'][0], 2),
+                        (m_live['Silver'][0], 2),
+                        (m_live['Brent'][0]. 2)
                     )
                     
                     # 3. Save to state
