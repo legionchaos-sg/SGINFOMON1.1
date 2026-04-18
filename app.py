@@ -16,8 +16,8 @@ from deep_translator import GoogleTranslator
 from yahooquery import Ticker
 #d_dep = st.date_input("Select Departure Date", value=date(2026, 6, 1))
 
-#DATAGOV_KEY = "v2:3cccaa70139e5db5dcbb7d14ea06a9c469ba210c2c73bcd63b94ec495254414b:mOfiC4oltq83feHBdKKlZ-ts9CsbJ3gi"
-#DATAGOV_API_KEY = st.secrets["DATAGOV_KEY"]
+# 1. Initialize the Client using your secret key
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 st.markdown("""
     <style>
