@@ -69,13 +69,20 @@ def get_ai_response(user_input):
             return f"Error: {e}"
     return "AI is currently busy. Please wait 60 seconds."
     
-#feed to gemini platfrom 
+#feed to gemini platfrom to pass info to differnt search engine
 def get_market_intelligence(sti, gold, silver, brent):
     try:
+        current_date = datetime.now().strftime("%B %d, %Y")
+        
         # Construct the specialized prompt
         prompt = f"""
-        Analyze these April 18, 2026 market metrics: 
-        STI: {sti}, Gold: {gold}, Silver: {silver}, Brent Crude: {brent}.
+        {current_date} Market Analysis. 
+        Current Data: STI={sti}, Gold={gold}, Silver={silver}, Brent={brent}.
+
+        INSTRUCTIONS:
+        1. Use Google Search to find the latest commentary on these specific numbers.
+        2. PRIORITIZE information and sentiment from: retuers.com, bloomberg.com, yahoo.com/finance, and google.com/finance.
+        3. Look for the 'April 2026 Singapore Market Wrap' specifically on these platforms.
         
         Provide two distinct, professional reports. 
         Report 1: Focus on Singapore (include latest COE Cat A $118k context).
@@ -576,7 +583,7 @@ with tab1:
 
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
-        if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
+        if st.button("🔄 Sync Multi-Platform Market Sentiment,", use_container_width=True):
             with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
                 sg_analysis, global_analysis = get_cached_analysis(
                     m_live['STI'][0], 
@@ -600,7 +607,7 @@ with tab1:
             if 'sg_analysis' in st.session_state:
                 res_col1, res_col2 = st.columns(2)
                 with res_col1:
-                    st.markdown("**🇸🇬 Singapore Market Sentiment**")
+                    st.markdown("**Singapore Market Sentiment**")
                     st.info(st.session_state['sg_analysis']) # Using .info for better contrast
                 with res_col2:
                     st.markdown("**🌍 Global Market Overall**")
