@@ -583,7 +583,7 @@ with tab1:
 
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
-        if st.button("🔄 Sync Multi-Platform Market Sentiment,", use_container_width=True):
+        if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
                 sg_analysis, global_analysis = get_cached_analysis(
                     m_live['STI'][0], 
