@@ -586,7 +586,6 @@ with tab1:
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             # 1. Clear previous errors from the screen
             st.empty() 
-            
             with st.spinner("🤖 AI is reaching out to the servers..."):
                 # 2. Add a 'Timeout' and direct print to catch the silent fail
                 try:
@@ -601,7 +600,6 @@ with tab1:
                     
                 except Exception as e:
                     st.error(f"⚠️ The AI Button Crashed: {e}")
-                )
             
         
     # 4. Foreign Exchange
