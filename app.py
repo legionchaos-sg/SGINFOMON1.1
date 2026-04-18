@@ -64,26 +64,41 @@ def get_ai_response(user_input):
     except Exception as e:
         return f"Error: {e}"
 
-
-def get_dynamic_analysis(sti, gold, brent):
-    # Class A: SG Market
-    if sti < 5000:
-        sg_res = "🔴 Defensive: STI resistance at 5k. MAS focus on core inflation."
-    else:
-        sg_res = "🟢 Bullish: Breakout above 5k confirmed. Institutional inflow."
-    
-    # Class B: Global Market
-    if brent > 95:
-        gl_res = "⚠️ Global Caution: Energy shock impacting logistics/CPI."
-    else:
-        gl_res = "✅ Global Recovery: Brent stabilizing; risk-on sentiment returning."
+#feed to gemini platfrom 
+def get_market_intelligence(sti, gold, silver, brent):
+    try:
+        # Construct the specialized prompt
+        prompt = f"""
+        Analyze these April 18, 2026 market metrics: 
+        STI: {sti}, Gold: {gold}, Silver: {silver}, Brent Crude: {brent}.
         
-    return sg_res, gl_res
+        Provide two distinct, professional reports. 
+        Report 1: Focus on Singapore (include latest COE Cat A $118k context).
+        Report 2: Focus on Global Macro (Gold/Oil trends).
+        
+        Format your response EXACTLY like this:
+        [SG_START]
+        (Write Singapore analysis here)
+        [SG_END]
+        [GL_START]
+        (Write Global analysis here)
+        [GL_END]
+        """
 
-if 'sg_analysis' not in st.session_state:
-    st.session_state['sg_analysis'] = "Awaiting Analysis..."
-if 'gl_analysis' not in st.session_state:
-    st.session_state['gl_analysis'] = "Awaiting Analysis..."
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+            config={"tools": [{"google_search": {}}]}
+        )
+        
+        full_text = response.text
+        # Splitting the text so we can put it in your 2-column layout
+        sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
+        gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
+        
+        return sg_part.strip(), gl_part.strip()
+    except Exception as e:
+        return f"AI Error: {e}", "Could not fetch global data."
 
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
@@ -554,21 +569,28 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
-            # This will now work because the function was defined above!
-            sg_analysis, global_analysis = get_dynamic_analysis(
-                m_live['STI'][0], m_live['Gold'][0], m_live['Brent'][0]
+            with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
+                # Feed all 4 values into the AI
+                sg_analysis, global_analysis = get_market_intelligence(
+                    m_live['STI'][0], 
+                    m_live['Gold'][0], 
+                    m_live['Silver'][0], # Added silver
+                    m_live['Brent'][0]
             )
+        
+            # Save to session state
             st.session_state['sg_analysis'] = sg_analysis
             st.session_state['gl_analysis'] = global_analysis
-                
+
+            #Display logic for the gemini AI 
             if 'sg_analysis' in st.session_state:
-                res_col1, res_col2 = st.columns(2)  # <--- Ensure this is exactly 8 spaces in
+                res_col1, res_col2 = st.columns(2)
                 with res_col1:
                     st.markdown("**🇸🇬 Singapore Market Sentiment**")
-                    st.caption(st.session_state['sg_analysis'])
+                    st.info(st.session_state['sg_analysis']) # Using .info for better contrast
                 with res_col2:
                     st.markdown("**🌍 Global Market Overall**")
-                    st.caption(st.session_state['gl_analysis'])
+                    st.success(st.session_state['gl_analysis']) # Using .success for clarity
         
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
