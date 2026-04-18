@@ -71,7 +71,7 @@ def get_ai_response(user_input):
     
 #feed to gemini platfrom to pass info to differnt search engine
 def get_market_intelligence(sti, gold, silver, brent):
-    try:
+    #try:
         current_date = datetime.now().strftime("%B %d, %Y")
         
         # Construct the specialized prompt
