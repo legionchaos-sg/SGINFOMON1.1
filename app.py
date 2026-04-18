@@ -75,41 +75,33 @@ def get_market_intelligence(sti, gold, silver, brent):
         current_date = datetime.now().strftime("%B %d, %Y")
         
         # Construct the specialized prompt
-        prompt = f"""
-        {current_date} Market Analysis. 
-        Current Data: STI={sti}, Gold={gold}, Silver={silver}, Brent={brent}.
-
+        PROMPT = f"""
+        Analyze market indications for {current_date} based on these values: 
+        STI={sti}, Gold={gold}, Brent={brent}.
+    
         INSTRUCTIONS:
-        1. Use Google Search to find the latest commentary on these specific numbers.
-        2. Look for the 'April 2026 Singapore Market Wrap' specifically on these platforms.
+        1. Use Google Search to cross-reference these values with today's financial news.
+        2. Provide a Singapore-specific report and a Global Macro report.
         
-        Provide two distinct, professional reports. 
-        Report 1: Focus on Singapore (include latest COE Cat A $118k context).
-        Report 2: Focus on Global Macro (Gold/Oil trends).
-        
-        Format your response EXACTLY like this:
-        [SG_START]
-        (Write Singapore analysis here)
-        [SG_END]
-        [GL_START]
-        (Write Global analysis here)
-        [GL_END]
+        FORMAT:
+        [SG_START] (Singapore Analysis) [SG_END]
+        [GL_START] (Global Analysis) [GL_END]
         """
-
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-            config={"tools": [{"google_search": {}}]}
-        )
+        try: 
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents=prompt,
+                config={"tools": [{"google_search": {}}]}
+            )
         
-        full_text = response.text
-        # Splitting the text so we can put it in your 2-column layout
-        sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
-        gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
-        
-        return sg_part.strip(), gl_part.strip()
-    except Exception as e:
-        return f"AI Error: {e}", "Could not fetch global data."
+            full_text = response.text
+            # Splitting the text so we can put it in your 2-column layout
+            sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
+            gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
+            
+            return sg_part.strip(), gl_part.strip()
+        except Exception as e:
+            return f"AI Error: {e}", "Could not fetch global data."
 
 def get_cached_analysis(sti, gold, silver, brent):
     return get_market_intelligence(sti, gold, silver, brent)
