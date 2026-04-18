@@ -94,13 +94,15 @@ def get_market_intelligence(sti, gold, silver, brent):
         )
         full_text = response.text
             
-        # Splitting the text so we can put it in your 2-column layout
+        if "[SG_START]" in full_text and "[GL_START]" in full_text:
             sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
             gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
-            
             return sg_part.strip(), gl_part.strip()
-        except Exception as e:
-            return f"AI Error: {e}", "Could not fetch global data."
+        else:
+            return "Format Error: AI missed the tags.", full_text
+            
+except Exception as e:
+    return f"AI Error: {e}", "Could not fetch global data."
 
 def get_cached_analysis(sti, gold, silver, brent):
     return get_market_intelligence(sti, gold, silver, brent)
