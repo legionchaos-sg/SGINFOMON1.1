@@ -52,28 +52,6 @@ if "g10_target_fix" not in st.session_state:
 
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
-def get_ai_consensus_analysis(sti, gold, brent, silver):
-    """
-    This is the DYNAMIC trigger. 
-    It 'goes out' to simulate consensus based on your live numbers.
-    """
-    # Logic: Cross-referencing 2026 data points
-    # (STI: 4,997 | Gold: $4,867 | Brent: $80 | Silver: $68)
-    
-    # Class A: Singapore Market Analysis
-    if sti < 5000:
-        sg_class = "STI under psychological pressure; MAS hawkish tilt (Apr 14) suggests SGD strength to fight imported inflation."
-    else:
-        sg_class = "STI breakout confirmed; reform momentum (SGX 2026) driving fund inflows into Banks/REITs."
-
-    # Class B: Global Market Analysis
-    if gold > 4800 and brent < 85:
-        global_class = "Safe-haven rotation: Gold remains elevated on Iran war jitters, but Brent easing as Hormuz reopens."
-    else:
-        global_class = "Global Risk-On: Energy prices stabilizing; focus shifting to 2027 industrial silver deficit."
-
-    return sg_class, global_class
-
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
     try:
@@ -236,23 +214,6 @@ def fetch_live_market_data():
             results[label] = (curr, ((curr - prev) / prev) * 100)
         except: results[label] = (0.0, 0.0)
     return results
-
---- DEFENSIVE DATA ACCESS ---
-# Check if STI exists in m_live and has at least one value
-if 'STI' in m_live and len(m_live['STI']) > 0:
-    sti_val = m_live['STI'][0]
-    sti_delta = m_live['STI'][1]
-else:
-    # Fallback values if the market is closed or API fails
-    sti_val = 4997.93  # Last known Friday close
-    sti_delta = 0.00
-    st.warning("⚠️ STI Live feed unavailable (Market Closed). Using last close.")
-
-# Now use these safe variables for your metrics
-m_cols[0].metric("STI Index", f"{sti_val:,.2f}", f"{sti_delta:+.2f}%")
-gold_val = m_live['Gold'][0]
-brent_val = m_live['Brent'][0]
-silver_val = m_live['Silver'][0]
 
 # DYNAMIC CALL: New analysis is fetched only if numbers change significantly
 sg_analysis, global_analysis = get_ai_consensus_analysis(sti_val, gold_val, brent_val, silver_val)
@@ -609,14 +570,7 @@ with tab1:
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
 
-with st.container():
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**🇸🇬 Singapore Market Consensus:**")
-        st.markdown(f'<p style="font-size:10px; color:#AFAFAF;">{sg_analysis}</p>', unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"**🌍 Global Market Consensus:**")
-        st.markdown(f'<p style="font-size:10px; color:#AFAFAF;">{global_analysis}</p>', unsafe_allow_html=True)
+
 # ==========================================
 # TAB 2: PUBLIC SERVICES
 # ==========================================
