@@ -237,7 +237,19 @@ def fetch_live_market_data():
         except: results[label] = (0.0, 0.0)
     return results
 
-sti_val = m_live['STI'][0]
+--- DEFENSIVE DATA ACCESS ---
+# Check if STI exists in m_live and has at least one value
+if 'STI' in m_live and len(m_live['STI']) > 0:
+    sti_val = m_live['STI'][0]
+    sti_delta = m_live['STI'][1]
+else:
+    # Fallback values if the market is closed or API fails
+    sti_val = 4997.93  # Last known Friday close
+    sti_delta = 0.00
+    st.warning("⚠️ STI Live feed unavailable (Market Closed). Using last close.")
+
+# Now use these safe variables for your metrics
+m_cols[0].metric("STI Index", f"{sti_val:,.2f}", f"{sti_delta:+.2f}%")
 gold_val = m_live['Gold'][0]
 brent_val = m_live['Brent'][0]
 silver_val = m_live['Silver'][0]
