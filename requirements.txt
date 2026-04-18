@@ -8,7 +8,6 @@ yfinance
 deep-translator
 numpy
 scikit-learn
-yfinance
 yahooquery
 google-genai
 google-generativeai
