@@ -55,9 +55,9 @@ if "g10_target_fix" not in st.session_state:
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
 def get_ai_response(user_input):
     try:
-        # 2. Call Gemini 3 Flash (The 2026 high-speed model)
+        # Switch to the preview or latest string
         response = client.models.generate_content(
-            model="gemini-3-flash", 
+            model="gemini-3-flash-preview", # OR "gemini-flash-latest"
             contents=user_input
         )
         return response.text
