@@ -504,20 +504,7 @@ with tab1:
     st.divider()
     holiday_info = get_upcoming_holiday()
     st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
-
-    # --- SIMPLE UI TEST FOR ai QUESTION---
-    #st.title("Gemini 3 Flash Brain")
-    #user_query = st.text_input("Ask the market analyst:")
     
-    #if st.button("Generate Analysis"):
-        #if user_query:
-            #with st.spinner("Thinking..."):
-                #answer = get_ai_response(user_query)
-                #st.write(answer)
-        #else:
-            #st.warning("Please enter a query first.")
-
-    # Define sources and headers
     news_sources = {
         "CNA": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416", 
         "Straits Times": "https://www.straitstimes.com/news/singapore/rss.xml", 
@@ -585,46 +572,16 @@ with tab1:
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             # 1. Clear previous errors from the screen
-            st.empty() 
-            with st.spinner("🤖 AI is connecting to the 2026 live feed..."):
-                try:
-                    # 2. Call the analysis
-                    sg_analysis, global_analysis = get_cached_analysis(
-                        m_live['STI'][0], 
-                        m_live['Gold'][0], 
-                        m_live['Silver'][0], 
-                        m_live['Brent'][0]
-                    )
-                    
-                    # 3. Save to state
-                    st.session_state['sg_analysis'] = sg_analysis
-                    st.session_state['gl_analysis'] = global_analysis
-                    
-                    # 4. CRITICAL: Force a rerun to show the results immediately
-                    st.rerun() 
-                    
+            st.empty()
+            # Temporary test line
+                try : 
+                    models = client.models.list()
+                    st.success("✅ Connection Healthy: Project is active!")
                 except Exception as e:
-                    # 5. If it fails, show the error in RED so we can fix it
-                    st.error(f"❌ AI Analysis Failed: {e}")
+                    st.error(f"❌ Key Issue: {e}")
 
-    # 1. INITIALIZE THE STATE (At the very top of your app)
-if 'sg_analysis' not in st.session_state:
-    st.session_state['sg_analysis'] = ""
-if 'gl_analysis' not in st.session_state:
-    st.session_state['gl_analysis'] = ""
-
-# 3. THE DISPLAY (This must be OUTSIDE the button block)
-if st.session_state['sg_analysis']: # Only show if there is data
-    st.divider()
-    res_col1, res_col2 = st.columns(2)
     
-    with res_col1:
-        st.markdown("### 🇸🇬 Singapore Market")
-        st.info(st.session_state['sg_analysis']) # .info makes it stand out
-        
-    with res_col2:
-        st.markdown("### 🌍 Global Overall")
-        st.success(st.session_state['gl_analysis']) # .success for contrast
+            
             
         
     # 4. Foreign Exchange
