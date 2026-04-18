@@ -490,17 +490,17 @@ with tab1:
     holiday_info = get_upcoming_holiday()
     st.markdown(f'### 🗞️ Headlines <span class="holiday-text">{holiday_info}</span>', unsafe_allow_html=True)
 
-    # --- SIMPLE UI TEST ---
-    st.title("Gemini 3 Flash Brain")
-    user_query = st.text_input("Ask the market analyst:")
+    # --- SIMPLE UI TEST FOR ai QUESTION---
+    #st.title("Gemini 3 Flash Brain")
+    #user_query = st.text_input("Ask the market analyst:")
     
-    if st.button("Generate Analysis"):
-        if user_query:
-            with st.spinner("Thinking..."):
-                answer = get_ai_response(user_query)
-                st.write(answer)
-        else:
-            st.warning("Please enter a query first.")
+    #if st.button("Generate Analysis"):
+        #if user_query:
+            #with st.spinner("Thinking..."):
+                #answer = get_ai_response(user_query)
+                #st.write(answer)
+        #else:
+            #st.warning("Please enter a query first.")
 
     # Define sources and headers
     news_sources = {
@@ -819,7 +819,6 @@ with tab2:
         "SGD/GBP": "SGDGBP=X",
         }
         
-        
         for label, ticker in currency_pairs.items():
             try:
                 # 1. Fetch current rate
@@ -866,13 +865,8 @@ with tab2:
         else:
             st.warning("Fetching live data... please wait.")
     
-       
- 
     # Bank Rates SG---
    
-
-    
-    
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
        table_data = []
