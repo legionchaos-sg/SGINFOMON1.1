@@ -23,13 +23,11 @@ st.markdown("""
     <style>
         /* This kills the invisible top bar */
         [data-testid="stHeader"] {display: none;}
-        
         /* This pulls the content to the top */
         .block-container {
             padding-top: 0rem !important;
             padding-bottom: 0rem !important;
         }
-
         /* This shrinks the gap between title and tabs */
         .stVerticalBlock {
             gap: 0.5rem !important;
@@ -50,9 +48,9 @@ if "g10_target_fix" not in st.session_state:
     st.session_state.g10_target_fix = 0.0000
 
 # --- DATA ENGINES ---
-
 # --- NEW: SG ECONOMY DATA ENGINE ---
-@st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
+@st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthlY
+#Use google AI
 def get_ai_response(user_input):
     # Try the request up to 3 times
     for attempt in range(3):
@@ -106,6 +104,9 @@ def get_market_intelligence(sti, gold, silver, brent):
         return sg_part.strip(), gl_part.strip()
     except Exception as e:
         return f"AI Error: {e}", "Could not fetch global data."
+
+def get_cached_analysis(sti, gold, silver, brent):
+    return get_market_intelligence(sti, gold, silver, brent)
 
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
@@ -577,6 +578,7 @@ with tab1:
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
+                sg_analysis, global_analysis = get_cached_analysis(sti_val, gold_val, silver_val, brent_val)
                 # Feed all 4 values into the AI
                 sg_analysis, global_analysis = get_market_intelligence(
                     m_live['STI'][0], 
