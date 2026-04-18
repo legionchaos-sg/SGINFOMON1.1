@@ -584,11 +584,24 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
-            response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents="Hello, give me a 1-sentence market update.",
-            # REMOVE THE TOOLS LINE ENTIRELY FOR THIS TEST
-        )
+            # 1. Clear previous errors from the screen
+            st.empty() 
+            
+            with st.spinner("🤖 AI is reaching out to the servers..."):
+                # 2. Add a 'Timeout' and direct print to catch the silent fail
+                try:
+                    # We call the function and EXPECT it to either work or tell us why it didn't
+                    sg_res, gl_res = get_market_intelligence(
+                        m_live['STI'][0], m_live['Gold'][0], m_live['Silver'][0], m_live['Brent'][0]
+                    )
+                    
+                    st.session_state['sg_analysis'] = sg_res
+                    st.session_state['gl_analysis'] = gl_res
+                    st.rerun() # 3. Force Streamlit to show the new data immediately
+                    
+                except Exception as e:
+                    st.error(f"⚠️ The AI Button Crashed: {e}")
+                )
             
         
     # 4. Foreign Exchange
