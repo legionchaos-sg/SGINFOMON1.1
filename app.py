@@ -574,11 +574,11 @@ with tab1:
             # 1. Clear previous errors from the screen
             st.empty()
             # Temporary test line
-                try: 
-                    models = client.models.list()
-                    st.success("✅ Connection Healthy: Project is active!")
-                except Exception as e:
-                    st.error(f"❌ Key Issue: {e}")
+            try: 
+                models = client.models.list()
+                st.success("✅ Connection Healthy: Project is active!")
+            except Exception as e:
+                st.error(f"❌ Key Issue: {e}")
 
     
             
