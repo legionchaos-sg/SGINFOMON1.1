@@ -52,6 +52,26 @@ if "g10_target_fix" not in st.session_state:
 
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthly
+def get_dynamic_analysis(sti, gold, brent):
+    # Class A: SG Market
+    if sti < 5000:
+        sg_res = "🔴 Defensive: STI resistance at 5k. MAS focus on core inflation."
+    else:
+        sg_res = "🟢 Bullish: Breakout above 5k confirmed. Institutional inflow."
+    
+    # Class B: Global Market
+    if brent > 95:
+        gl_res = "⚠️ Global Caution: Energy shock impacting logistics/CPI."
+    else:
+        gl_res = "✅ Global Recovery: Brent stabilizing; risk-on sentiment returning."
+        
+    return sg_res, gl_res
+
+if 'sg_analysis' not in st.session_state:
+    st.session_state['sg_analysis'] = "Awaiting Analysis..."
+if 'gl_analysis' not in st.session_state:
+    st.session_state['gl_analysis'] = "Awaiting Analysis..."
+
 def fetch_sg_economy():
     """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
     try:
@@ -509,11 +529,12 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
-            with st.spinner("Analyzing Consensus (Gemini, ChatGPT, TradingView)..."):
-                # Call your dynamic logic function here
-                sg_analysis, global_analysis = get_dynamic_analysis(
-                    m_live['STI'][0], m_live['Gold'][0], m_live['Brent'][0]
-                )
+            # This will now work because the function was defined above!
+            sg_analysis, global_analysis = get_dynamic_analysis(
+                m_live['STI'][0], m_live['Gold'][0], m_live['Brent'][0]
+            )
+            st.session_state['sg_analysis'] = sg_analysis
+            st.session_state['gl_analysis'] = global_analysis
                 
                 # Display Results in 2 columns
                 res_col1, res_col2 = st.columns(2)
