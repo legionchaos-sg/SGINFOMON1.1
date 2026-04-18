@@ -1,4 +1,5 @@
 import streamlit as st
+from google import genai
 import pandas as pd
 import feedparser, requests, pytz
 import yfinance as yf
