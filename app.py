@@ -578,7 +578,12 @@ with tab1:
         # This button triggers the logic that "pushes" the data to the AI platforms
         if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             with st.spinner("🤖 Grounding analysis with April 2026 live news..."):
-                sg_analysis, global_analysis = get_cached_analysis(sti_val, gold_val, silver_val, brent_val)
+                sg_analysis, global_analysis = get_cached_analysis(
+                    m_live['STI'][0], 
+                    m_live['Gold'][0], 
+                    m_live['Silver'][0], # Added silver
+                    m_live['Brent'][0]
+                )
                 # Feed all 4 values into the AI
                 sg_analysis, global_analysis = get_market_intelligence(
                     m_live['STI'][0], 
