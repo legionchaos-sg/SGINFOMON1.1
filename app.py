@@ -433,7 +433,7 @@ st.markdown("""
 
 # --- UI START ---
 st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ SYSTEM TOOLS", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ Taticial Avg fOREX Exchg", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE"])
 
 with tab1:
     # 1. Clocks
@@ -691,7 +691,7 @@ with tab5:
     st.dataframe(hero_grid, hide_index=True, use_container_width=True)
      
 # ==========================================
-# TAB 2: PUBLIC SERVICES (Your EXACT Original)
+# TAB 2: PUBLIC SERVICES
 # ==========================================
 with tab2:
     # --- 1. Government & Public Services ---
@@ -810,7 +810,7 @@ with tab2:
            st.rerun()
             
     # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
-    with st.expander("Other Major Markets", expanded=True):
+    with st.expander("🌏 Western Market Watch", expanded=True):
         western_data = []
         
         for name, symbol in western_markets.items():
@@ -831,12 +831,7 @@ with tab2:
         }))
         
         if st.button("Refresh Western Feed"):
-            st.rerun()
-
-       
-
-       
-    
+            st.rerun() 
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
