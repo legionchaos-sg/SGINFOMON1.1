@@ -81,7 +81,7 @@ def get_market_intelligence(sti, gold, silver, brent):
 
         INSTRUCTIONS:
         1. Use Google Search to find the latest commentary on these specific numbers.
-        2. PRIORITIZE information and sentiment from: yahoo.com/finance, and google.com/finance.
+        2. PRIORITIZE information and sentiment from: google.com/finance.
         3. Look for the 'April 2026 Singapore Market Wrap' specifically on these platforms.
         
         Provide two distinct, professional reports. 
@@ -588,7 +588,7 @@ with tab1:
                     st.session_state['gl_analysis'] = global_analysis
                     
                     # 4. CRITICAL: Force a rerun to show the results immediately
-                    st.rerun() 
+                    #st.rerun() 
                     
                 except Exception as e:
                     # 5. If it fails, show the error in RED so we can fix it
