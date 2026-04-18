@@ -215,9 +215,6 @@ def fetch_live_market_data():
         except: results[label] = (0.0, 0.0)
     return results
 
-# DYNAMIC CALL: New analysis is fetched only if numbers change significantly
-sg_analysis, global_analysis = get_ai_consensus_analysis(sti_val, gold_val, brent_val, silver_val)
-
 def get_upcoming_holiday():
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
