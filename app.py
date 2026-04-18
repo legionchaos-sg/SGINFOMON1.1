@@ -536,14 +536,14 @@ with tab1:
             st.session_state['sg_analysis'] = sg_analysis
             st.session_state['gl_analysis'] = global_analysis
                 
-                # Display Results in 2 columns
-                res_col1, res_col2 = st.columns(2)
+            if 'sg_analysis' in st.session_state:
+                res_col1, res_col2 = st.columns(2)  # <--- Ensure this is exactly 8 spaces in
                 with res_col1:
                     st.markdown("**🇸🇬 Singapore Market Sentiment**")
-                    st.caption(sg_analysis)
+                    st.caption(st.session_state['sg_analysis'])
                 with res_col2:
-                    st.markdown("**🌍 Global Market Sentiment**")
-                    st.caption(global_analysis)
+                    st.markdown("**🌍 Global Market Overall**")
+                    st.caption(st.session_state['gl_analysis'])
         
     # 4. Foreign Exchange
     fx_data = fetch_live_forex()
