@@ -101,8 +101,8 @@ def get_market_intelligence(sti, gold, silver, brent):
         else:
             return "Format Error: AI missed the tags.", full_text
             
-except Exception as e:
-    return f"AI Error: {e}", "Could not fetch global data."
+    except Exception as e:
+        return f"AI Error: {e}", "Could not fetch global data."
 
 def get_cached_analysis(sti, gold, silver, brent):
     return get_market_intelligence(sti, gold, silver, brent)
