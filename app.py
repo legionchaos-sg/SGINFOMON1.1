@@ -72,30 +72,29 @@ def get_ai_response(user_input):
 #feed to gemini platfrom to pass info to differnt search engine
 def get_market_intelligence(sti, gold, silver, brent):
     #try:
-        current_date = datetime.now().strftime("%B %d, %Y")
+    current_date = datetime.now().strftime("%B %d, %Y")
         
-        # Construct the specialized prompt
-        PROMPT = f"""
-        Analyze market indications for {current_date} based on these values: 
-        STI={sti}, Gold={gold}, Brent={brent}.
+    # Construct the specialized prompt
+    prompt = f"""
+    Analyze market indications for {current_date}: STI={sti}, Gold={gold}, Brent={brent}.
     
-        INSTRUCTIONS:
-        1. Use Google Search to cross-reference these values with today's financial news.
-        2. Provide a Singapore-specific report and a Global Macro report.
+    INSTRUCTIONS:
+    1. Use Google Search to cross-reference these values with today's financial news.
+    2. Provide a Singapore-specific report and a Global Macro report.
         
-        FORMAT:
-        [SG_START] (Singapore Analysis) [SG_END]
-        [GL_START] (Global Analysis) [GL_END]
-        """
-        try: 
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview",
-                contents=prompt,
-                config={"tools": [{"google_search": {}}]}
-            )
-        
-            full_text = response.text
-            # Splitting the text so we can put it in your 2-column layout
+    FORMAT:
+    [SG_START] (Singapore Analysis) [SG_END]
+    [GL_START] (Global Analysis) [GL_END]
+    """
+    try: 
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+            config={"tools": [{"google_search": {}}]}
+        )
+        full_text = response.text
+            
+        # Splitting the text so we can put it in your 2-column layout
             sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
             gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
             
