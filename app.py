@@ -86,11 +86,10 @@ def get_market_intelligence(sti, gold, silver, brent):
     STI={sti}, Gold={gold}, Silver={silver}, Brent={brent}.
     
     INSTRUCTIONS:
-    1. Use Google Search to cross-reference these values with today's financial news.
-    2. Provide a single cohesive report connecting Singapore sentiment (including $118k COE) 
-       with global macro trends for Gold, Silver, and Oil.
+    1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
+    connecting Singapore sentiment with global trends.
     """
-    return prompt_to_display
+    #return prompt_to_display
     
    
 
