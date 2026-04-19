@@ -89,7 +89,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
     connecting Singapore sentiment with global trends.
     """
-    #return prompt_to_display
+    return prompt_to_display
     
    
 
@@ -580,6 +580,7 @@ with tab1:
         if 'active_prompt' in st.session_state:
             st.divider()
             st.subheader("🤖 Generated AI Query")
+            st.info("Copy this prompt into Gemini to see the Search Analysis & Context results.")
             st.code(st.session_state['active_prompt'], language="text")
             
             if st.button("Clear Preview"):
