@@ -75,10 +75,10 @@ def get_market_intelligence(sti, gold, silver, brent):
         
     # Construct the specialized prompt
     # 1. Setup the variables for the prompt
-    sti = m_live['STI'][0]
-    gold = m_live['Gold'][0]
-    silver = m_live['Silver'][0]
-    brent = m_live['Brent'][0]
+    sti = round(float(m_live['STI'][0]), 2)
+    gold = round(float(m_live['Gold'][0]), 2)
+    silver = round(float(m_live['Silver'][0]), 2)
+    brent = round(float(m_live['Brent'][0]), 2)
     
     # 2. Construct the prompt string
     prompt_to_display = f"""
