@@ -570,15 +570,15 @@ with tab1:
             st.session_state['show_prompt'] = True
     
                 # 4. The Display Logic
-                if st.session_state.get('show_prompt'):
-                    st.divider()
-                    st.markdown("### 🤖 Target AI Prompt")
-                    st.code(prompt_to_display, language="text") # .code makes it easy to read/copy
+        if st.session_state.get('show_prompt'):
+            st.divider()
+            st.markdown("### 🤖 Target AI Prompt")
+            st.code(prompt_to_display, language="text") # .code makes it easy to read/copy
                     
-                    # Optional: Add a 'Close' button
-                    if st.button("❌ Hide Preview"):
-                        st.session_state['show_prompt'] = False
-                        st.rerun()
+            # Optional: Add a 'Close' button
+            if st.button("❌ Hide Preview"):
+                st.session_state['show_prompt'] = False
+                st.rerun()
            
 
 
