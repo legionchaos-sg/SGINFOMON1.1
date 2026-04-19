@@ -566,17 +566,17 @@ with tab1:
         st.markdown("---")
 
         # 3. Dynamic Analysis Button (Full Width)        
-            if st.button("📝 Preview AI Prompt"):
+    if st.button("📝 Preview AI Prompt"):
              # 3. The Button Action
-            generated_text = get_market_intelligence(
-            m_live['STI'][0], 
-            m_live['Gold'][0], 
-            m_live['Silver'][0], 
-            m_live['Brent'][0]
-            )
+        generated_text = get_market_intelligence(
+        m_live['STI'][0], 
+        m_live['Gold'][0], 
+        m_live['Silver'][0], 
+        m_live['Brent'][0]
+        )
                 
-            st.session_state['active_prompt'] = generated_text
-            st.rerun()
+    st.session_state['active_prompt'] = generated_text
+    st.rerun()
     
                 # 4. The Display Logic
     if 'active_prompt' in st.session_state:
