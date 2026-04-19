@@ -578,11 +578,13 @@ with tab1:
             )
             
             with st.spinner("Searching today's financial news..."):
-                # Initialize the model with Google Search Grounding
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(
-                    final_prompt,
-                    tools=[{'google_search_retrieval': {}}] # ENABLES THE SEARCH
+               #The NEW 2026 syntax for model generation with Google Search
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=final_prompt,
+                    config={
+                        'tools': [{'google_search': {}}] # Updated Tool Key
+            }
                 )
                 if st.session_state['analysis_result']:
                     st.success("### 🔍 Search Analysis & Context:")
