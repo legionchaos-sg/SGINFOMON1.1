@@ -567,17 +567,17 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # 3. The Button Action
         if st.button("📝 Preview AI Prompt"):
-            st.session_state['show_prompt'] = prompt_to_display
+            st.session_state['active_prompt'] = prompt_to_display
     
                 # 4. The Display Logic
-        if st.session_state.get('show_prompt'):
+        if 'active_prompt' in st.session_state:
             st.divider()
-            st.markdown("### 🤖 Target AI Prompt")
-            st.code(prompt_to_display, language="text") # .code makes it easy to read/copy
-                    
-            # Optional: Add a 'Close' button
-            if st.button("❌ Hide Preview"):
-                st.session_state['show_prompt'] = False
+            st.subheader("🤖 Generated AI Query")
+            # Now this will never fail because we are using the session_state version
+            st.code(st.session_state['active_prompt'], language="text")
+            
+            if st.button("Clear Preview"):
+                del st.session_state['active_prompt']
                 st.rerun()
            
 
