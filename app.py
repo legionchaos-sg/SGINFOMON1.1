@@ -588,7 +588,7 @@ with tab1:
                             temperature=1.0  # Recommended for search grounding
                         )
                 )
-                if st.session_state['analysis_result'] = response.text
+                st.session_state['analysis_result'] = response.text
                 st.rerun()
         
         # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
