@@ -567,7 +567,7 @@ with tab1:
         # 3. Dynamic Analysis Button (Full Width)
         # 3. The Button Action
         if st.button("📝 Preview AI Prompt"):
-            st.session_state['show_prompt'] = True
+            st.session_state['show_prompt'] = prompt_to_display
     
                 # 4. The Display Logic
         if st.session_state.get('show_prompt'):
