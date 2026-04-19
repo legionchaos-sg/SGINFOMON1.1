@@ -578,18 +578,18 @@ with tab1:
             )
             
             with st.spinner("Searching today's financial news..."):
-               #The NEW 2026 syntax for model generation with Google Search
-                response = client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=final_prompt,
-                    config={
-                        'tools': [{'google_search': {}}] # Updated Tool Key
-            }
+               try:
+                    # The 2026 strictly-typed configuration
+                    response = client.models.generate_content(
+                        model='gemini-1.5-flash',
+                        contents=final_prompt,
+                        config=types.GenerateContentConfig(
+                            tools=[types.Tool(google_search=types.GoogleSearch())],
+                            temperature=1.0  # Recommended for search grounding
+                        )
                 )
-                if st.session_state['analysis_result']:
-                    st.success("### 🔍 Search Analysis & Context:")
-                    st.markdown(st.session_state['analysis_result'])
-            #st.rerun()
+                if st.session_state['analysis_result'] = response.text
+                st.rerun()
         
         # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
         if 'active_prompt' in st.session_state:
