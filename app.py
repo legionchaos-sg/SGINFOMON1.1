@@ -1,6 +1,5 @@
 import streamlit as st
 from google import genai
-#import google.generativeai as genai
 import pandas as pd
 import feedparser, requests, pytz
 import yfinance as yf
@@ -19,12 +18,6 @@ from yahooquery import Ticker
 
 # 1. Initialize the Client using your secret key
 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-
-# Initialize session state keys so they are never "missing"
-if 'analysis_result' not in st.session_state:
-    st.session_state['analysis_result'] = None
-if 'active_prompt' not in st.session_state:
-    st.session_state['active_prompt'] = None
 
 st.markdown("""
     <style>
@@ -572,34 +565,25 @@ with tab1:
         st.markdown("---")
 
         # 1. The Button Action
-        if st.button("📝 Trial AI Prompt"):
-            final_prompt = get_market_intelligence(
-                m_live['STI'][0], m_live['Gold'][0], m_live['Silver'][0], m_live['Brent'][0]
+        if st.button("📝 Preview AI Prompt"):
+            generated_text = get_market_intelligence(
+                m_live['STI'][0], 
+                m_live['Gold'][0], 
+                m_live['Silver'][0], 
+                m_live['Brent'][0]
             )
-            
-            with st.spinner("Searching today's financial news..."):
-               try:
-                    # The 2026 strictly-typed configuration
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=final_prompt,
-                        config=types.GenerateContentConfig(
-                            tools=[types.Tool(google_search=types.GoogleSearch())],
-                            temperature=1.0  # Recommended for search grounding
-                        )
-                )
-                st.session_state['analysis_result'] = response.text
-                st.rerun()
+            # These two lines MUST be indented to stay "inside" the button
+            st.session_state['active_prompt'] = generated_text
+            st.rerun()
         
         # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
         if 'active_prompt' in st.session_state:
-            st.success("### 🔍 Search Analysis & Context:")
-            st.markdown(st.session_state['analysis_result'])
+            st.divider()
+            st.subheader("🤖 Generated AI Query")
+            st.code(st.session_state['active_prompt'], language="text")
             
             if st.button("Clear Preview"):
-                #del st.session_state['active_prompt']
-                st.session_state['analysis_result'] = None
-                st.session_state['active_prompt'] = None
+                del st.session_state['active_prompt']
                 st.rerun()
     
            
