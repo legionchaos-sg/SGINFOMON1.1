@@ -90,6 +90,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     2. Provide a single cohesive report connecting Singapore sentiment (including $118k COE) 
        with global macro trends for Gold, Silver, and Oil.
     """
+    return prompt_to_display
     
    
 
