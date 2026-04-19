@@ -1,5 +1,6 @@
 import streamlit as st
-from google import genai
+#from google import genai
+import google.generativeai as genai
 import pandas as pd
 import feedparser, requests, pytz
 import yfinance as yf
@@ -89,7 +90,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
     connecting Singapore sentiment with global trends.
     """
-    return prompt_to_display
+    #return prompt_to_display
     
    
 
@@ -565,23 +566,25 @@ with tab1:
         st.markdown("---")
 
         # 1. The Button Action
-        if st.button("📝 Preview AI Prompt"):
-            generated_text = get_market_intelligence(
-                m_live['STI'][0], 
-                m_live['Gold'][0], 
-                m_live['Silver'][0], 
-                m_live['Brent'][0]
+        if st.button("📝 Trial AI Prompt"):
+            final_prompt = get_market_intelligence(
+                m_live['STI'][0], m_live['Gold'][0], m_live['Silver'][0], m_live['Brent'][0]
             )
-            # These two lines MUST be indented to stay "inside" the button
-            st.session_state['active_prompt'] = generated_text
-            st.rerun()
+            
+            with st.spinner("Searching today's financial news..."):
+                # Initialize the model with Google Search Grounding
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(
+                    final_prompt,
+                    tools=[{'google_search_retrieval': {}}] # ENABLES THE SEARCH
+                )
+                st.session_state['analysis_result'] = response.text
+            #st.rerun()
         
         # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
         if 'active_prompt' in st.session_state:
-            st.divider()
-            st.subheader("🤖 Generated AI Query")
-            st.info("Copy this prompt into Gemini to see the Search Analysis & Context results.")
-            st.code(st.session_state['active_prompt'], language="text")
+            st.success("### 🔍 Search Analysis & Context:")
+            st.markdown(st.session_state['analysis_result'])
             
             if st.button("Clear Preview"):
                 del st.session_state['active_prompt']
