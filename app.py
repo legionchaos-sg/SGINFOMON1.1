@@ -20,6 +20,12 @@ from yahooquery import Ticker
 # 1. Initialize the Client using your secret key
 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
+# Initialize session state keys so they are never "missing"
+if 'analysis_result' not in st.session_state:
+    st.session_state['analysis_result'] = None
+if 'active_prompt' not in st.session_state:
+    st.session_state['active_prompt'] = None
+
 st.markdown("""
     <style>
         /* This kills the invisible top bar */
@@ -578,7 +584,9 @@ with tab1:
                     final_prompt,
                     tools=[{'google_search_retrieval': {}}] # ENABLES THE SEARCH
                 )
-                st.session_state['analysis_result'] = response.text
+                st.session_state['analysis_result']:
+                    st.success("### 🔍 Search Analysis & Context:")
+                    st.markdown(st.session_state['analysis_result'])
             #st.rerun()
         
         # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
@@ -587,7 +595,9 @@ with tab1:
             st.markdown(st.session_state['analysis_result'])
             
             if st.button("Clear Preview"):
-                del st.session_state['active_prompt']
+                #del st.session_state['active_prompt']
+                st.session_state['analysis_result'] = None
+                st.session_state['active_prompt'] = None
                 st.rerun()
     
            
