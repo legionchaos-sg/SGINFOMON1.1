@@ -578,49 +578,11 @@ with tab1:
 
         # 3. Dynamic Analysis Button (Full Width)
         # This button triggers the logic that "pushes" the data to the AI platforms
-        if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
+        #if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
             # 1. Clear previous errors from the screen
-            st.empty()
-            with st.spinner("🤖 AI is connecting to the 2026 live feed..."):
-                try:
-                    # 2. Call the analysis
-                    sg_analysis, global_analysis = get_cached_analysis(
-                        m_live['STI'][0],
-                        m_live['Gold'][0],
-                        m_live['Silver'][0],
-                        m_live['Brent'][0]
-                    )
-                    
-                    # 3. Save to state
-                    st.session_state['sg_analysis'] = sg_analysis
-                    st.session_state['gl_analysis'] = global_analysis
-                    
-                    # 4. CRITICAL: Force a rerun to show the results immediately
-                    #st.rerun() 
-                    
-                except Exception as e:
-                    # 5. If it fails, show the error in RED so we can fix it
-                    st.error(f"❌ AI Analysis Failed: {e}")
+           
 
-    # 1. INITIALIZE THE STATE (At the very top of your app)
-if 'sg_analysis' not in st.session_state:
-    st.session_state['sg_analysis'] = ""
-if 'gl_analysis' not in st.session_state:
-    st.session_state['gl_analysis'] = ""
 
-# 3. THE DISPLAY (This must be OUTSIDE the button block)
-if st.session_state['sg_analysis']: # Only show if there is data
-    st.divider()
-    res_col1, res_col2 = st.columns(2)
-    
-    with res_col1:
-        st.markdown("### 🇸🇬 Singapore Market")
-        st.info(st.session_state['sg_analysis']) # .info makes it stand out
-        
-    with res_col2:
-        st.markdown("### 🌍 Global Overall")
-        st.success(st.session_state['gl_analysis']) # .success for contrast
-            
 
     
             
