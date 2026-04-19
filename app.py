@@ -584,7 +584,7 @@ with tab1:
                     final_prompt,
                     tools=[{'google_search_retrieval': {}}] # ENABLES THE SEARCH
                 )
-                st.session_state['analysis_result']:
+                if st.session_state['analysis_result']:
                     st.success("### 🔍 Search Analysis & Context:")
                     st.markdown(st.session_state['analysis_result'])
             #st.rerun()
