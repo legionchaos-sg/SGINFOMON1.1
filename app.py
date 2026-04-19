@@ -568,6 +568,7 @@ with tab1:
         # 3. The Button Action
         if st.button("📝 Preview AI Prompt"):
             st.session_state['active_prompt'] = prompt_to_display
+            st.rerun()
     
                 # 4. The Display Logic
         if 'active_prompt' in st.session_state:
