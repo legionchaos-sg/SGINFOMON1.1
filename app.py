@@ -565,22 +565,29 @@ with tab1:
         # 2. Visual Separation
         st.markdown("---")
 
-        # 3. Dynamic Analysis Button (Full Width)
-        # 3. The Button Action
+        # 3. Dynamic Analysis Button (Full Width)        
         if st.button("📝 Preview AI Prompt"):
-            st.session_state['active_prompt'] = prompt_to_display
-            st.rerun()
+         # 3. The Button Action
+        generated_text = get_market_intelligence(
+        m_live['STI'][0], 
+        m_live['Gold'][0], 
+        m_live['Silver'][0], 
+        m_live['Brent'][0]
+        )
+            
+        st.session_state['active_prompt'] = generated_text
+        st.rerun()
     
                 # 4. The Display Logic
-        if 'active_prompt' in st.session_state:
-            st.divider()
-            st.subheader("🤖 Generated AI Query")
-            # Now this will never fail because we are using the session_state version
-            st.code(st.session_state['active_prompt'], language="text")
+    if 'active_prompt' in st.session_state:
+        st.divider()
+        st.subheader("🤖 Generated AI Query")
+        # Now this will never fail because we are using the session_state version
+        st.code(st.session_state['active_prompt'], language="text")
             
-            if st.button("Clear Preview"):
-                del st.session_state['active_prompt']
-                st.rerun()
+        if st.button("Clear Preview"):
+            del st.session_state['active_prompt']
+            st.rerun()
            
 
 
