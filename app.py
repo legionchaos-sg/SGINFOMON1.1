@@ -71,38 +71,27 @@ def get_ai_response(user_input):
     
 #feed to gemini platfrom to pass info to differnt search engine
 def get_market_intelligence(sti, gold, silver, brent):
-    #try:
     current_date = datetime.now().strftime("%B %d, %Y")
         
     # Construct the specialized prompt
-    prompt = f"""
-    Analyze market indications for {current_date}: STI={sti}, Gold={gold}, Brent={brent}.
+    # 1. Setup the variables for the prompt
+    sti = m_live['STI'][0]
+    gold = m_live['Gold'][0]
+    silver = m_live['Silver'][0]
+    brent = m_live['Brent'][0]
+    
+    # 2. Construct the prompt string
+    prompt_to_display = f"""
+    Analyze the current market indications for {current_date} based on these values: 
+    STI={sti}, Gold={gold}, Silver={silver}, Brent={brent}.
     
     INSTRUCTIONS:
     1. Use Google Search to cross-reference these values with today's financial news.
-    2. Provide a Singapore-specific report and a Global Macro report.
-        
-    FORMAT:
-    [SG_START] (Singapore Analysis) [SG_END]
-    [GL_START] (Global Analysis) [GL_END]
+    2. Provide a single cohesive report connecting Singapore sentiment (including $118k COE) 
+       with global macro trends for Gold, Silver, and Oil.
     """
-    try: 
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-            config={"tools": [{"google_search": {}}]}
-        )
-        full_text = response.text
-            
-        if "[SG_START]" in full_text and "[GL_START]" in full_text:
-            sg_part = full_text.split("[SG_START]")[1].split("[SG_END]")[0]
-            gl_part = full_text.split("[GL_START]")[1].split("[GL_END]")[0]
-            return sg_part.strip(), gl_part.strip()
-        else:
-            return "Format Error: AI missed the tags.", full_text
-            
-    except Exception as e:
-        return f"AI Error: {e}", "Could not fetch global data."
+    
+   
 
 def get_cached_analysis(sti, gold, silver, brent):
     prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
@@ -559,7 +548,6 @@ with tab1:
             st.markdown(f"<div class='trans-box'>🇨🇳 {tr_dict[item['title']]}</div>", unsafe_allow_html=True)
 
     # 3. Markets & Commodities
-    #st.divider()
     m_live = fetch_live_market_data()
     sg_econ = fetch_sg_economy()
     with st.expander("📈 Market Indices & Commodities", expanded=True):
@@ -577,9 +565,20 @@ with tab1:
         st.markdown("---")
 
         # 3. Dynamic Analysis Button (Full Width)
-        # This button triggers the logic that "pushes" the data to the AI platforms
-        #if st.button("🔄 Sync Multi-Platform Market Sentiment", use_container_width=True):
-            # 1. Clear previous errors from the screen
+        # 3. The Button Action
+        if st.button("📝 Preview AI Prompt"):
+        st.session_state['show_prompt'] = True
+    
+        # 4. The Display Logic
+        if st.session_state.get('show_prompt'):
+            st.divider()
+            st.markdown("### 🤖 Target AI Prompt")
+            st.code(prompt_to_display, language="text") # .code makes it easy to read/copy
+            
+            # Optional: Add a 'Close' button
+            if st.button("❌ Hide Preview"):
+                st.session_state['show_prompt'] = False
+                st.rerun()
            
 
 
