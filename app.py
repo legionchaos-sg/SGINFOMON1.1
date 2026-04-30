@@ -705,11 +705,31 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
                 with st.popover(f"Quotes: {g}"):
-                    for brand, price in f_brands[g].items():
-                        if price != "N/A":
-                            b_arrow, b_color = ("↑", "#ff4b4b") if is_up else ("↓", "#28a745")
-                            st.write(f"**{brand}**: ${price:.2f} <span style='color:{b_color}; font-weight:bold;'>{b_arrow}</span>", unsafe_allow_html=True)
-                        else: st.write(f"**{brand}**: N/A")
+                    if g in f_brands and isinstance(f_brands[g], dict):
+                        for brand, price in f_brands[g].items():
+                            # 2. Check if price is a valid number (not N/A or None)
+                            if price not in ["N/A", None, ""]:
+                                try:
+                                    # Convert to float just in case it came back as a string
+                                    num_price = float(price)
+                                    
+                                    # Determine styling
+                                    b_arrow, b_color = ("↑", "#ff4b4b") if is_up else ("↓", "#28a745")
+                                    
+                                    # Render the line
+                                    st.write(
+                                        f"**{brand}**: ${num_price:.2f} "
+                                        f"<span style='color:{b_color}; font-weight:bold;'>{b_arrow}</span>", 
+                                        unsafe_allow_html=True
+                                    )
+                                except (ValueError, TypeError):
+                                    # Fallback if the price string isn't a clean number
+                                    st.write(f"**{brand}**: {price}")
+                            else:
+                                st.write(f"**{brand}**: N/A")
+                    else:
+                        # If the grade key is missing entirely, show a quiet message instead of crashing
+                        st.caption(f"No specific brand data found for {g}")
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
