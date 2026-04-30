@@ -623,25 +623,36 @@ with tab1:
 
         # 1. The Button Action
         if st.button("📝 Preview AI Prompt"):
-            generated_text = get_market_intelligence(
-                m_live['STI'][0], 
-                m_live['Gold'][0], 
-                m_live['Silver'][0], 
-                m_live['Brent'][0]
-            )
-            # These two lines MUST be indented to stay "inside" the button
-            st.session_state['active_prompt'] = generated_text
-            st.rerun()
+            try:
+                # Check if m_live has data before calling
+                if all(k in m_live for k in ['STI', 'Gold', 'Silver', 'Brent']):
+                    generated_text = get_market_intelligence(
+                        m_live['STI'][0], 
+                        m_live['Gold'][0], 
+                        m_live['Silver'][0], 
+                        m_live['Brent'][0]
+                    )
+                    
+                    # Store it
+                    st.session_state['active_prompt'] = generated_text
+                    # Use st.fragment or just let the script finish to avoid 'rerun loops'
+                else:
+                    st.error("Market data 'm_live' is not fully loaded.")
+            except Exception as e:
+                st.error(f"Generation Error: {e}")
         
-        # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
-        if 'active_prompt' in st.session_state:
+        # 2. The Display Logic (Outside the button click)
+        if 'active_prompt' in st.session_state and st.session_state['active_prompt']:
             st.divider()
             st.subheader("🤖 Generated AI Query")
-            st.code(st.session_state['active_prompt'], language="text")
             
-            if st.button("Clear Preview"):
-                del st.session_state['active_prompt']
+            # Display the prompt in a text area or code block
+            st.text_area("Review your prompt:", value=st.session_state['active_prompt'], height=200)
+            
+            if st.button("❌ Clear Preview"):
+                st.session_state['active_prompt'] = None # Better than 'del' to avoid KeyErrors
                 st.rerun()
+        
     
            
 
