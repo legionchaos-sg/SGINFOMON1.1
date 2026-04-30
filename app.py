@@ -10,7 +10,7 @@ import requests
 import datetime 
 import time
 import numpy as np
-Import json
+import json
 
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
