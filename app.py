@@ -90,8 +90,6 @@ def get_market_intelligence(sti, gold, silver, brent):
     connecting Singapore sentiment with global trends.
     """
     #return prompt_to_display
-    
-   
 
 def get_cached_analysis(sti, gold, silver, brent):
     prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
@@ -113,20 +111,57 @@ def get_cached_analysis(sti, gold, silver, brent):
         return response_lite.text
 
 def fetch_sg_economy():
-    """Pulls latest CPI and Inflation from SingStat / Trading Economics proxy"""
+    """
+    Dynamically pulls live CPI data from SingStat API (2024=100 Base).
+    Calculates CPI Value, MoM Delta, and YoY Inflation.
+    """
+    # M213751: Consumer Price Index, (2024 As Base Year), Monthly
+    url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
+    
     try:
-        # Using a reliable financial API or SingStat API
-        # For this example, we use the latest Mar 2026 data points confirmed by MAS
-        data = {
-            "cpi_val": 101.9,      # Feb 2026 Base 2024=100
-            "cpi_delta": -0.60,    # MoM Change
-            "inf_val": 1.20,       # Feb 2026 YoY
-            "inf_delta": -0.20     # Change vs Jan 2026 (1.4%)
-        }
-        return data
-    except:
-        return {"cpi_val": 100.7, "cpi_delta": 0.0, "inf_val": 1.4, "inf_delta": 0.0}
+        # We request enough data to compare current month vs prev month AND prev year
+        params = {'limit': 15, 'sortBy': 'time_period desc'}
+        response = requests.get(url, params=params, timeout=10)
+        json_data = response.json()
         
+        # Extract the 'All Items' row (usually the first row in this table)
+        # Note: We filter for the "All Items" row text to be precise
+        all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
+        columns = all_items_row['columns']
+        
+        # 1. CPI Value (Latest)
+        latest_cpi = float(columns[0]['value'])
+        
+        # 2. CPI Delta (Month-on-Month)
+        prev_month_cpi = float(columns[1]['value'])
+        cpi_delta = latest_cpi - prev_month_cpi
+        
+        # 3. Inflation Value (Year-on-Year)
+        # 12 months ago is index 12 in a monthly series
+        year_ago_cpi = float(columns[12]['value'])
+        inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100
+        
+        # 4. Inflation Delta (Current YoY vs Previous month's YoY)
+        prev_month_year_ago_cpi = float(columns[13]['value'])
+        prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
+        inf_delta = inf_val - prev_inf_val
+
+        return {
+            "cpi_val": round(latest_cpi, 2),
+            "cpi_delta": round(cpi_delta, 2),
+            "inf_val": round(inf_val, 2),
+            "inf_delta": round(inf_delta, 2)
+        }
+
+    except Exception as e:
+        # Robust Fallback: Returns your known March 2026 data if API is down
+        print(f"SingStat API Error: {e}")
+        return {
+            "cpi_val": 102.40, 
+            "cpi_delta": 0.50, 
+            "inf_val": 1.80, 
+            "inf_delta": 0.60
+        }        
 @st.cache_data(ttl=600)
 def fetch_fuel_logic():
     """
