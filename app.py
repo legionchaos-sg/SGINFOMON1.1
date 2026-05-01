@@ -7,7 +7,6 @@ import yfinance as yf
 from prophet import Prophet
 import numpy as np
 import requests
-import requests_cache
 from bs4 import BeautifulSoup
 import re
 import datetime 
