@@ -942,7 +942,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
-    with st.expander("🌐 Forex Prediction"):
+    with st.expander("🌐 Forex Prediction 3 day predictions"):
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
@@ -968,41 +968,35 @@ with tab2:
         "SGD/USD": "SGDUSD=X",
         "SGD/GBP": "SGDGBP=X",
         }
+
+        # Fetch the 3-month history ONCE (Gold 10 optimization)
+        all_fx_data = fetch_live_forex_data()
         
         for label, ticker in currency_pairs.items():
-            try:
-                # 1. Fetch current rate
-                raw_rate = get_live_rate(ticker)
-                
-                # 2. Extract the number safely
-                if hasattr(raw_rate, 'iloc'):
-                    current_rate = float(raw_rate.iloc[0])
-                else:
-                    current_rate = float(raw_rate)
-                    
-                # 3. Skip if no data found to prevent model crash
-                if current_rate == 0:
-                    prediction_data.append({
-                        "Pair": label, "Current": "0.0000", 
-                        m_day1: "-", m_day2: "-", m_day3: "-", 
-                        "Recommendation": "⚠️ NO DATA"
-                    })
-                    continue
-        
-                # 4. Run the models
-                d1_val = run_models(ticker, step=1)
-                d2_val = run_models(ticker, step=2)
-                d3_val = run_models(ticker, step=3)
-        
-                # 5. Add to results
-                prediction_data.append({
-                    "Pair": label,
-                    "Current": f"{current_rate:.4f}",
-                    m_day1: f"{d1_val:.4f}",
-                    m_day2: f"{d2_val:.4f}",
-                    m_day3: f"{d3_val:.4f}",
-                    "Recommendation": generate_recommendation(d3_val, current_rate)
-                })
+        try:
+            # Get the DataFrame for this specific pair
+            data = all_fx_data.get(label)
+            
+            if data is None or data.empty:
+                continue
+    
+            # Extract current rate from the table
+            current_rate = float(data['Close'].iloc[-1])
+            
+            # --- THE CRITICAL CHANGE ---
+            # Pass the 'data' table, not the 'ticker' string
+            d1_val = run_models(data, step=1)
+            d2_val = run_models(data, step=2)
+            d3_val = run_models(data, step=3)
+            
+            # 5. Add to results
+            prediction_data.append({
+                "Pair": label,
+                "Current": f"{current_rate:.4f}",
+                m_day1: f"{d1_val:.4f}",
+                m_day2: f"{d2_val:.4f}",
+                m_day3: f"{d3_val:.4f}",
+                "Recommendation": generate_recommendation(d3_val, current_rate)
         
             except Exception as e:
                 # If one pair fails (like SGD/MYR), this 'except' prevents the whole app from stopping
