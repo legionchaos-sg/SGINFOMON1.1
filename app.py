@@ -927,9 +927,9 @@ with tab2:
        markets = {
         "Hong Kong": "^HSI", "China (SSE)": "000001.SS", "Taiwan": "^TWII",
         "Japan": "^N225", "South Korea": "^KS11", "Thailand": "^SET.BK", "Malaysia": "^KLSE"
-        }
+       }
 
-        table_data = []
+       table_data = []
         for name, symbol in markets.items():
             price, change, status = fetch_market_rate(symbol)
             table_data.append({
