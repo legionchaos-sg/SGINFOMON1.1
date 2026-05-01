@@ -91,7 +91,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
     connecting Singapore sentiment with global trends.
     """
-    #return prompt_to_display
+    return prompt_to_display
 
 def get_cached_analysis(sti, gold, silver, brent):
     prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
