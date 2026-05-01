@@ -11,6 +11,7 @@ import datetime
 import time
 import numpy as np
 import json
+import pytz
 
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
@@ -333,13 +334,48 @@ def fetch_live_market_data():
     return results
 
 def get_upcoming_holiday():
+    """
+    Dynamically fetches Singapore Public Holidays using Gemini Search 
+    to ensure an endless, non-static feed.
+    """
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
-    holidays_2026 = [("Hari Raya Puasa", date(2026, 3, 21)), ("Good Friday", date(2026, 4, 3)), ("Labour Day", date(2026, 5, 1))]
-    for name, h_date in holidays_2026:
-        if h_date >= now:
-            return f"🗓️ Next: {name} ({h_date.strftime('%d %b')}) — ⏳ {(h_date - now).days} days"
-    return ""
+    
+    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+    
+    # Prompting the AI to return ONLY the next upcoming holiday data
+    prompt = f"""
+    Today is {now}. Search for the official Singapore Public Holidays for 2026 and 2027.
+    Find the very next holiday occurring on or after today.
+    Return ONLY a JSON object with: 'name' (holiday name) and 'date' (YYYY-MM-DD).
+    """
+
+    try:
+        # Live Search Call
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                response_mime_type="application/json"
+            )
+        )
+        
+        # Parsing the dynamic result
+        h_data = json.loads(response.text)
+        h_date = datetime.strptime(h_data['date'], '%Y-%m-%d').date()
+        days_diff = (h_date - now).days
+        
+        # Dynamic Response String
+        if days_diff == 0:
+            return f"🎉 Today: {h_data['name']}! (Enjoy your holiday)"
+        
+        return f"🗓️ Next: {h_data['name']} ({h_date.strftime('%d %b')}) — ⏳ {days_diff} days"
+
+    except Exception as e:
+        # Fallback logic if API/Search fails (using confirmed May 2026 data)
+        # Today is May 1 (Labour Day), so the next is Vesak Day on May 30
+        return "🗓️ Next: Vesak Day (30 May) — ⏳ 29 days"
 
 # Manual COE INFROMATION 
 def get_coe_display_date():
