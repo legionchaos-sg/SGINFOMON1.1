@@ -925,7 +925,7 @@ with tab2:
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
        markets = {
-        "Singapore": "^STI": Hong Kong": "^HSI", "China (SSE)": "000001.SS", "Taiwan": "^TWII",
+        "Singapore": "^STI", Hong Kong": "^HSI", "China (SSE)": "000001.SS", "Taiwan": "^TWII",
         "Japan": "^N225", "South Korea": "^KS11", "Thailand": "^SET.BK", "Malaysia": "^KLSE"
        }
 
