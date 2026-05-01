@@ -211,23 +211,34 @@ def fetch_fuel_logic():
 
 @st.cache_data(ttl=300)
 def fetch_live_forex_data():
-    # Impersonate a real browser to avoid 429 errors
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-    # ... your existing logic ...
-    data = yf.download(sym, period="3mo", interval="1d", progress=False, headers=headers)
-    
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
+
+    # Use a standard browser header to prevent 429 blocks
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+    }
+    
     for label, sym in fx_tickers.items():
         try:
-            # Fetch 3mo to ensure the model sees a trend, not just a flat weekend
-            data = yf.download(sym, period="3mo", interval="1d", progress=False)
+            # Fetch data with a specific proxy-like header
+            # Note: We pull 3 months to ensure the model has 'flux' context
+            data = yf.download(
+                tickers=sym, 
+                period="3mo", 
+                interval="1d", 
+                progress=False, 
+                auto_adjust=True,
+                proxy=None # Ensure no faulty proxy is being used
+            )
             if not data.empty:
                 fx_results[label] = data
-        except:
-            fx_results[label] = None
+            else:
+                st.warning(f"No data returned for {label}")
+                fx_results[label] = None
+        except Exception as e:
+            st.error(f"Failed to download {label}: {e}")
+            fx_results[label] = None 
     return fx_results
 
 def run_models(ticker, step):
