@@ -7,6 +7,8 @@ import yfinance as yf
 from prophet import Prophet
 import numpy as np
 import requests
+from bs4 import BeautifulSoup
+import re
 import datetime 
 import time
 import numpy as np
@@ -385,40 +387,47 @@ def get_upcoming_holiday():
 # Manual COE INFROMATION 
 def get_coe_display_date():
     """
-    Fetches the most recent COE bidding date from LTA DataMall.
-    If the system is abolished/feed stops, it returns a sunset notification.
+    Tier 1: Pull from LTA DataMall API.
+    Tier 2: Scrape OneMotoring Landing Page.
+    Tier 3: Return Abolished/Status Error.
     """
-    # LTA DataMall Endpoint for COE Results
-    url = "https://datamall.lta.gov.sg/api/v1/COE"
     
-    # Replace with your actual LTA DataMall API Key
-    # Sign up at: https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html
-    headers = {'AccountKey': 'YOUR_LTA_DATAMALL_KEY_HERE'}
-
+    # --- TIER 1: LTA DATAMALL API ---
+    api_url = "https://datamall.lta.gov.sg/api/v1/COE"
+    headers = {'AccountKey': 'YOUR_LTA_KEY'} # Register for free on LTA DataMall
+    
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            coe_records = data.get('value', [])
-            
-            if coe_records:
-                # Get the 'month' string from the most recent record (e.g., '2026-04-2')
-                # and format it for your display.
-                raw_month = coe_records[0].get('month')
-                
-                # In 2026, the bidding rounds occur on specific Wednesdays.
-                # We can map the 'month' field to a readable date.
-                # Since LTA data includes the year and round, it's highly reliable.
-                return f"Latest Results: {raw_month}"
-            else:
-                return "COE System Abolished / No Active Data"
-        else:
-            return "Feed Temporarily Unavailable"
-
+        api_res = requests.get(api_url, headers=headers, timeout=5)
+        if api_res.status_code == 200:
+            data = api_res.json().get('value', [])
+            if data:
+                # Returns format like '2026-04-2' (April 2nd Round)
+                return f"{data[0].get('month')} Results"
     except Exception:
-        # If the API disappears entirely or the connection fails
-        return "COE System Abolished (Data Feed Disconnected)"
+        pass # Silently fail to Tier 2
+
+    # --- TIER 2: ONEMOTORING SCRAPER ---
+    # This acts as the backup if the API key expires or the endpoint changes.
+    scrape_url = "https://onemotoring.lta.gov.sg/content/onemotoring/home/buying/coe-open-bidding.html"
+    
+    try:
+        scrape_res = requests.get(scrape_url, timeout=10)
+        if scrape_res.status_code == 200:
+            soup = BeautifulSoup(scrape_res.text, 'html.parser')
+            
+            # OneMotoring usually uses an <h3> or <div> for the latest result header
+            # We look for text like "Results for APRIL 2026 2nd Open Bidding"
+            target_text = soup.find(string=re.compile(r"Results for.*Bidding", re.IGNORECASE))
+            
+            if target_text:
+                # Extract just the date part (e.g., "APRIL 2026")
+                clean_date = target_text.strip().replace("Final Results for ", "")
+                return clean_date
+    except Exception:
+        pass # Proceed to Tier 3
+
+    # --- TIER 3: SYSTEM ABOLISHED / FEED DEAD ---
+    return "COE System Abolished or Data Feed Offline"
     
 def get_latest_coe():
     """
