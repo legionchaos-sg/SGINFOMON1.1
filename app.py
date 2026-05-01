@@ -7,6 +7,7 @@ import yfinance as yf
 from prophet import Prophet
 import numpy as np
 import requests
+import requests_cache
 from bs4 import BeautifulSoup
 import re
 import datetime 
@@ -211,6 +212,13 @@ def fetch_fuel_logic():
 
 @st.cache_data(ttl=300)
 def fetch_live_forex_data():
+    # Impersonate a real browser to avoid 429 errors
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    # ... your existing logic ...
+    data = yf.download(sym, period="3mo", interval="1d", progress=False, headers=headers)
+    
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
     for label, sym in fx_tickers.items():
