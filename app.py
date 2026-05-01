@@ -757,19 +757,21 @@ with tab1:
     fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f_cols = st.columns(5)
-        target_pairs = [
-        ("MYR", "SGD/MYR", ".4f"), 
-        ("JPY", "SGD/JPY", ".2f"), 
-        ("THB", "SGD/THB", ".2f"), 
-        ("CNY", "SGD/CNY", ".4f"), 
-        ("USD", "SGD/USD", ".4f")
+        
+        # 1. DEFINE THE LIST (This was missing or named differently)
+        metric_setup = [
+            ("MYR", "SGD/MYR", ".4f"),
+            ("JPY", "SGD/JPY", ".2f"),
+            ("THB", "SGD/THB", ".2f"),
+            ("CNY", "SGD/CNY", ".4f"),
+            ("USD", "SGD/USD", ".4f")
         ]
 
         for i, (label, key, fmt) in enumerate(metric_setup):
             try:
                 df = fx_data.get(key)
                 if df is not None and not df.empty:
-                    # Get current and previous close
+                    # extraxt prices from dataframe
                     curr = float(df['Close'].iloc[-1])
                     prev = float(df['Close'].iloc[-2])
                     delta = ((curr - prev) / prev) * 100
