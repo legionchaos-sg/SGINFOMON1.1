@@ -967,7 +967,7 @@ with tab2:
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction"):
 
-        all_fx_data = fetch_live_forex_data()
+        all_fx_data = fetch_live_forex()
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
