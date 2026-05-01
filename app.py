@@ -930,25 +930,25 @@ with tab2:
        }
 
        table_data = []
-        for name, symbol in markets.items():
-            price, change, status = fetch_market_rate(symbol)
-            table_data.append({
-                "Region": name,
-                "Index Value": f"{price:,.2f}" if price else "N/A",
-                "Change %": change,
-                "Status": status
-            })
+       for name, symbol in markets.items():
+           price, change, status = fetch_market_rate(symbol)
+           table_data.append({
+               "Region": name,
+               "Index Value": f"{price:,.2f}" if price else "N/A",
+               "Change %": change,
+               "Status": status
+           })
     
-        # Display with 10pt Font and White Text
-        df = pd.DataFrame(table_data)
-        st.table(df.style.set_properties(**{
-            'text-align': 'left',
-            'font-size': '10pt',
-            'color': 'white'
-        }))
+       # Display with 10pt Font and White Text
+       df = pd.DataFrame(table_data)
+       st.table(df.style.set_properties(**{
+           'text-align': 'left',
+           'font-size': '10pt',
+           'color': 'white'
+       }))
     
-        if st.button("🔄 Manual Refresh"):
-            st.rerun()
+       if st.button("🔄 Manual Refresh"):
+           st.rerun()
             
     # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
     with st.expander("🌏 Western Market Watch", expanded=True):
