@@ -213,15 +213,9 @@ def fetch_fuel_logic():
 def fetch_live_forex_data():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
-
-    # Use a standard browser header to prevent 429 blocks
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
-    }
     
     for label, sym in fx_tickers.items():
         try:
-            # Fetch data with a specific proxy-like header
             # Note: We pull 3 months to ensure the model has 'flux' context
             data = yf.download(
                 tickers=sym, 
@@ -229,16 +223,16 @@ def fetch_live_forex_data():
                 interval="1d", 
                 progress=False, 
                 auto_adjust=True,
-                proxy=None # Ensure no faulty proxy is being used
             )
-            if not data.empty:
+            if data is not None and not data.empty:
+                # Ensure we have a clean DataFrame for the models
                 fx_results[label] = data
             else:
-                st.warning(f"No data returned for {label}")
                 fx_results[label] = None
         except Exception as e:
-            st.error(f"Failed to download {label}: {e}")
-            fx_results[label] = None 
+            # This will show you if there's a new error like a 429 rate limit
+            st.warning(f"Connection issue with {label}: {e}")
+            fx_results[label] = None
     return fx_results
 
 def run_models(ticker, step):
