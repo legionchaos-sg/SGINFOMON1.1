@@ -53,7 +53,6 @@ if "g10_target_fix" not in st.session_state:
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthlY
 #Use google AI
-
 def get_ai_response(user_input):
     # Try the request up to 3 times
     for attempt in range(3):
@@ -92,7 +91,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
     connecting Singapore sentiment with global trends.
     """
-    return prompt_to_display
+    #return prompt_to_display
 
 def get_cached_analysis(sti, gold, silver, brent):
     prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
@@ -113,12 +112,11 @@ def get_cached_analysis(sti, gold, silver, brent):
         )
         return response_lite.text
 
-"""
+def fetch_sg_economy():
+    """
     Dynamically pulls live CPI data from SingStat API (2024=100 Base).
     Calculates CPI Value, MoM Delta, and YoY Inflation.
     """
-def fetch_sg_economy():
-    
     # M213751: Consumer Price Index, (2024 As Base Year), Monthly
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
     
@@ -166,13 +164,12 @@ def fetch_sg_economy():
             "inf_val": 1.80, 
             "inf_delta": 0.60
         }        
-
 @st.cache_data(ttl=600)
-"""
+def fetch_fuel_logic():
+    """
     Scrapes the live web for current SG pump prices using Gemini Search Grounding.
     Returns dynamic averages, trends, and brand-specific data.
-"""
-def fetch_fuel_logic():
+    """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
     # This prompt tells Gemini EXACTLY what structure to return
@@ -626,36 +623,25 @@ with tab1:
 
         # 1. The Button Action
         if st.button("📝 Preview AI Prompt"):
-            try:
-                # Check if m_live has data before calling
-                if all(k in m_live for k in ['STI', 'Gold', 'Silver', 'Brent']):
-                    generated_text = get_market_intelligence(
-                        m_live['STI'][0], 
-                        m_live['Gold'][0], 
-                        m_live['Silver'][0], 
-                        m_live['Brent'][0]
-                    )
-                    
-                    # Store it
-                    st.session_state['active_prompt'] = generated_text
-                    # Use st.fragment or just let the script finish to avoid 'rerun loops'
-                else:
-                    st.error("Market data 'm_live' is not fully loaded.")
-            except Exception as e:
-                st.error(f"Generation Error: {e}")
+            generated_text = get_market_intelligence(
+                m_live['STI'][0], 
+                m_live['Gold'][0], 
+                m_live['Silver'][0], 
+                m_live['Brent'][0]
+            )
+            # These two lines MUST be indented to stay "inside" the button
+            st.session_state['active_prompt'] = generated_text
+            st.rerun()
         
-        # 2. The Display Logic (Outside the button click)
-        if 'active_prompt' in st.session_state and st.session_state['active_prompt']:
+        # 2. The Display Logic (Aligned with the first 'if' so it stays on screen)
+        if 'active_prompt' in st.session_state:
             st.divider()
             st.subheader("🤖 Generated AI Query")
+            st.code(st.session_state['active_prompt'], language="text")
             
-            # Display the prompt in a text area or code block
-            st.text_area("Review your prompt:", value=st.session_state['active_prompt'], height=200)
-            
-            if st.button("❌ Clear Preview"):
-                st.session_state['active_prompt'] = None # Better than 'del' to avoid KeyErrors
+            if st.button("Clear Preview"):
+                del st.session_state['active_prompt']
                 st.rerun()
-        
     
            
 
