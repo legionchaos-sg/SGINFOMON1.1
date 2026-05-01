@@ -989,14 +989,15 @@ with tab2:
                 d2_val = run_models(data, step=2)
                 d3_val = run_models(data, step=3)
             
-            # 5. Add to results
-            prediction_data.append({
-                "Pair": label,
-                "Current": f"{current_rate:.4f}",
-                m_day1: f"{d1_val:.4f}",
-                m_day2: f"{d2_val:.4f}",
-                m_day3: f"{d3_val:.4f}",
-                "Recommendation": generate_recommendation(d3_val, current_rate)
+                # 5. Add to results
+                prediction_data.append({
+                    "Pair": label,
+                    "Current": f"{current_rate:.4f}",
+                    m_day1: f"{d1_val:.4f}",
+                    m_day2: f"{d2_val:.4f}",
+                    m_day3: f"{d3_val:.4f}",
+                    "Recommendation": generate_recommendation(d3_val, current_rate)
+                })
         
             except Exception as e:
                 # If one pair fails (like SGD/MYR), this 'except' prevents the whole app from stopping
