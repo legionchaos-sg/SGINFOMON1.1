@@ -215,12 +215,18 @@ def fetch_live_forex():
     fx_results = {}
     for label, sym in fx_tickers.items():
         try:
-            ticker = yf.Ticker(sym)
-            hist = ticker.history(period="5d")
-            curr = hist['Close'].iloc[-1]
-            prev = hist['Close'].iloc[-2]
-            fx_results[label] = (curr, ((curr - prev) / prev) * 100)
-        except: fx_results[label] = (0.0, 0.0)
+            # Period 3mo is required for the models to see flux
+            data = yf.download(sym, period="3mo", interval="1d", progress=False)
+            
+            if data is not None and not data.empty:
+                # 2026 Multi-index Flattening
+                if isinstance(data.columns, pd.MultiIndex):
+                    data.columns = data.columns.get_level_values(0)
+                fx_results[label] = data
+            else:
+                fx_results[label] = None
+        except Exception:
+            fx_results[label] = None
     return fx_results
 
 def run_models(ticker, step):
@@ -943,6 +949,9 @@ with tab2:
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction 3 day predictions"):
+
+        # Fetch the 3-month history ONCE (Gold 10 optimization)
+        all_fx_data = fetch_live_forex_data()
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
@@ -969,9 +978,6 @@ with tab2:
         "SGD/GBP": "SGDGBP=X",
         }
 
-        # Fetch the 3-month history ONCE (Gold 10 optimization)
-        all_fx_data = fetch_live_forex_data()
-        
         for label, ticker in currency_pairs.items():
             try:
                 # Get the DataFrame for this specific pair
