@@ -973,21 +973,21 @@ with tab2:
         all_fx_data = fetch_live_forex_data()
         
         for label, ticker in currency_pairs.items():
-        try:
-            # Get the DataFrame for this specific pair
-            data = all_fx_data.get(label)
-            
-            if data is None or data.empty:
-                continue
-    
-            # Extract current rate from the table
-            current_rate = float(data['Close'].iloc[-1])
-            
-            # --- THE CRITICAL CHANGE ---
-            # Pass the 'data' table, not the 'ticker' string
-            d1_val = run_models(data, step=1)
-            d2_val = run_models(data, step=2)
-            d3_val = run_models(data, step=3)
+            try:
+                # Get the DataFrame for this specific pair
+                data = all_fx_data.get(label)
+                
+                if data is None or data.empty:
+                    continue
+        
+                # Extract current rate from the table
+                current_rate = float(data['Close'].iloc[-1])
+                
+                # --- THE CRITICAL CHANGE ---
+                # Pass the 'data' table, not the 'ticker' string
+                d1_val = run_models(data, step=1)
+                d2_val = run_models(data, step=2)
+                d3_val = run_models(data, step=3)
             
             # 5. Add to results
             prediction_data.append({
