@@ -215,12 +215,12 @@ def fetch_live_forex():
     fx_results = {}
     for label, sym in fx_tickers.items():
         try:
-            ticker = yf.Ticker(sym)
-            hist = ticker.history(period="5d")
-            curr = hist['Close'].iloc[-1]
-            prev = hist['Close'].iloc[-2]
-            fx_results[label] = (curr, ((curr - prev) / prev) * 100)
-        except: fx_results[label] = (0.0, 0.0)
+            # Fetch 3mo to ensure the model sees a trend, not just a flat weekend
+            data = yf.download(sym, period="3mo", interval="1d", progress=False)
+            if not data.empty:
+                fx_results[label] = data
+        except:
+            fx_results[label] = None
     return fx_results
 
 def run_models(ticker, step):
@@ -943,6 +943,8 @@ with tab2:
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction"):
+
+        all_fx_data = fetch_live_forex_data()
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
@@ -968,31 +970,31 @@ with tab2:
         "SGD/USD": "SGDUSD=X",
         "SGD/GBP": "SGDGBP=X",
         }
+
+        # 2. Start the Display Loop
+        prediction_data = []
         
         for label, ticker in currency_pairs.items():
             try:
-                # 1. Fetch current rate
-                raw_rate = get_live_rate(ticker)
+                # Get the specific data table for this pair from our master fetch
+                data = all_fx_data.get(label)
                 
-                # 2. Extract the number safely
-                if hasattr(raw_rate, 'iloc'):
-                    current_rate = float(raw_rate.iloc[0])
-                else:
-                    current_rate = float(raw_rate)
-                    
-                # 3. Skip if no data found to prevent model crash
-                if current_rate == 0:
+               if data is None or data.empty:
+                    # Fallback if specific pair failed to fetch
                     prediction_data.append({
                         "Pair": label, "Current": "0.0000", 
                         m_day1: "-", m_day2: "-", m_day3: "-", 
                         "Recommendation": "⚠️ NO DATA"
                     })
                     continue
+
+                # Extract current rate from the table
+                current_rate = float(data['Close'].iloc[-1])
         
                 # 4. Run the models
-                d1_val = run_models(ticker, step=1)
-                d2_val = run_models(ticker, step=2)
-                d3_val = run_models(ticker, step=3)
+                d1_val = run_models(data, step=1)
+                d2_val = run_models(data, step=2)
+                d3_val = run_models(data, step=3)
         
                 # 5. Add to results
                 prediction_data.append({
