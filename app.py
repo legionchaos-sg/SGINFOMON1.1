@@ -269,9 +269,6 @@ def generate_recommendation(predicted_val, current_val):
     elif change < -0.001: return "↘️ SELL"
     else: return "↔️ HOLD / WAIT"
 
-
-
-
 def get_live_rate(ticker):
     #Gold 10 Data Fetcher, Fetches the most recent closing price for a given ticker.
     try:
@@ -408,7 +405,7 @@ def get_latest_coe():
 
 # --- DASHBOARD LOGIC ---
 
-# --- 1. DEFINE MARKETS ---
+# Asia Markets values and status-
 markets = {
     "Hong Kong": "^HSI",
     "China (SSE)": "000001.SS",
@@ -475,7 +472,7 @@ def fetch_market_rate(ticker):
     except Exception as e:
         return None, None, "ERROR"
 
-# --- 1. DEFINE TICKERS ---
+# Western Market indicators and values
 western_markets = {
     "S&P 500": "^GSPC",
     "Dow Jones": "^DJI",
