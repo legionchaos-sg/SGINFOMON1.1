@@ -751,11 +751,34 @@ with tab1:
     fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f_cols = st.columns(5)
-        f_cols[0].metric("SGD/MYR", f"{fx_data['MYR'][0]:.4f}", f"{fx_data['MYR'][1]:+.2f}%")
-        f_cols[1].metric("SGD/JPY", f"{fx_data['JPY'][0]:.2f}", f"{fx_data['JPY'][1]:+.2f}%")
-        f_cols[2].metric("SGD/THB", f"{fx_data['THB'][0]:.2f}", f"{fx_data['THB'][1]:+.2f}%")
-        f_cols[3].metric("SGD/CNY", f"{fx_data['CNY'][0]:.4f}", f"{fx_data['CNY'][1]:+.2f}%")
-        f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
+        # Define the mapping between your display label and the key in fx_data
+        # Note: Ensure these keys match the labels in your fetch_live_forex() function
+        pairs = [
+            ("MYR", "SGD/MYR", ".4f"), 
+            ("JPY", "SGD/JPY", ".2f"), 
+            ("THB", "SGD/THB", ".2f"), 
+            ("CNY", "SGD/CNY", ".4f"), 
+            ("USD", "SGD/USD", ".4f")
+        ]
+    
+        for i, (label, key, fmt) in enumerate(pairs):
+            try:
+                df = fx_data.get(key)
+                if df is not None and not df.empty:
+                    # Extract the last two closing prices
+                    curr = float(df['Close'].iloc[-1])
+                    prev = float(df['Close'].iloc[-2])
+                    delta = ((curr - prev) / prev) * 100
+                    
+                    f_cols[i].metric(
+                        f"SGD/{label}", 
+                        f"{curr:{fmt}}", 
+                        f"{delta:+.2f}%"
+                    )
+                else:
+                    f_cols[i].metric(f"SGD/{label}", "N/A")
+            except Exception:
+                f_cols[i].metric(f"SGD/{label}", "Error")
 
     # 5. COE Results
     coe_title = f"🚗 COE Bidding Results (Last Closed: {get_coe_display_date()})"
