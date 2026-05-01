@@ -385,12 +385,40 @@ def get_upcoming_holiday():
 # Manual COE INFROMATION 
 def get_coe_display_date():
     """
-    Returns the date of the most recent COE bidding close (1st/3rd Wednesday).
-    For April 2026, this reflects the result from today, April 8.
+    Fetches the most recent COE bidding date from LTA DataMall.
+    If the system is abolished/feed stops, it returns a sunset notification.
     """
-    # In a fully automated version, you'd calculate the Wednesday here.
-    # For your current dashboard, we'll anchor it to the latest result:
-    return "08 April 2026"
+    # LTA DataMall Endpoint for COE Results
+    url = "https://datamall.lta.gov.sg/api/v1/COE"
+    
+    # Replace with your actual LTA DataMall API Key
+    # Sign up at: https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html
+    headers = {'AccountKey': 'YOUR_LTA_DATAMALL_KEY_HERE'}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            coe_records = data.get('value', [])
+            
+            if coe_records:
+                # Get the 'month' string from the most recent record (e.g., '2026-04-2')
+                # and format it for your display.
+                raw_month = coe_records[0].get('month')
+                
+                # In 2026, the bidding rounds occur on specific Wednesdays.
+                # We can map the 'month' field to a readable date.
+                # Since LTA data includes the year and round, it's highly reliable.
+                return f"Latest Results: {raw_month}"
+            else:
+                return "COE System Abolished / No Active Data"
+        else:
+            return "Feed Temporarily Unavailable"
+
+    except Exception:
+        # If the API disappears entirely or the connection fails
+        return "COE System Abolished (Data Feed Disconnected)"
     
 def get_latest_coe():
     """
