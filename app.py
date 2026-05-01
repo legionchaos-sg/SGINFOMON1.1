@@ -764,19 +764,19 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
         for i, (label, key, fmt) in enumerate(metric_setup):
-        try:
-            df = fx_data.get(key)
-            if df is not None and not df.empty:
-                # Get current and previous close
-                curr = float(df['Close'].iloc[-1])
-                prev = float(df['Close'].iloc[-2])
-                delta = ((curr - prev) / prev) * 100
-                
-                f_cols[i].metric(f"SGD/{label}", f"{curr:{fmt}}", f"{delta:+.2f}%")
-            else:
-                f_cols[i].metric(f"SGD/{label}", "N/A")
-        except Exception:
-            f_cols[i].metric(f"SGD/{label}", "Error")
+            try:
+                df = fx_data.get(key)
+                if df is not None and not df.empty:
+                    # Get current and previous close
+                    curr = float(df['Close'].iloc[-1])
+                    prev = float(df['Close'].iloc[-2])
+                    delta = ((curr - prev) / prev) * 100
+                    
+                    f_cols[i].metric(f"SGD/{label}", f"{curr:{fmt}}", f"{delta:+.2f}%")
+                else:
+                    f_cols[i].metric(f"SGD/{label}", "N/A")
+            except Exception:
+                f_cols[i].metric(f"SGD/{label}", "Error")
 
     # 5. COE Results
     coe_title = f"🚗 COE Bidding Results (Last Closed: {get_coe_display_date()})"
