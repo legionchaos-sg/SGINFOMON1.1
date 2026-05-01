@@ -210,29 +210,17 @@ def fetch_fuel_logic():
         return averages, trends, brands
 
 @st.cache_data(ttl=300)
-def fetch_live_forex_data():
+def fetch_live_forex():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
-    
     for label, sym in fx_tickers.items():
         try:
-            # Note: We pull 3 months to ensure the model has 'flux' context
-            data = yf.download(
-                tickers=sym, 
-                period="3mo", 
-                interval="1d", 
-                progress=False, 
-                auto_adjust=True,
-            )
-            if data is not None and not data.empty:
-                # Ensure we have a clean DataFrame for the models
-                fx_results[label] = data
-            else:
-                fx_results[label] = None
-        except Exception as e:
-            # This will show you if there's a new error like a 429 rate limit
-            st.warning(f"Connection issue with {label}: {e}")
-            fx_results[label] = None
+            ticker = yf.Ticker(sym)
+            hist = ticker.history(period="5d")
+            curr = hist['Close'].iloc[-1]
+            prev = hist['Close'].iloc[-2]
+            fx_results[label] = (curr, ((curr - prev) / prev) * 100)
+        except: fx_results[label] = (0.0, 0.0)
     return fx_results
 
 def run_models(ticker, step):
@@ -760,37 +748,14 @@ with tab1:
             
         
     # 4. Foreign Exchange
-    fx_data = fetch_live_forex_data()
+    fx_data = fetch_live_forex()
     with st.expander("💱 Foreign Exchange (1 SGD Base)", expanded=True):
         f_cols = st.columns(5)
-        # Define the mapping between your display label and the key in fx_data
-        # Note: Ensure these keys match the labels in your fetch_live_forex() function
-        pairs = [
-            ("MYR", "SGD/MYR", ".4f"), 
-            ("JPY", "SGD/JPY", ".2f"), 
-            ("THB", "SGD/THB", ".2f"), 
-            ("CNY", "SGD/CNY", ".4f"), 
-            ("USD", "SGD/USD", ".4f")
-        ]
-    
-        for i, (label, key, fmt) in enumerate(pairs):
-            try:
-                df = fx_data.get(key)
-                if df is not None and not df.empty:
-                    # Extract the last two closing prices
-                    curr = float(df['Close'].iloc[-1])
-                    prev = float(df['Close'].iloc[-2])
-                    delta = ((curr - prev) / prev) * 100
-                    
-                    f_cols[i].metric(
-                        f"SGD/{label}", 
-                        f"{curr:{fmt}}", 
-                        f"{delta:+.2f}%"
-                    )
-                else:
-                    f_cols[i].metric(f"SGD/{label}", "N/A")
-            except Exception:
-                f_cols[i].metric(f"SGD/{label}", "Error")
+        f_cols[0].metric("SGD/MYR", f"{fx_data['MYR'][0]:.4f}", f"{fx_data['MYR'][1]:+.2f}%")
+        f_cols[1].metric("SGD/JPY", f"{fx_data['JPY'][0]:.2f}", f"{fx_data['JPY'][1]:+.2f}%")
+        f_cols[2].metric("SGD/THB", f"{fx_data['THB'][0]:.2f}", f"{fx_data['THB'][1]:+.2f}%")
+        f_cols[3].metric("SGD/CNY", f"{fx_data['CNY'][0]:.4f}", f"{fx_data['CNY'][1]:+.2f}%")
+        f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
     coe_title = f"🚗 COE Bidding Results (Last Closed: {get_coe_display_date()})"
@@ -978,8 +943,6 @@ with tab2:
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
     with st.expander("🌐 Forex Prediction"):
-
-        all_fx_data = fetch_live_forex()
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
@@ -1005,31 +968,31 @@ with tab2:
         "SGD/USD": "SGDUSD=X",
         "SGD/GBP": "SGDGBP=X",
         }
-
-        # 2. Start the Display Loop
-        prediction_data = []
         
         for label, ticker in currency_pairs.items():
             try:
-                # Get the specific data table for this pair from our master fetch
-                data = all_fx_data.get(label)
+                # 1. Fetch current rate
+                raw_rate = get_live_rate(ticker)
                 
-                if data is None or data.empty:
-                    # Fallback if specific pair failed to fetch
+                # 2. Extract the number safely
+                if hasattr(raw_rate, 'iloc'):
+                    current_rate = float(raw_rate.iloc[0])
+                else:
+                    current_rate = float(raw_rate)
+                    
+                # 3. Skip if no data found to prevent model crash
+                if current_rate == 0:
                     prediction_data.append({
                         "Pair": label, "Current": "0.0000", 
                         m_day1: "-", m_day2: "-", m_day3: "-", 
                         "Recommendation": "⚠️ NO DATA"
                     })
                     continue
-
-                # Extract current rate from the table
-                current_rate = float(data['Close'].iloc[-1])
         
                 # 4. Run the models
-                d1_val = run_models(data, step=1)
-                d2_val = run_models(data, step=2)
-                d3_val = run_models(data, step=3)
+                d1_val = run_models(ticker, step=1)
+                d2_val = run_models(ticker, step=2)
+                d3_val = run_models(ticker, step=3)
         
                 # 5. Add to results
                 prediction_data.append({
