@@ -254,15 +254,15 @@ def run_models(ticker, step):
         m = Prophet(daily_seasonality=False, weekly_seasonality=True, yearly_seasonality=False)
         m.fit(df_prophet)
         
-        # 4. Predict Future
-        future = m.make_future_dataframe(periods=step + 4, freq = 'D')
-        future['day'] = future['ds'].dt.weekday
-        future = future[future['day'] < 5] # Filter out Sat (5) and Sun (6)
+        # 4. THE MACHINE -> Predict Future 3 DAYS
+        future = m.make_future_dataframe(periods=step, freq='B', include_history=False)
+        forecast = m.predict(future)
+        #future = future[future['day'] < 5] # Filter out Sat (5) and Sun (6)
 
         forecast = m.predict(future)
 
         # Instead of iloc[-1], we grab the exact step we want from the business day list
-        prophet_val = forecast['yhat'].iloc[-(4-step)] # Adjusts based on the business day index
+        prophet_val = forecast['yhat'].iloc[-1]
         
         # 5. Chronos-2 Style Momentum Logic (Simplified for CPU/Streamlit)
         # We calculate the recent acceleration to 'adjust' the Prophet baseline
