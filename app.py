@@ -168,7 +168,7 @@ def fetch_sg_economy():
         }        
 
 @st.cache_data(ttl=600)
-"""
+    """
     Scrapes the live web for current SG pump prices using Gemini Search Grounding.
     Returns dynamic averages, trends, and brand-specific data.
     """
