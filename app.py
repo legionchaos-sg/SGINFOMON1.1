@@ -210,7 +210,7 @@ def fetch_fuel_logic():
         return averages, trends, brands
 
 @st.cache_data(ttl=300)
-def fetch_live_forex():
+def fetch_live_forex_data():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
     for label, sym in fx_tickers.items():
