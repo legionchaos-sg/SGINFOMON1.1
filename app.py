@@ -979,7 +979,7 @@ with tab2:
                 # Get the specific data table for this pair from our master fetch
                 data = all_fx_data.get(label)
                 
-               if data is None or data.empty:
+                if data is None or data.empty:
                     # Fallback if specific pair failed to fetch
                     prediction_data.append({
                         "Pair": label, "Current": "0.0000", 
