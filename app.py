@@ -585,8 +585,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- UI START ---
-st.title("🇸🇬 SG Info Monitor 10.9")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 PUBLIC SERVICES", "🛠️ Taticial Avg fOREX Exchg", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE"])
+st.title("SG Info Monitor 10.9")
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful SERVICES", "🛠️ Taticial AVG FX Exchg", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE"])
 
 with tab1:
     # 1. Clocks
@@ -658,45 +658,44 @@ with tab1:
         st.markdown("---")
 
         # 1. The Button Action
-        # --- 1. THE TRIGGER BUTTON ---
-# This button now calls the Deep Intelligence function
-if st.button("🚀 Run Deep Market Analysis"):
-    with st.spinner("Consulting Gemini-3 Flash & Market Data..."):
-        try:
-            # We pass the live values from your m_live dictionary
-            analysis_text = get_cached_analysis(
-                sti=m_live['STI'][0],
-                gold=m_live['Gold'][0],
-                silver=m_live['Silver'][0],
-                brent=m_live['Brent'][0]
-            )
-            
-            # Save the full analysis to session state
-            st.session_state['active_report'] = analysis_text
-            # st.rerun()  # Optional: force refresh to show the report immediately
-            
-        except Exception as e:
-            st.error(f"Intelligence Engine Error: {e}")
-
-# --- 2. THE DISPLAY LOGIC ---
-# This check ensures the report stays on screen even after the button click
-if 'active_report' in st.session_state and st.session_state['active_report']:
-    st.divider()
-    st.subheader("🤖 Gold 10 Market Intelligence Report")
-    
-    # Use a container for a clean UI 'card' look
-    with st.container(border=True):
-        # We use st.markdown instead of st.code to see formatting/bolding
-        st.markdown(st.session_state['active_report'])
+        # This button now calls the Deep Intelligence function
+        if st.button("🚀 Run Deep Market Analysis"):
+            with st.spinner("Consulting Gemini-3 Flash & Market Data..."):
+                try:
+                    # We pass the live values from your m_live dictionary
+                    analysis_text = get_cached_analysis(
+                        sti=m_live['STI'][0],
+                        gold=m_live['Gold'][0],
+                        silver=m_live['Silver'][0],
+                        brent=m_live['Brent'][0]
+                    )
+                    
+                    # Save the full analysis to session state
+                    st.session_state['active_report'] = analysis_text
+                    # st.rerun()  # Optional: force refresh to show the report immediately
+                    
+                except Exception as e:
+                    st.error(f"Intelligence Engine Error: {e}")
         
-        # Action row
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            if st.button("🗑️ Clear"):
-                st.session_state['active_report'] = None
-                st.rerun()
-        with col2:
-            st.caption(f"Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        # --- 2. THE DISPLAY LOGIC ---
+        # This check ensures the report stays on screen even after the button click
+        if 'active_report' in st.session_state and st.session_state['active_report']:
+            st.divider()
+            st.subheader("🤖 Gold 10 Market Intelligence Report")
+            
+            # Use a container for a clean UI 'card' look
+            with st.container(border=True):
+                # We use st.markdown instead of st.code to see formatting/bolding
+                st.markdown(st.session_state['active_report'])
+                
+                # Action row
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    if st.button("🗑️ Clear"):
+                        st.session_state['active_report'] = None
+                        st.rerun()
+                with col2:
+                    st.caption(f"Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     
            
 
