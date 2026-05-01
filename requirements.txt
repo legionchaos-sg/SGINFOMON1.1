@@ -13,3 +13,4 @@ google-genai
 google-generativeai
 prophet
 plotly
+requests_cache
