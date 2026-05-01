@@ -418,59 +418,31 @@ markets = {
 
 def fetch_market_rate(ticker):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m&range=1d"
-    headers = {'User-Agent': 'Mozilla/5.0'}
-
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
-
-        result = data['chart']['result'][0]
+        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10).json()
+        result = res['chart']['result'][0]
         meta = result.get('meta', {})
-        indicators = result.get('indicators', {}).get('quote', [{}])[0]
-
-        # ✅ Fallback price logic
-        current_price = meta.get('regularMarketPrice')
-
-        if current_price is None:
-            close_list = indicators.get('close', [])
-            if close_list and close_list[-1] is not None:
-                current_price = close_list[-1]
-
-        if current_price is None:
-            current_price = meta.get('previousClose')
-
-        prev_close = meta.get('previousClose')
-
-        if current_price is None or prev_close is None:
-            return None, None, "NO DATA"
-
-        # ✅ Market status
-        # 1. Pull the data
-        market_state = result['meta'].get('marketState', 'CLOSED').upper()
-        last_trade_ts = result['meta'].get('regularMarketTime', 0)
         
-        # 2. Check Yahoo's Official Text (Include Pre and Post market)
-        is_text_open = market_state in ["REGULAR", "PRE", "POST"]
+        # Concise Price Fallback: Regular -> Last Chart Close -> Previous Close
+        price = meta.get('regularMarketPrice') or \
+                result.get('indicators', {}).get('quote', [{}])[0].get('close', [None])[-1] or \
+                meta.get('previousClose')
         
-        # 3. The "Heartbeat" Override (If a trade happened in the last 30 mins, it's open)
-        current_time = time.time()
-        is_heartbeat_live = (current_time - last_trade_ts) < 1800 # 1800 seconds = 30 mins
+        prev = meta.get('previousClose')
+        if price is None or prev is None: return None, "N/A", "NO DATA"
+
+        # Dynamic Status: Logic for Taiwan/Thailand lag (60-min Heartbeat)
+        state = meta.get('marketState', '').upper()
+        last_trade = meta.get('regularMarketTime', 0)
+        # Gold 10 Logic: Open if Yahoo says so OR trade happened within last hour
+        is_live = state in ["REGULAR", "PRE", "POST"] or (time.time() - last_trade < 3600)
         
-        # 4. Final Gold 10 Logic: If EITHER is true, the market is LIVE.
-        if is_text_open or is_heartbeat_live:
-            status = "🟢 LIVE"
-        else:
-            status = "🔴 CLOSED"
-
-        change_pct = ((current_price - prev_close) / prev_close) * 100
-
-        return current_price, f"{change_pct:+.2f}%", status
-        change_pct = ((current_price - prev_close) / prev_close) * 100
-
-        return current_price, f"{change_pct:+.2f}%", status
-
-    except Exception as e:
-        return None, None, "ERROR"
+        status = "🟢 LIVE" if is_live else "🔴 CLOSED"
+        change = f"{((price - prev) / prev * 100):+.2f}%"
+        
+        return price, change, status
+    except:
+        return None, "N/A", "ERROR"
 
 # Western Market indicators and values
 western_markets = {
@@ -952,28 +924,31 @@ with tab2:
    
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
-       table_data = []
-       
-       for name, symbol in markets.items():
-           price, change, status = fetch_market_rate(symbol)
-           table_data.append({
-               "Region": name,
-               "Index Value": f"{price:,.2f}" if price else "N/A",
-               "Change %": change if change else "N/A",
-               "Status": status
-           })
-        
-       df = pd.DataFrame(table_data)
-        
-       # --- 3. DISPLAY WITH 10PT FONT ---
-       st.table(df.style.set_properties(**{
-           'text-align': 'left',
-           'font-size': '10pt',
-           'color': 'white'
-       }))
-        
-       if st.button("Manual Refresh"):
-           st.rerun()
+       markets = {
+        "Hong Kong": "^HSI", "China (SSE)": "000001.SS", "Taiwan": "^TWII",
+        "Japan": "^N225", "South Korea": "^KS11", "Thailand": "^SET.BK", "Malaysia": "^KLSE"
+        }
+
+        table_data = []
+        for name, symbol in markets.items():
+            price, change, status = fetch_market_rate(symbol)
+            table_data.append({
+                "Region": name,
+                "Index Value": f"{price:,.2f}" if price else "N/A",
+                "Change %": change,
+                "Status": status
+            })
+    
+        # Display with 10pt Font and White Text
+        df = pd.DataFrame(table_data)
+        st.table(df.style.set_properties(**{
+            'text-align': 'left',
+            'font-size': '10pt',
+            'color': 'white'
+        }))
+    
+        if st.button("🔄 Manual Refresh"):
+            st.rerun()
             
     # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
     with st.expander("🌏 Western Market Watch", expanded=True):
