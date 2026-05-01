@@ -942,9 +942,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Network & Connectivity Status --- New updated 29th Mar
-    with st.expander("🌐 Forex Prediction 3 days predictions"):
-
-        all_fx_data = fetch_live_forex_data()
+    with st.expander("🌐 Forex Prediction"):
     
         # 1. Get the next 3 market days dynamically
         # 'periods=4' gives us [Today, Day 1, Day 2, Day 3]
@@ -972,15 +970,24 @@ with tab2:
         }
         
         for label, ticker in currency_pairs.items():
-                # 2. Get the DataFrame (The "Feed")
-                data = all_fx_data.get(label)
+            try:
+                # 1. Fetch current rate
+                raw_rate = get_live_rate(ticker)
+                
+                # 2. Extract the number safely
+                if hasattr(raw_rate, 'iloc'):
+                    current_rate = float(raw_rate.iloc[0])
+                else:
+                    current_rate = float(raw_rate)
                     
                 # 3. Skip if no data found to prevent model crash
-                if data is not None:
-                # 3. Pass the WHOLE TABLE to the models to get different daily values
-                d1_val = run_models(data, step=1)
-                d2_val = run_models(data, step=2)
-                d3_val = run_models(data, step=3)
+                if current_rate == 0:
+                    prediction_data.append({
+                        "Pair": label, "Current": "0.0000", 
+                        m_day1: "-", m_day2: "-", m_day3: "-", 
+                        "Recommendation": "⚠️ NO DATA"
+                    })
+                    continue
         
                 # 4. Run the models
                 d1_val = run_models(ticker, step=1)
