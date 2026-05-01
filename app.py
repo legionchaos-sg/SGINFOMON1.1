@@ -53,6 +53,7 @@ if "g10_target_fix" not in st.session_state:
 # --- NEW: SG ECONOMY DATA ENGINE ---
 @st.cache_data(ttl=86400) # Cache for 24 hours as this data only changes monthlY
 #Use google AI
+
 def get_ai_response(user_input):
     # Try the request up to 3 times
     for attempt in range(3):
@@ -91,7 +92,7 @@ def get_market_intelligence(sti, gold, silver, brent):
     1. Use Google Search to cross-reference these values with today's financial news, Provide a single cohesive report 
     connecting Singapore sentiment with global trends.
     """
-    #return prompt_to_display
+    return prompt_to_display
 
 def get_cached_analysis(sti, gold, silver, brent):
     prompt = f"Analyze: STI {sti}, Gold {gold}, Silver {silver} Brent {brent}."
@@ -112,11 +113,12 @@ def get_cached_analysis(sti, gold, silver, brent):
         )
         return response_lite.text
 
-def fetch_sg_economy():
-    """
+"""
     Dynamically pulls live CPI data from SingStat API (2024=100 Base).
     Calculates CPI Value, MoM Delta, and YoY Inflation.
     """
+def fetch_sg_economy():
+    
     # M213751: Consumer Price Index, (2024 As Base Year), Monthly
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
     
@@ -164,12 +166,13 @@ def fetch_sg_economy():
             "inf_val": 1.80, 
             "inf_delta": 0.60
         }        
+
 @st.cache_data(ttl=600)
-def fetch_fuel_logic():
-    """
+"""
     Scrapes the live web for current SG pump prices using Gemini Search Grounding.
     Returns dynamic averages, trends, and brand-specific data.
-    """
+"""
+def fetch_fuel_logic():
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
     # This prompt tells Gemini EXACTLY what structure to return
