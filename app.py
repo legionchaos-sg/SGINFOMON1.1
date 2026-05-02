@@ -118,10 +118,8 @@ def get_cached_analysis(sti, gold, silver, brent):
         return response_lite.text
 
 def fetch_sg_economy():
-    """
-    Dynamically pulls live CPI data from SingStat API (2024=100 Base).
-    Calculates CPI Value, MoM Delta, and YoY Inflation.
-    """
+    #Dynamically pulls live CPI data from SingStat API (2024=100 Base).Calculates CPI Value, MoM Delta, and YoY Inflation.
+    
     # M213751: Consumer Price Index, (2024 As Base Year), Monthly
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
     
@@ -558,28 +556,6 @@ frequency_data = {
     "2698": 26, "0732": 25, "1845": 25, "1942": 25, "2967": 25
 }
 
-#Breaking news section
-def fetch_agency_news(url, limit=4):
-    """Fetches and parses RSS data from a specific agency."""
-    try:
-        feed = feedparser.parse(url)
-        return [{"title": e.title, "link": e.link} for e in feed.entries[:limit]]
-    except Exception:
-        return []
-
-# --- NEWS AGENCY REPOSITORY (2026 Verified) ---
-agencies = {
-    "BLOOMBERG": "https://feeds.bloomberg.com/markets/news.rss",
-    "REUTERS": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
-    "CNBC": "https://www.cnbc.com/id/10000311/device/rss/rss.html",
-    "XINHUA": "http://www.xinhuanet.com/english/rss/worldrss.xml",
-    "AFP": "https://www.afp.com/en/news-rss", # Note: AFP often requires aggregator proxies
-    "CNA": "https://www.channelnewsasia.com/rssfeeds/8395986",
-    "AL JAZEERA": "https://www.aljazeera.com/xml/rss/all.xml",
-    "BBC": "https://feeds.bbci.co.uk/news/world/rss.xml",
-    "KYODO": "https://english.kyodonews.net/rss/news.xml"
-}
-
 def analyze_bet_worth(user_num, alpha, beta, delta):
     """
     Determines worthiness based on the house edge and model confidence.
@@ -603,6 +579,30 @@ def get_metrics(user_num):
     gamma = 0.03 # Fixed 3/10000 probability for Top 3
     delta = (alpha * 0.4) + (beta * 0.6)
     return alpha, beta, gamma, delta
+
+#Breaking news section
+def fetch_agency_news(url, limit=4):
+    """Fetches and parses RSS data from a specific agency."""
+    try:
+        feed = feedparser.parse(url)
+        return [{"title": e.title, "link": e.link} for e in feed.entries[:limit]]
+    except Exception:
+        return []
+
+# --- NEWS AGENCY REPOSITORY (2026 Verified) ---
+agencies = {
+    "BLOOMBERG": "https://feeds.bloomberg.com/markets/news.rss",
+    "REUTERS": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+    "CNBC": "https://www.cnbc.com/id/10000311/device/rss/rss.html",
+    "XINHUA": "http://www.xinhuanet.com/english/rss/worldrss.xml",
+    "AFP": "https://www.afp.com/en/news-rss", # Note: AFP often requires aggregator proxies
+    "CNA": "https://www.channelnewsasia.com/rssfeeds/8395986",
+    "AL JAZEERA": "https://www.aljazeera.com/xml/rss/all.xml",
+    "BBC": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "KYODO": "https://english.kyodonews.net/rss/news.xml"
+}
+
+
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -720,9 +720,6 @@ with tab1:
         # These will now be perfectly aligned with the market data
         m_cols[4].metric("SG Inflae Idx", f"{sg_econ['inf_val']:,.2f}", f"{sg_econ['inf_delta']:+.2f}%")
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.5f}%")
-
-        # 2. Visual Separation
-        #st.markdown("---")
 
         # 1. The Button Action
         # This button now calls the Deep Intelligence function
