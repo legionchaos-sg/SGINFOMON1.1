@@ -641,6 +641,10 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful SERVIC
 
 with tab1:
     # 1. Clocks
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    
     t_cols = st.columns(6)# 2. News & Holidays (FIXED INDENTATION)
     st.divider()
     holiday_info = get_upcoming_holiday()
@@ -815,9 +819,7 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
                 
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+   
 
 
 # ==========================================
