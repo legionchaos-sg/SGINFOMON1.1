@@ -15,6 +15,7 @@ import numpy as np
 import json
 import pytz
 import random
+import feedparser
 
 from datetime import datetime, date, timedelta
 from streamlit_autorefresh import st_autorefresh
@@ -302,6 +303,28 @@ def fetch_live_market_data():
             results[label] = (curr, ((curr - prev) / prev) * 100)
         except: results[label] = (0.0, 0.0)
     return results
+
+#news ribbon source 
+def get_aggregated_news():
+    # List of high-quality free financial RSS feeds
+    sources = {
+        "REUTERS": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+        "CNBC": "https://www.cnbc.com/id/10000664/device/rss/rss.html",
+        "MARKETWATCH": "http://feeds.marketwatch.com/marketwatch/topstories/",
+        "BBG PODCAST": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/d9566f78-0464-4367-9dcc-b05700aeec6f/7f880b3c-7f67-4b4b-b520-b05700af9172/podcast.rss"
+    }
+    
+    all_headlines = []
+    for name, url in sources.items():
+        try:
+            feed = feedparser.parse(url)
+            # Take top 3-4 headlines from each source to keep it fresh
+            for entry in feed.entries[:4]:
+                all_headlines.append(f"[{name}] {entry.title.upper()}")
+        except Exception:
+            continue
+            
+    return "  |  ".join(all_headlines)
 
 def get_upcoming_holiday():
     """
@@ -649,6 +672,22 @@ with tab1:
     # 3. Markets & Commodities
     m_live = fetch_live_market_data()
     sg_econ = fetch_sg_economy()
+
+    news_ribbon_text = get_aggregated_news()
+
+    # Enhanced Marquee CSS
+    ticker_html = f"""
+    <div style="background-color: #0e1117; color: #00ff41; padding: 12px; border-bottom: 2px solid #333; overflow: hidden; white-space: nowrap;">
+        <marquee behavior="scroll" direction="left" scrollamount="7">
+            <span style="font-family: 'Courier New', monospace; font-size: 11pt; letter-spacing: 1px;">
+                {news_ribbon_text}
+            </span>
+        </marquee>
+    </div>
+    """
+    
+    st.markdown(ticker_html, unsafe_allow_html=True)
+    
     with st.expander("📈 Market Indices & Commodities", expanded=True):
        # Each column now occupies exactly 1/6th of the expander width
         m_cols = st.columns(6)
@@ -661,7 +700,7 @@ with tab1:
         m_cols[5].metric("SG CP Idx", f"{sg_econ['cpi_val']:,.2f}", f"{sg_econ['cpi_delta']:+.5f}%")
 
         # 2. Visual Separation
-        st.markdown("---")
+        #st.markdown("---")
 
         # 1. The Button Action
         # This button now calls the Deep Intelligence function
