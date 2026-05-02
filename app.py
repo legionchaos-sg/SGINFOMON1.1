@@ -558,6 +558,28 @@ frequency_data = {
     "2698": 26, "0732": 25, "1845": 25, "1942": 25, "2967": 25
 }
 
+#Breaking news section
+def fetch_agency_news(url, limit=4):
+    """Fetches and parses RSS data from a specific agency."""
+    try:
+        feed = feedparser.parse(url)
+        return [{"title": e.title, "link": e.link} for e in feed.entries[:limit]]
+    except Exception:
+        return []
+
+# --- NEWS AGENCY REPOSITORY (2026 Verified) ---
+agencies = {
+    "BLOOMBERG": "https://feeds.bloomberg.com/markets/news.rss",
+    "REUTERS": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+    "CNBC": "https://www.cnbc.com/id/10000311/device/rss/rss.html",
+    "XINHUA": "http://www.xinhuanet.com/english/rss/worldrss.xml",
+    "AFP": "https://www.afp.com/en/news-rss", # Note: AFP often requires aggregator proxies
+    "CNA": "https://www.channelnewsasia.com/rssfeeds/8395986",
+    "AL JAZEERA": "https://www.aljazeera.com/xml/rss/all.xml",
+    "BBC": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "KYODO": "https://english.kyodonews.net/rss/news.xml"
+}
+
 def analyze_bet_worth(user_num, alpha, beta, delta):
     """
     Determines worthiness based on the house edge and model confidence.
@@ -1040,8 +1062,39 @@ with tab2:
         
         if st.button("Refresh Western Feed"):
             st.rerun() 
-
-     # 4D
+    
+    #breaking news
+    with st.expander("🌍 Breaking News Hub (Agency Control Center)", expanded=False):
+        st.markdown("### ⚙️ Toggle News Agents")
+        
+        # Create toggle grid
+        t_cols = st.columns(3)
+        active_agencies = {}
+        
+        # Generate toggles dynamically
+        for i, name in enumerate(agencies.keys()):
+            with t_cols[i % 3]:
+                # Defaulting to ON for a global view
+                active_agencies[name] = st.toggle(name, value=True, key=f"tgl_{name}")
+        
+        st.divider()
+    
+        # --- NEWS DISPLAY LOGIC ---
+        for name, is_active in active_agencies.items():
+            if is_active:
+                st.markdown(f"#### 🛰️ {name}")
+                news_data = fetch_agency_news(agencies[name])
+                
+                if news_data:
+                    for item in news_data:
+                        st.markdown(f"- [{item['title']}]({item['link']})")
+                else:
+                    st.caption(f"⚠️ {name} feed currently unavailable or restricted.")
+                st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.caption("ℹ️ gold 10: News pulled dynamically via RSS. [Verified: May 2, 2026]")
+    
+    # 4D
     with st.expander("SG4D Predictions based on last 10 years", expanded=True):
         user_bet = st.text_input("Provision Your 4-Digit Bet:", value="9395", max_chars=4)
     
