@@ -1091,8 +1091,9 @@ with tab2:
                 else:
                     st.caption(f"⚠️ {name} feed currently unavailable or restricted.")
                 st.markdown("<br>", unsafe_allow_html=True)
+        st.caption("ℹ️ gold 10: News pulled dynamically via RSS. [Verified: May 2, 2026]")
     
-    st.caption("ℹ️ gold 10: News pulled dynamically via RSS. [Verified: May 2, 2026]")
+            
     
     # 4D
     with st.expander("SG4D Predictions based on last 10 years", expanded=True):
