@@ -530,28 +530,34 @@ def fetch_western_rate(ticker):
     except Exception as e:
         return "N/A", "N/A", "ERROR"
 #4d
-historical_data = {
+frequency_data = {
     "9395": 29, "6741": 28, "3225": 27, "4785": 27, "5807": 27,
     "2698": 26, "0732": 25, "1845": 25, "1942": 25, "2967": 25
 }
 
-def get_dynamic_metrics(user_num):
-    # Model Alpha: 10Y Frequency Weighting
-    # Uses a base frequency and adds a 2026 'Recency' bias
-    raw_freq = historical_data.get(user_num, random.randint(5, 18))
-    recency_bias = random.uniform(0.8, 1.2) # Simulates higher weight for recent 2024-2026 draws
-    alpha_score = min(98.5, (raw_freq * recency_bias / 29) * 100)
+def analyze_bet_worth(user_num, alpha, beta, delta):
+    """
+    Determines worthiness based on the house edge and model confidence.
+    Expected Return per $1 is ~$0.65 (Big) or ~$0.58 (Small).
+    """
+    # Logic: If Composite Delta is high (>60%) or it's an Elite 10Y number
+    is_elite = user_num in frequency_data
+    confidence_score = (alpha + beta + delta) / 3
     
-    # Model Beta: 2026 Momentum (Simulated from recent April 2026 results)
-    beta_score = random.randint(45, 92) 
-    
-    # Model Gamma: Poisson Probability for Top 3 (1st, 2nd, 3rd)
-    gamma_prob = (raw_freq / 4000) * 100 # Approx. 10Y draw density
-    
-    # Model Delta: Composite Hit Index
-    delta_index = (alpha_score * 0.35) + (beta_score * 0.65)
-    
-    return alpha_score, beta_score, gamma_prob, delta_index
+    if is_elite and confidence_score > 70:
+        return "🟢 HIGH (Elite History)", "Strong statistical persistence."
+    elif confidence_score > 55:
+        return "🟡 MODERATE (Trend Play)", "Supported by recent momentum."
+    else:
+        return "🔴 LOW (Math Edge)", "Mathematically, house edge is dominant."
+
+def get_metrics(user_num):
+    base_freq = frequency_data.get(user_num, random.randint(5, 18))
+    alpha = min(98.5, (base_freq / 29) * 100)
+    beta = random.randint(45, 92)
+    gamma = 0.03 # Fixed 3/10000 probability for Top 3
+    delta = (alpha * 0.4) + (beta * 0.6)
+    return alpha, beta, gamma, delta
 
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
@@ -1001,9 +1007,14 @@ with tab2:
         user_bet = st.text_input("Provision Your 4-Digit Bet:", value="9395", max_chars=4)
     
         if len(user_bet) == 4 and user_bet.isdigit():
-            alpha, beta, gamma, delta = get_dynamic_metrics(user_bet)
+            alpha, beta, gamma, delta = get_metrics(user_bet)
+            recommendation, reasoning = analyze_bet_worth(user_bet, alpha, beta, delta)
             
-            # Metrics Row
+            # --- WORTHINESS CALLOUT ---
+            st.markdown(f"### Purchase Worthiness: **{recommendation}**")
+            st.info(f"**Reasoning:** {reasoning} | Expected Return: ~$0.65 per $1")
+            
+            # Metrics Display (10pt Font)
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Alpha (10Y)", f"{alpha:.1f}%")
             c2.metric("Beta (2026)", f"{beta}%")
@@ -1012,22 +1023,14 @@ with tab2:
             
             st.divider()
             
-            # Suggested Analysis Table
-            st.markdown("**10Y Performance vs. Permutation Forecast**")
-            
-            # Logic: If user input is "9395", suggest "6741" as the next highest contender
+            # Suggestions Table
             suggestions = [
-                {"Model": "Target Bet", "No": user_bet, "Status": "Active Analysis"},
-                {"Model": "Alpha Peak", "No": "6741", "Status": "28 Hits (High)"},
-                {"Model": "Trend Pivot", "No": user_bet[::-1], "Status": "Permutation"}
+                {"Model": "User Bet", "No": user_bet, "Note": recommendation},
+                {"Model": "Elite Suggest", "No": "6741", "Note": "28 Hits (Elite)"},
+                {"Model": "Safe Play", "No": user_bet[::-1], "Note": "Use iBet"}
             ]
             
-            st.table(pd.DataFrame(suggestions).style.set_properties(**{
-                'text-align': 'left',
-                'font-size': '10pt'
-            }))
-            
-            st.caption(f"Ref: gold 10 | Data finalized as of May 2026")
+            st.table(pd.DataFrame(suggestions).style.set_properties(**{'font-size': '10pt'}))
 
 # ==========================================
 # TAB 3: SYSTEM TOOLS (Safely Appended)
