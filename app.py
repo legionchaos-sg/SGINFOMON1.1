@@ -1064,7 +1064,7 @@ with tab2:
             st.rerun() 
     
     #breaking news
-    with st.expander("🌍 Breaking News Hub (Agency Control Center)", expanded=False):
+    with st.expander("🌍 Breaking News Hub (Agency Control Center)", expanded=True):
         st.markdown("### ⚙️ Toggle News Agents")
         
         # Create toggle grid
