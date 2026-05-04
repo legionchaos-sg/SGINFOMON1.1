@@ -259,6 +259,16 @@ def gold_10_predictor(df, step):
     
     return current_price + (weighted_flux * step)
 
+def generate_recommendation(predicted_val, current_val):
+    if current_val == 0 or predicted_val == 0:
+        return "⏳ DATA ERR"
+    change = (predicted_val - current_val) / current_val
+    if change > 0.005: return "🚀 STRONG BUY"
+    elif change > 0.001: return "↗️ BUY"
+    elif change < -0.005: return "❄️ STRONG SELL"
+    elif change < -0.001: return "↘️ SELL"
+    else: return "↔️ HOLD / WAIT"
+
 def get_live_rate(ticker):
     #Gold 10 Data Fetcher, Fetches the most recent closing price for a given ticker.
     try:
