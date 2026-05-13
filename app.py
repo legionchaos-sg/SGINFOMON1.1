@@ -366,7 +366,10 @@ def get_upcoming_holiday():
     except Exception as e:
         # Fallback logic if API/Search fails (using confirmed May 2026 data)
         # Today is May 1 (Labour Day), so the next is Vesak Day on May 30
-        return "🗓️ Next: Vesak Day (30 May) — ⏳ 29 days"
+        # Fallback: Manually define Vesak Day 2026 for May
+        fallback_date = date(2026, 5, 30)
+        days_remaining = (fallback_date - now).days
+        return f"🗓️ Next: Vesak Day (30 May) — ⏳ {days_remaining} days"
 
 # Manual COE INFROMATION 
 def get_coe_display_date():
