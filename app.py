@@ -359,13 +359,7 @@ def get_upcoming_holiday():
         # Parsing the dynamic result
         h_data = json.loads(response.text)
         h_date = datetime.strptime(h_data['date'], '%Y-%m-%d').date()
-        days_diff = (h_date - now).days
-        
-        # Dynamic Response String
-        if days_diff == 0:
-            return f"🎉 Today: {h_data['name']}! (Enjoy your holiday)"
-        
-        return f"🗓️ Next: {h_data['name']} ({h_date.strftime('%d %b')}) — ⏳ {days_diff} days"
+        days_diff = (h_date - now).day
 
     except Exception as e:
         # Fallback logic if API/Search fails (using confirmed May 2026 data)
@@ -382,6 +376,12 @@ def get_upcoming_holiday():
         # Filter for the next one based on 'now'
         # Today is May 13, so it will pick Hari Raya Haji automatically.
         next_name, next_date = next((h for h in backup_holidays if h[1] > now), ("New Year", date(2027, 1, 1)))
+
+        # Dynamic Response String
+        if days_diff == 0:
+            return f"🎉 Today: {h_data['name']}! (Enjoy your holiday)"
+        
+        return f"🗓️ Next: {h_data['name']} ({h_date.strftime('%d %b')}) — ⏳ {days_diff} days"
 
 # Manual COE INFROMATION 
 def get_coe_display_date():
