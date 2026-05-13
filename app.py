@@ -369,11 +369,19 @@ def get_upcoming_holiday():
 
     except Exception as e:
         # Fallback logic if API/Search fails (using confirmed May 2026 data)
-        # Today is May 1 (Labour Day), so the next is Vesak Day on May 30
-        # Fallback: Manually define Vesak Day 2026 for May
-        fallback_date = date(2026, 5, 30)
-        days_remaining = (fallback_date - now).days
-        return f"🗓️ Next: Vesak Day (30 May) — ⏳ {days_remaining} days"
+        # Instead of returning a static string, we calculate from a local list
+        # Known future holidays for the rest of 2026:
+        backup_holidays = [
+            ("Hari Raya Haji", date(2026, 5, 27)),
+            ("Vesak Day", date(2026, 5, 31)),
+            ("National Day", date(2026, 8, 9)),
+            ("Deepavali", date(2026, 11, 8)),
+            ("Christmas", date(2026, 12, 25))
+        ]
+
+        # Filter for the next one based on 'now'
+        # Today is May 13, so it will pick Hari Raya Haji automatically.
+        next_name, next_date = next((h for h in backup_holidays if h[1] > now), ("New Year", date(2027, 1, 1)))
 
 # Manual COE INFROMATION 
 def get_coe_display_date():
