@@ -336,9 +336,13 @@ def get_upcoming_holiday():
     
     # Prompting the AI to return ONLY the next upcoming holiday data
     prompt = f"""
-    Today is {now}. Search for the official Singapore Public Holidays for 2026 and 2027.
-    Find the very next holiday occurring on or after today.
-    Return ONLY a JSON object with: 'name' (holiday name) and 'date' (YYYY-MM-DD).
+    Current Date: {now} (Wednesday). 
+    Task: Use Google Search to find the Singapore Public Holidays for 2026.
+    Instructions:
+    1. Identify all holidays occurring STRICTLY AFTER {now}.
+    2. Compare the dates of Hari Raya Haji and Vesak Day for 2026. 
+    3. Select the one with the earliest date that has not passed.
+    4. Return ONLY a JSON object: {{"name": "Holiday Name", "date": "YYYY-MM-DD"}}.
     """
 
     try:
