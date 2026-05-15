@@ -816,6 +816,18 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
+    # --- STEP 1: Harvest Dynamic Data (Bridge from your Market Feed) ---
+    try:
+        # m_live is your dictionary from the earlier get_market_intelligence result
+        brent_now = round(float(m_live['Brent'][0]), 2)
+    except (NameError, KeyError, IndexError, TypeError):
+        # Fallback for May 15, 2026, if the live feed is momentarily down
+        brent_now = 109.17 
+    
+    # --- STEP 2: Manage the 3rd-Day Trend ---
+    if 'brent_3d_ago' not in st.session_state:
+        st.session_state.brent_3d_ago = brent_now
+    
     f_avg, f_trends, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now, brent_3d_ago)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
