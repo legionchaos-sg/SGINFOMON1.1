@@ -832,7 +832,8 @@ with tab1:
         for i, g in enumerate(["92", "95", "98", "Premium", "Diesel"]):
             with fuel_cols[i]:
                 # Arrow logic based on the 3rd-day comparison
-                arrow, color = ("▲", "red") if f_trends[g] else ("▼", "green")
+                is_up = f_trends.get(g, False) 
+                arrow, color = ("▲", "red") if is_up else ("▼", "green")
                 st.markdown(f"""
                     <div style="text-align:center; padding:10px; border:1px solid #ddd; border-radius:5px;">
                         <small>Grade {g}</small><br>
