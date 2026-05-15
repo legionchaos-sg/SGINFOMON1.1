@@ -828,35 +828,35 @@ with tab1:
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
-fuel_cols = st.columns(5)
-grades = ["92", "95", "98", "Premium", "Diesel"]
-
-for i, g in enumerate(grades):
-    with fuel_cols[i]:
-        # Using the actual boolean trend returned from the function
-        # This is more reliable than checking the timing string
-        is_up = f_trends.get(g, False) 
-        arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
+        fuel_cols = st.columns(5)
+        grades = ["92", "95", "98", "Premium", "Diesel"]
         
-        st.markdown(f"""
-            <div class="f-card">
-                <span class="stat-label">Grade {g}</span><br>
-                <b style="font-size:1.1rem;">${f_avg[g]:.2f}</b><br>
-                <span class="{color_class}">{arrow}</span>
-            </div>
-        """, unsafe_allow_html=True)
-
-# --- Advisor Section ---
-st.markdown("---")
-advice_col1, advice_col2 = st.columns([1, 1])
-
-with advice_col1:
-    # Displays: 🚨 REFILL NOW: Brent is up 2.4%...
-    st.markdown(f"**Market Timing:** {f_timing}")
-
-with advice_col2:
-    # Displays the spread analysis (e.g., 95-Octane value tip)
-    st.markdown(f"**Market Analysis:** {f_savings}")
+        for i, g in enumerate(grades):
+            with fuel_cols[i]:
+                # Using the actual boolean trend returned from the function
+                # This is more reliable than checking the timing string
+                is_up = f_trends.get(g, False) 
+                arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
+                
+                st.markdown(f"""
+                    <div class="f-card">
+                        <span class="stat-label">Grade {g}</span><br>
+                        <b style="font-size:1.1rem;">${f_avg[g]:.2f}</b><br>
+                        <span class="{color_class}">{arrow}</span>
+                    </div>
+                """, unsafe_allow_html=True)
+        
+        # --- Advisor Section ---
+        st.markdown("---")
+        advice_col1, advice_col2 = st.columns([1, 1])
+        
+        with advice_col1:
+            # Displays: 🚨 REFILL NOW: Brent is up 2.4%...
+            st.markdown(f"**Market Timing:** {f_timing}")
+        
+        with advice_col2:
+            # Displays the spread analysis (e.g., 95-Octane value tip)
+            st.markdown(f"**Market Analysis:** {f_savings}")
                 
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
