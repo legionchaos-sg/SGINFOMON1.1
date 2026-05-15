@@ -844,9 +844,9 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
                 
-        st.markdown("---")
-        st.write(f"**Timing:** {f_timing}")
-        st.write(f"**Optimization:** {f_savings}")
+        #st.markdown("---")
+        #st.write(f"**Timing:** {f_timing}")
+        #st.write(f"**Optimization:** {f_savings}")
         
         # --- Advisor Section ---
         #st.markdown("---")
