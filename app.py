@@ -819,7 +819,7 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
-    f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now, brent_3d_ago)
+    f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
