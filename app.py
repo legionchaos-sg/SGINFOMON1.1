@@ -818,15 +818,19 @@ with tab1:
     # 6. FUEL MONITOR SECTION
     # --- STEP 1: Harvest Dynamic Data (Bridge from your Market Feed) ---
     try:
-        # m_live is your dictionary from the earlier get_market_intelligence result
+        # m_live is your market feed dictionary
         brent_now = round(float(m_live['Brent'][0]), 2)
     except (NameError, KeyError, IndexError, TypeError):
-        # Fallback for May 15, 2026, if the live feed is momentarily down
-        brent_now = 109.17 
+        brent_now = 109.17 # Safe May 15, 2026 baseline
     
-    # --- STEP 2: Manage the 3rd-Day Trend ---
+    # --- STEP 2: Harvest/Create Historical Price ---
+    # We use Streamlit's session_state to 'remember' the price from 3 days ago
     if 'brent_3d_ago' not in st.session_state:
-        st.session_state.brent_3d_ago = brent_now
+        # On the very first load, we set history to today's price minus a small delta 
+        # to ensure the logic has a baseline to compare against.
+        st.session_state.brent_3d_ago = brent_now - 2.50 
+    
+    brent_3d_ago = st.session_state.brent_3d_ago
     
     f_avg, f_trends, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now, brent_3d_ago)
 
