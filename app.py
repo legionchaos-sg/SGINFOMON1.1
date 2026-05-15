@@ -609,9 +609,6 @@ agencies = {
     "BBC": "https://feeds.bbci.co.uk/news/world/rss.xml",
     "KYODO": "https://english.kyodonews.net/rss/news.xml"
 }
-
-
-
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
 
@@ -874,23 +871,7 @@ with tab1:
         with col_right:
             st.markdown(f"**Strategic Advice:** {advice}")
             st.markdown(f"**Market Momentum:** Currently at **{brent_delta_pct:+.2f}%** vs May 12 baseline.")
-                
-        #st.markdown("---")
-        #st.write(f"**Timing:** {f_timing}")
-        #st.write(f"**Optimization:** {f_savings}")
-        
-        # --- Advisor Section ---
-        #st.markdown("---")
-        #advice_col1, advice_col2 = st.columns([1, 1])
-        
-        #with advice_col1:
-            # Displays: 🚨 REFILL NOW: Brent is up 2.4%...
-         #   st.markdown(f"**Market Timing:** {f_timing}")
-        
-        #with advice_col2:
-            # Displays the spread analysis (e.g., 95-Octane value tip)
-            #st.markdown(f"**Market Analysis:** {f_savings}")
-                
+                 
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
