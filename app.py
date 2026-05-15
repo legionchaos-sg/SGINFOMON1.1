@@ -823,7 +823,7 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
-    fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_current_grade="98"):
+    fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_current_grade="98")
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
