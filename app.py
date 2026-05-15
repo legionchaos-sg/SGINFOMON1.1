@@ -169,56 +169,66 @@ def fetch_sg_economy():
         }      
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic(brent_now, brent_3d_ago):
+def fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98"):
     """
-    Focused strictly on Brent Crude trends and Grade pricing spreads.
+    Scrapes SG pump prices AND Brent Crude history to provide 
+    timing and grade optimization advice.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-
-    dynamic_prompt = """
-    Search for Singapore retail petrol prices (92, 95, 98, Premium, Diesel).
-    Return JSON only: 
-    {"averages": {"92": float, "95": float, "98": float, "Premium": float, "Diesel": float},
-     "brands": {"95": {"Shell": float, "Esso": float, "SPC": float, "Caltex": float}}}
+    
+    # Combined Prompt: Now asks for Brent history + SG prices
+    dynamic_prompt = f"""
+    1. Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
+    2. Search for Brent Crude oil prices for the last 3 trading days.
+    Return a JSON object with:
+    - 'averages': {{'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}}
+    - 'brands': {{'95': {{'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}}}
+    - 'brent_history': [day1_price, day2_price, day3_price]
     """
 
     try:
         response = client.models.generate_content(
             model='gemini-1.5-pro',
             contents=dynamic_prompt,
-            config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], response_mime_type="application/json")
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                response_mime_type="application/json"
+            )
         )
         
         live_data = json.loads(response.text)
         averages = live_data['averages']
+        brands = live_data['brands']
+        brent = live_data['brent_history']
+
+        # --- START OF ADVISOR LOGIC ---
         
-        # --- MARKET-ONLY LOGIC ---
-        
-        # 1. Brent Momentum
-        brent_diff = brent_now - brent_3d_ago
-        brent_pct = (brent_diff / brent_3d_ago) * 100
-        
-        # 2. Timing Recommendation
-        if brent_pct > 1.0:
-            timing_verdict = f"🚨 URGENT REFILL: Brent up {brent_pct:.1f}% (${brent_diff:.2f}). Local prices will rise."
-        elif brent_pct < -1.0:
-            timing_verdict = f"⏳ HOLD OFF: Brent dropping {abs(brent_pct):.1f}%. Lower pump prices likely next week."
+        # 1. Timing Logic (Brent 3-Day Trend)
+        brent_change = ((brent[-1] - brent[0]) / brent[0]) * 100
+        if brent_change > 2.0:
+            timing_verdict = "🚨 REFILL NOW: Global prices rising; SG hike expected in 48h."
+        elif brent_change < -2.0:
+            timing_verdict = "⏳ WAIT: Global prices falling; expect cheaper fuel in 3-5 days."
         else:
-            timing_verdict = "✅ STABLE: No immediate market pressure on retail prices."
+            timing_verdict = "✅ STABLE: Market is steady. Refill when convenient."
 
-        # 3. Spread Analysis (Finding the 'Value' Grade)
-        # We look for which grade has the smallest premium over 92-Octane
-        # Current averages: 95 (~$3.46) is only $0.03 more than 92 (~$3.43)
-        spread_95 = averages['95'] - averages['92']
-        if spread_95 < 0.05:
-            recommendation = "💎 95-OCTANE VALUE: The price gap between 92 and 95 is minimal. 95 is the smarter buy today."
+        # 2. Grade Optimization Logic
+        savings_msg = ""
+        if int(user_current_grade) > int(user_car_min_grade):
+            diff = averages[str(user_current_grade)] - averages[str(user_car_min_grade)]
+            potential_save = diff * 50 # Based on 50L tank
+            savings_msg = f"💡 TIP: Your car only needs {user_car_min_grade}. Switching from {user_current_grade} saves ~S${potential_save:.2f}/tank."
         else:
-            recommendation = "📊 NARROW SPREADS: Grade prices are standard. Choice based on market timing only."
+            savings_msg = "✅ GRADE OPTIMIZED: You are using the most cost-effective grade for your car."
 
-        return averages, timing_verdict, recommendation
+        # Return everything to the dashboard
+        return averages, brands, timing_verdict, savings_msg
 
-    except Exception:
-        return {"92":3.43,"95":3.46,"98":3.98,"Premium":4.15,"Diesel":4.68}, "⚠️ Live Feed Lag", "Check back for market analysis."
+    except Exception as e:
+        # Emergency Fallback (Updated for May 15, 2026)
+        averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
+        brands = {"95": {"Shell": 3.49, "Caltex": 3.47, "SPC": 3.42, "Esso": 3.46}}
+        return averages, brands, "✅ STABLE: Using fallback data.", "⚠️ Check connection for live advice."
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
@@ -816,23 +826,7 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
-    # --- STEP 1: Harvest Dynamic Data (Bridge from your Market Feed) ---
-    try:
-        # m_live is your market feed dictionary
-        brent_now = round(float(m_live['Brent'][0]), 2)
-    except (NameError, KeyError, IndexError, TypeError):
-        brent_now = 109.17 # Safe May 15, 2026 baseline
-    
-    # --- STEP 2: Harvest/Create Historical Price ---
-    # We use Streamlit's session_state to 'remember' the price from 3 days ago
-    if 'brent_3d_ago' not in st.session_state:
-        # On the very first load, we set history to today's price minus a small delta 
-        # to ensure the logic has a baseline to compare against.
-        st.session_state.brent_3d_ago = brent_now - 2.50 
-    
-    brent_3d_ago = st.session_state.brent_3d_ago
-    
-    f_avg, f_trends, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now, brent_3d_ago)
+    f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98")
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
