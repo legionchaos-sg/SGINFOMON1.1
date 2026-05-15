@@ -836,46 +836,44 @@ with tab1:
         brent_delta_pct = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
         
         # 2. Predictive Analysis Logic
-        # On May 15, 2026, Brent is trading at a "Geopolitical Premium" (~$108)
+        # 2. Time-Range Predictive Logic
+        # We define "Stability" as volatility within a 1.5% band
         if brent_delta_pct > 2.0:
-            prediction = "⚠️ HIGH PROBABILITY HIKE"
-            advice = "Brent has surged over 2% in 72 hours. Historic data suggests local retailers (Shell/Esso) will adjust upwards by S$0.04 - S$0.07 within the next 48-96 hours."
-            color = "#ff4b4b" # Red
+            prediction = "🚨 PRICE HIKE IMMINENT"
+            time_window = "Next 12–24 Hours"
+            advice = f"Brent has surged {brent_delta_pct:.1f}%. Local stations (Shell/Esso) usually adjust within 24h of a 2% move. Refill now."
+            status_color = "#ff4b4b" # Red
         elif brent_delta_pct < -2.0:
-            prediction = "🟢 EXPECTED SOFTENING"
-            advice = "Downward Brent momentum detected. Recommend waiting for the 10-day lag to hit; prices likely to dip by next weekend."
-            color = "#21c354" # Green
+            prediction = "📉 PRICE DROP LIKELY"
+            time_window = "Next 48–72 Hours"
+            advice = "Downward trend detected. Wait 2 days; retailers often lag on price cuts to clear expensive inventory."
+            status_color = "#21c354" # Green
         else:
+            # THIS IS YOUR RANGE-BOUND STABILITY BLOCK
             prediction = "⚖️ RANGE-BOUND STABILITY"
-            advice = "Market is consolidating. Current pump prices ($3.46 for 95) are fairly valued against $108 Brent. Focus on credit card stacking rather than timing."
-            color = "#0068c9" # Blue
+            time_window = "Next 24–48 Hours"
+            advice = "Low volatility. Pump prices are expected to remain flat through the weekend. No rush to refill."
+            status_color = "#0068c9" # Blue
 
-        # 3. Grade-Specific Value Analysis
-        # Checking for the "Price Gap" between 95 and 92
-        gap_95_92 = f_avg['95'] - f_avg['92']
-        value_analysis = "High Value" if gap_95_92 < 0.05 else "Standard Spread"
-
-        # 4. Display the Gemini Analysis Output
-        st.markdown(f"### 🤖 AI Market Insights (May 15, 2026)")
+        # 3. Display the Output with the Time Window
+        st.markdown(f"### 🤖 AI Market Insights")
         
         col_left, col_right = st.columns([1, 2])
         
         with col_left:
             st.markdown(f"""
-                <div style="background-color:{color}22; padding:15px; border-radius:10px; border-left:5px solid {color}; text-align:center;">
-                    <small>PROJECTION</small><br>
-                    <b style="font-size:1.1rem; color:{color};">{prediction}</b><br>
-                    <hr style="margin:10px 0; border:0.1px solid {color}44;">
-                    <small>Brent Delta: {brent_delta_pct:+.2f}%</small>
+                <div style="background-color:{status_color}22; padding:15px; border-radius:10px; border-left:5px solid {status_color}; text-align:center;">
+                    <small>PREDICTION</small><br>
+                    <b style="font-size:1.1rem; color:{status_color};">{prediction}</b><br>
+                    <hr style="margin:8px 0; border:0.1px solid {status_color}44;">
+                    <small>EST. WINDOW</small><br>
+                    <b style="color:{status_color};">{time_window}</b>
                 </div>
             """, unsafe_allow_html=True)
             
         with col_right:
             st.markdown(f"**Strategic Advice:** {advice}")
-            st.markdown(f"**Current Grade Efficiency:** The 95-Octane spread is currently in **{value_analysis}** territory (Gap: S${gap_95_92:.2f}).")
-
-        # 5. The "Smart Saver" Conclusion
-        st.info(f"💡 **Gold 10 Saving Tip:** SPC currently offers the best base rate at **S${f_avg['95']-0.04:.2f}** for 95-Octane. Stack with a DBS/UOB card for a targeted 24% effective discount.")
+            st.markdown(f"**Market Momentum:** Currently at **{brent_delta_pct:+.2f}%** vs May 12 baseline.")
                 
         #st.markdown("---")
         #st.write(f"**Timing:** {f_timing}")
