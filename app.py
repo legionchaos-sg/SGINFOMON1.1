@@ -821,7 +821,7 @@ with tab1:
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
     st.markdown(f"### 🛢️ Brent Crude: **${brent_now:.2f}**")
-    f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now)
+    f_avg, f_brands, f_trends, f_timing, f_savings = fetch_fuel_logic(brent_now)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
        # Display the current Brent spot price for context
