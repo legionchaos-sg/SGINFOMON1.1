@@ -819,6 +819,7 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
+    brent_now = float(m_live['Brent'][0])
     f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
