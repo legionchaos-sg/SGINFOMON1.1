@@ -169,21 +169,18 @@ def fetch_sg_economy():
         }      
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98"):
+def fetch_fuel_logic(brent_now, brent_3d_ago):
     """
-    Scrapes SG pump prices AND Brent Crude history to provide 
-    timing and grade optimization advice.
+    Optimized for SG market-timing and price-spread analysis.
+    Uses dynamic Brent inputs passed from the main dashboard logic.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Combined Prompt: Now asks for Brent history + SG prices
-    dynamic_prompt = f"""
-    1. Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
-    2. Search for Brent Crude oil prices for the last 3 trading days.
+    dynamic_prompt = """
+    Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
     Return a JSON object with:
-    - 'averages': {{'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}}
-    - 'brands': {{'95': {{'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}}}
-    - 'brent_history': [day1_price, day2_price, day3_price]
+    - 'averages': {'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}
+    - 'brands': {'95': {'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}
     """
 
     try:
@@ -199,36 +196,37 @@ def fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98"):
         live_data = json.loads(response.text)
         averages = live_data['averages']
         brands = live_data['brands']
-        brent = live_data['brent_history']
 
-        # --- START OF ADVISOR LOGIC ---
+        # --- MARKET ADVISOR LOGIC ---
+        brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
+        is_spiking = brent_change > 1.0  # Threshold for "Refill Now"
         
-        # 1. Timing Logic (Brent 3-Day Trend)
-        brent_change = ((brent[-1] - brent[0]) / brent[0]) * 100
-        if brent_change > 2.0:
-            timing_verdict = "🚨 REFILL NOW: Global prices rising; SG hike expected in 48h."
-        elif brent_change < -2.0:
-            timing_verdict = "⏳ WAIT: Global prices falling; expect cheaper fuel in 3-5 days."
+        # 1. Timing Logic
+        if brent_change > 1.5:
+            timing_verdict = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}%. Local hike imminent."
+        elif brent_change < -1.5:
+            timing_verdict = f"⏳ WAIT: Brent is down {abs(brent_change):.1f}%. Prices may drop."
         else:
-            timing_verdict = "✅ STABLE: Market is steady. Refill when convenient."
+            timing_verdict = "✅ STABLE: Market volatility is low today."
 
-        # 2. Grade Optimization Logic
-        savings_msg = ""
-        if int(user_current_grade) > int(user_car_min_grade):
-            diff = averages[str(user_current_grade)] - averages[str(user_car_min_grade)]
-            potential_save = diff * 50 # Based on 50L tank
-            savings_msg = f"💡 TIP: Your car only needs {user_car_min_grade}. Switching from {user_current_grade} saves ~S${potential_save:.2f}/tank."
+        # 2. Market Opportunity Logic (Spread Analysis)
+        spread = averages['95'] - averages['92']
+        if spread < 0.05:
+            opportunity_msg = f"💡 TIP: 95-Octane value is high; gap vs 92 is only S${spread:.2f}."
         else:
-            savings_msg = "✅ GRADE OPTIMIZED: You are using the most cost-effective grade for your car."
+            opportunity_msg = "📊 SPREADS NORMAL: Grade price gaps are standard today."
 
-        # Return everything to the dashboard
-        return averages, brands, timing_verdict, savings_msg
+        # Create trends dict to drive the UI arrows (Required for your loop)
+        trends = {g: is_spiking for g in averages.keys()}
 
-    except Exception as e:
-        # Emergency Fallback (Updated for May 15, 2026)
-        averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
+        return averages, trends, brands, timing_verdict, opportunity_msg
+
+    except Exception:
+        # Emergency Fallback (Data for May 15, 2026)
+        averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.48}
+        trends = {"92": True, "95": True, "98": True, "Premium": True, "Diesel": True}
         brands = {"95": {"Shell": 3.49, "Caltex": 3.47, "SPC": 3.42, "Esso": 3.46}}
-        return averages, brands, "✅ STABLE: Using fallback data.", "⚠️ Check connection for live advice."
+        return averages, trends, brands, "✅ STABLE: Market data lag.", "⚠️ Search unavailable."
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
@@ -830,29 +828,35 @@ with tab1:
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
-        fuel_cols = st.columns(5)
-        grades = ["92", "95", "98", "Premium", "Diesel"]
-        for i, g in enumerate(grades):
-            with fuel_cols[i]:
-                # Using the timing logic to drive the UI arrows (since fetch_fuel_logic now handles trends via Brent)
-                is_up = "REFILL NOW" in f_timing 
-                arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
-                st.markdown(f"""
-                    <div class="f-card">
-                        <span class="stat-label">Grade {g}</span><br>
-                        <b style="font-size:1.1rem;">${f_avg[g]:.2f}</b><br>
-                        <span class="{color_class}">{arrow}</span>
-                    </div>
-                """, unsafe_allow_html=True)
+fuel_cols = st.columns(5)
+grades = ["92", "95", "98", "Premium", "Diesel"]
+
+for i, g in enumerate(grades):
+    with fuel_cols[i]:
+        # Using the actual boolean trend returned from the function
+        # This is more reliable than checking the timing string
+        is_up = f_trends.get(g, False) 
+        arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
         
-        # --- New Advisor Section (Point 1 & 2) ---
-        # This sits at the bottom of the expander to maintain structure but add high value
-        st.markdown("---")
-        advice_col1, advice_col2 = st.columns([1, 1])
-        with advice_col1:
-            st.markdown(f"**Market Timing:** {f_timing}")
-        with advice_col2:
-            st.markdown(f"**Cost Optimization:** {f_savings}")
+        st.markdown(f"""
+            <div class="f-card">
+                <span class="stat-label">Grade {g}</span><br>
+                <b style="font-size:1.1rem;">${f_avg[g]:.2f}</b><br>
+                <span class="{color_class}">{arrow}</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+# --- Advisor Section ---
+st.markdown("---")
+advice_col1, advice_col2 = st.columns([1, 1])
+
+with advice_col1:
+    # Displays: 🚨 REFILL NOW: Brent is up 2.4%...
+    st.markdown(f"**Market Timing:** {f_timing}")
+
+with advice_col2:
+    # Displays the spread analysis (e.g., 95-Octane value tip)
+    st.markdown(f"**Market Analysis:** {f_savings}")
                 
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
