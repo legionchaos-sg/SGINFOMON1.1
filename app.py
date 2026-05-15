@@ -174,6 +174,14 @@ def fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_curr
     Scrapes SG pump prices and uses provided Brent feed for logic.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+
+    # 1. Fetch your market data first
+    # (Assuming m_live is your dictionary from the market intelligence logic)
+    brent_now = round(float(m_live['Brent'][0]), 2)
+    
+    # 2. Get your historical Brent (e.g., from 3 days ago)
+    # If you don't have a 3-day history yet, use today's price as a temporary baseline
+    brent_3d_ago = st.session_state.get('brent_old', brent_now)
     
     # Prompt now ONLY focuses on local prices for maximum speed/reliability
     dynamic_prompt = """
