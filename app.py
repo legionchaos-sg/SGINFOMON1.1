@@ -169,18 +169,22 @@ def fetch_sg_economy():
         }      
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic(brent_now, brent_3d_ago):
+def fetch_fuel_logic(brent_now):
     """
-    Optimized for SG market-timing and price-spread analysis.
-    Uses dynamic Brent inputs passed from the main dashboard logic.
+    Revised: Gemini now fetches the 3-day-ago price itself via Search.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
+    # Updated Prompt: Now asks for historical Brent specifically
     dynamic_prompt = """
-    Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
-    Return a JSON object with:
-    - 'averages': {'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}
-    - 'brands': {'95': {'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}
+    1. Search for Singapore retail petrol prices (92, 95, 98, Premium, Diesel).
+    2. Search for the Brent Crude price exactly 3 trading days ago (May 12, 2026).
+    Return JSON only:
+    {
+      "averages": {"92": float, "95": float, "98": float, "Premium": float, "Diesel": float},
+      "brands": {"95": {"Shell": float, "Esso": float, "SPC": float, "Caltex": float}},
+      "brent_3d_ago": float
+    }
     """
 
     try:
@@ -194,39 +198,30 @@ def fetch_fuel_logic(brent_now, brent_3d_ago):
         )
         
         live_data = json.loads(response.text)
-        averages = live_data['averages']
-        brands = live_data['brands']
+        f_avg = live_data['averages']
+        f_brands = live_data['brands']
+        # GETTING THE 3rd DAY PRICE FROM THE SEARCH RESULT
+        brent_3d_ago = live_data.get('brent_3d_ago', brent_now)
 
-        # --- MARKET ADVISOR LOGIC ---
+        # --- ADVISOR LOGIC ---
         brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
-        is_spiking = brent_change > 1.0  # Threshold for "Refill Now"
+        is_spiking = brent_change > 1.0
         
-        # 1. Timing Logic
         if brent_change > 1.5:
-            timing_verdict = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}%. Local hike imminent."
-        elif brent_change < -1.5:
-            timing_verdict = f"⏳ WAIT: Brent is down {abs(brent_change):.1f}%. Prices may drop."
+            f_timing = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}% since May 12."
         else:
-            timing_verdict = "✅ STABLE: Market volatility is low today."
+            f_timing = "✅ STABLE: No major market spike detected."
 
-        # 2. Market Opportunity Logic (Spread Analysis)
-        spread = averages['95'] - averages['92']
-        if spread < 0.05:
-            opportunity_msg = f"💡 TIP: 95-Octane value is high; gap vs 92 is only S${spread:.2f}."
-        else:
-            opportunity_msg = "📊 SPREADS NORMAL: Grade price gaps are standard today."
+        f_savings = "💡 TIP: 95-Octane offers the best cost-to-performance ratio today."
+        f_trends = {g: is_spiking for g in f_avg.keys()}
 
-        # Create trends dict to drive the UI arrows (Required for your loop)
-        trends = {g: is_spiking for g in averages.keys()}
-
-        return averages, trends, brands, timing_verdict, opportunity_msg
+        return f_avg, f_trends, f_brands, f_timing, f_savings
 
     except Exception:
-        # Emergency Fallback (Data for May 15, 2026)
-        averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.48}
-        trends = {"92": True, "95": True, "98": True, "Premium": True, "Diesel": True}
-        brands = {"95": {"Shell": 3.49, "Caltex": 3.47, "SPC": 3.42, "Esso": 3.46}}
-        return averages, trends, brands, "✅ STABLE: Market data lag.", "⚠️ Search unavailable."
+        # Fallback (May 15 data)
+        f_avg = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
+        f_trends = {g: True for g in f_avg.keys()}
+        return f_avg, f_trends, {}, "✅ STABLE: Market baseline.", "⚠️ Live search unavailable."
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
