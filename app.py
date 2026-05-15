@@ -169,21 +169,18 @@ def fetch_sg_economy():
         }      
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98"):
+def fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_current_grade="98"):
     """
-    Scrapes SG pump prices AND Brent Crude history to provide 
-    timing and grade optimization advice.
+    Scrapes SG pump prices and uses provided Brent feed for logic.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Combined Prompt: Now asks for Brent history + SG prices
-    dynamic_prompt = f"""
-    1. Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
-    2. Search for Brent Crude oil prices for the last 3 trading days.
+    # Prompt now ONLY focuses on local prices for maximum speed/reliability
+    dynamic_prompt = """
+    Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
     Return a JSON object with:
-    - 'averages': {{'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}}
-    - 'brands': {{'95': {{'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}}}
-    - 'brent_history': [day1_price, day2_price, day3_price]
+    - 'averages': {'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}
+    - 'brands': {'95': {'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}
     """
 
     try:
@@ -199,36 +196,36 @@ def fetch_fuel_logic(user_car_min_grade="95", user_current_grade="98"):
         live_data = json.loads(response.text)
         averages = live_data['averages']
         brands = live_data['brands']
-        brent = live_data['brent_history']
 
-        # --- START OF ADVISOR LOGIC ---
+        # --- ADVISOR LOGIC (Using your Feed) ---
         
-        # 1. Timing Logic (Brent 3-Day Trend)
-        brent_change = ((brent[-1] - brent[0]) / brent[0]) * 100
-        if brent_change > 2.0:
-            timing_verdict = "🚨 REFILL NOW: Global prices rising; SG hike expected in 48h."
-        elif brent_change < -2.0:
-            timing_verdict = "⏳ WAIT: Global prices falling; expect cheaper fuel in 3-5 days."
+        # 1. Timing Logic: Using passed variables brent_now and brent_3d_ago
+        # Brent is currently ~$108.11 (up from ~$105.72)
+        brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
+        
+        if brent_change > 1.5:
+            timing_verdict = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}%. Local hike imminent."
+        elif brent_change < -1.5:
+            timing_verdict = f"⏳ WAIT: Brent is down {abs(brent_change):.1f}%. Prices may drop."
         else:
-            timing_verdict = "✅ STABLE: Market is steady. Refill when convenient."
+            timing_verdict = "✅ STABLE: Market volatility is low today."
 
         # 2. Grade Optimization Logic
         savings_msg = ""
         if int(user_current_grade) > int(user_car_min_grade):
             diff = averages[str(user_current_grade)] - averages[str(user_car_min_grade)]
-            potential_save = diff * 50 # Based on 50L tank
-            savings_msg = f"💡 TIP: Your car only needs {user_car_min_grade}. Switching from {user_current_grade} saves ~S${potential_save:.2f}/tank."
+            potential_save = diff * 50 
+            savings_msg = f"💡 TIP: Switching to {user_car_min_grade} saves ~S${potential_save:.2f}/tank."
         else:
-            savings_msg = "✅ GRADE OPTIMIZED: You are using the most cost-effective grade for your car."
+            savings_msg = "✅ GRADE OPTIMIZED: You are using the best grade for your car."
 
-        # Return everything to the dashboard
         return averages, brands, timing_verdict, savings_msg
 
-    except Exception as e:
-        # Emergency Fallback (Updated for May 15, 2026)
+    except Exception:
+        # Fallback now uses your live Brent feed even if SG scraping fails
         averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
         brands = {"95": {"Shell": 3.49, "Caltex": 3.47, "SPC": 3.42, "Esso": 3.46}}
-        return averages, brands, "✅ STABLE: Using fallback data.", "⚠️ Check connection for live advice."
+        return averages, brands, "✅ STABLE: Using fallback data.", "⚠️ Live search unavailable."
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
