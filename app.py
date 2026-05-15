@@ -169,71 +169,56 @@ def fetch_sg_economy():
         }      
         
 @st.cache_data(ttl=600)
-def fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_current_grade="98"):
+def fetch_fuel_logic(brent_now, brent_3d_ago):
     """
-    Scrapes SG pump prices and uses provided Brent feed for logic.
+    Focused strictly on Brent Crude trends and Grade pricing spreads.
     """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-    # 1. Fetch your market data first
-    # (Assuming m_live is your dictionary from the market intelligence logic)
-    brent_now = round(float(m_live['Brent'][0]), 2)
-    
-    # 2. Get your historical Brent (e.g., from 3 days ago)
-    # If you don't have a 3-day history yet, use today's price as a temporary baseline
-    brent_3d_ago = st.session_state.get('brent_old', brent_now)
-    
-    # Prompt now ONLY focuses on local prices for maximum speed/reliability
     dynamic_prompt = """
-    Search for today's retail petrol prices in Singapore (Motorist.sg/Price Kaki).
-    Return a JSON object with:
-    - 'averages': {'92': float, '95': float, '98': float, 'Premium': float, 'Diesel': float}
-    - 'brands': {'95': {'Shell': float, 'Esso': float, 'SPC': float, 'Caltex': float}}
+    Search for Singapore retail petrol prices (92, 95, 98, Premium, Diesel).
+    Return JSON only: 
+    {"averages": {"92": float, "95": float, "98": float, "Premium": float, "Diesel": float},
+     "brands": {"95": {"Shell": float, "Esso": float, "SPC": float, "Caltex": float}}}
     """
 
     try:
         response = client.models.generate_content(
             model='gemini-1.5-pro',
             contents=dynamic_prompt,
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-                response_mime_type="application/json"
-            )
+            config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], response_mime_type="application/json")
         )
         
         live_data = json.loads(response.text)
         averages = live_data['averages']
-        brands = live_data['brands']
-
-        # --- ADVISOR LOGIC (Using your Feed) ---
         
-        # 1. Timing Logic: Using passed variables brent_now and brent_3d_ago
-        # Brent is currently ~$108.11 (up from ~$105.72)
-        brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
+        # --- MARKET-ONLY LOGIC ---
         
-        if brent_change > 1.5:
-            timing_verdict = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}%. Local hike imminent."
-        elif brent_change < -1.5:
-            timing_verdict = f"⏳ WAIT: Brent is down {abs(brent_change):.1f}%. Prices may drop."
+        # 1. Brent Momentum
+        brent_diff = brent_now - brent_3d_ago
+        brent_pct = (brent_diff / brent_3d_ago) * 100
+        
+        # 2. Timing Recommendation
+        if brent_pct > 1.0:
+            timing_verdict = f"🚨 URGENT REFILL: Brent up {brent_pct:.1f}% (${brent_diff:.2f}). Local prices will rise."
+        elif brent_pct < -1.0:
+            timing_verdict = f"⏳ HOLD OFF: Brent dropping {abs(brent_pct):.1f}%. Lower pump prices likely next week."
         else:
-            timing_verdict = "✅ STABLE: Market volatility is low today."
+            timing_verdict = "✅ STABLE: No immediate market pressure on retail prices."
 
-        # 2. Grade Optimization Logic
-        savings_msg = ""
-        if int(user_current_grade) > int(user_car_min_grade):
-            diff = averages[str(user_current_grade)] - averages[str(user_car_min_grade)]
-            potential_save = diff * 50 
-            savings_msg = f"💡 TIP: Switching to {user_car_min_grade} saves ~S${potential_save:.2f}/tank."
+        # 3. Spread Analysis (Finding the 'Value' Grade)
+        # We look for which grade has the smallest premium over 92-Octane
+        # Current averages: 95 (~$3.46) is only $0.03 more than 92 (~$3.43)
+        spread_95 = averages['95'] - averages['92']
+        if spread_95 < 0.05:
+            recommendation = "💎 95-OCTANE VALUE: The price gap between 92 and 95 is minimal. 95 is the smarter buy today."
         else:
-            savings_msg = "✅ GRADE OPTIMIZED: You are using the best grade for your car."
+            recommendation = "📊 NARROW SPREADS: Grade prices are standard. Choice based on market timing only."
 
-        return averages, brands, timing_verdict, savings_msg
+        return averages, timing_verdict, recommendation
 
     except Exception:
-        # Fallback now uses your live Brent feed even if SG scraping fails
-        averages = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
-        brands = {"95": {"Shell": 3.49, "Caltex": 3.47, "SPC": 3.42, "Esso": 3.46}}
-        return averages, brands, "✅ STABLE: Using fallback data.", "⚠️ Live search unavailable."
+        return {"92":3.43,"95":3.46,"98":3.98,"Premium":4.15,"Diesel":4.68}, "⚠️ Live Feed Lag", "Check back for market analysis."
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
@@ -831,7 +816,7 @@ with tab1:
             """, unsafe_allow_html=True)    
 
     # 6. FUEL MONITOR SECTION
-    fetch_fuel_logic(brent_now, brent_3d_ago, user_car_min_grade="95", user_current_grade="98")
+    f_avg, f_trends, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now, brent_3d_ago)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
         # --- Price Cards Section ---
