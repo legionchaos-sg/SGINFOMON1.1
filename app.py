@@ -170,22 +170,8 @@ def fetch_sg_economy():
         
 @st.cache_data(ttl=600)
 def fetch_fuel_logic(brent_now):
-    """
-    Revised: Gemini now fetches the 3-day-ago price itself via Search.
-    """
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    # Updated Prompt: Now asks for historical Brent specifically
-    dynamic_prompt = """
-    1. Search for Singapore retail petrol prices (92, 95, 98, Premium, Diesel).
-    2. Search for the Brent Crude price exactly 3 trading days ago (May 12, 2026).
-    Return JSON only:
-    {
-      "averages": {"92": float, "95": float, "98": float, "Premium": float, "Diesel": float},
-      "brands": {"95": {"Shell": float, "Esso": float, "SPC": float, "Caltex": float}},
-      "brent_3d_ago": float
-    }
-    """
+    dynamic_prompt = """Search for SG petrol prices and Brent price on May 12, 2026. Return JSON only."""
 
     try:
         response = client.models.generate_content(
@@ -197,34 +183,33 @@ def fetch_fuel_logic(brent_now):
             )
         )
         
-        live_data = json.loads(response.text)
-        f_avg = live_data['averages']
-        f_brands = live_data['brands']
-        # GETTING THE 3rd DAY PRICE FROM THE SEARCH RESULT
-        brent_3d_ago = live_data.get('brent_3d_ago', brent_now)
-
-        # --- ADVISOR LOGIC ---
-        brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
-        is_spiking = brent_change > 1.0
+        # Clean the response text to ensure it's valid JSON
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        live_data = json.loads(clean_json)
         
-        if brent_change > 1.5:
-            f_timing = f"🚨 REFILL NOW: Brent is up {brent_change:.1f}% since May 12."
-        else:
-            f_timing = "✅ STABLE: No major market spike detected."
+        f_avg = live_data.get('averages', {})
+        f_brands = live_data.get('brands', {})
+        brent_3d_ago = float(live_data.get('brent_3d_ago', brent_now))
 
-        f_savings = "💡 TIP: 95-Octane offers the best cost-to-performance ratio today."
+        # Calculation with safety check
+        if brent_3d_ago > 0:
+            brent_change = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
+        else:
+            brent_change = 0
+
+        is_spiking = brent_change > 1.0
+        f_timing = "🚨 REFILL NOW" if brent_change > 1.5 else "✅ STABLE"
+        f_savings = "💡 TIP: 95-Octane is best value today."
         f_trends = {g: is_spiking for g in f_avg.keys()}
 
+        # RETURN 6 ITEMS
         return f_avg, f_trends, f_brands, f_timing, f_savings, brent_3d_ago
 
-        st.write(f"**Timing chk:** {f_timing}")
-        st.write(f"**Optimization chk:** {f_savings}")
-
-    except Exception:
-        # Fallback (May 15 data)
+    except Exception as e:
+        # Fallback MUST ALSO RETURN 6 ITEMS
         f_avg = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
         f_trends = {g: True for g in f_avg.keys()}
-        return f_avg, f_trends, {}, "✅ STABLE: Market baseline.", "⚠️ Live search unavailable."
+        return f_avg, f_trends, {}, "✅ STABLE (Baseline)", f"⚠️ Error: {str(e)[:20]}", 107.77
 
 @st.cache_data(ttl=300)
 def fetch_live_forex():
