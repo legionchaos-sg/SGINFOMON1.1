@@ -824,24 +824,26 @@ with tab1:
     f_avg, f_brands, f_timing, f_savings = fetch_fuel_logic(brent_now)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
-        # --- Price Cards Section ---
-        fuel_cols = st.columns(5)
-        grades = ["92", "95", "98", "Premium", "Diesel"]
+       # Display the current Brent spot price for context
+        st.markdown(f"**Global Market Trigger:** Brent Crude is at :blue[**${brent_now:.2f}**]")
         
-        for i, g in enumerate(grades):
+        # Petrol Grade Cards
+        fuel_cols = st.columns(5)
+        for i, g in enumerate(["92", "95", "98", "Premium", "Diesel"]):
             with fuel_cols[i]:
-                # Using the actual boolean trend returned from the function
-                # This is more reliable than checking the timing string
-                is_up = f_trends.get(g, False) 
-                arrow, color_class = ("▲", "up") if is_up else ("▼", "down")
-                
+                # Arrow logic based on the 3rd-day comparison
+                arrow, color = ("▲", "red") if f_trends[g] else ("▼", "green")
                 st.markdown(f"""
-                    <div class="f-card">
-                        <span class="stat-label">Grade {g}</span><br>
-                        <b style="font-size:1.1rem;">${f_avg[g]:.2f}</b><br>
-                        <span class="{color_class}">{arrow}</span>
+                    <div style="text-align:center; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                        <small>Grade {g}</small><br>
+                        <b style="font-size:1.2rem;">${f_avg[g]:.2f}</b><br>
+                        <span style="color:{color};">{arrow}</span>
                     </div>
                 """, unsafe_allow_html=True)
+                
+        st.markdown("---")
+        st.write(f"**Timing:** {f_timing}")
+        st.write(f"**Optimization:** {f_savings}")
         
         # --- Advisor Section ---
         st.markdown("---")
