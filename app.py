@@ -217,6 +217,9 @@ def fetch_fuel_logic(brent_now):
 
         return f_avg, f_trends, f_brands, f_timing, f_savings
 
+        st.write(f"**Timing chk:** {f_timing}")
+        st.write(f"**Optimization chk:** {f_savings}")
+
     except Exception:
         # Fallback (May 15 data)
         f_avg = {"92": 3.43, "95": 3.46, "98": 3.98, "Premium": 4.15, "Diesel": 4.68}
@@ -846,16 +849,16 @@ with tab1:
         st.write(f"**Optimization:** {f_savings}")
         
         # --- Advisor Section ---
-        st.markdown("---")
-        advice_col1, advice_col2 = st.columns([1, 1])
+        #st.markdown("---")
+        #advice_col1, advice_col2 = st.columns([1, 1])
         
-        with advice_col1:
+        #with advice_col1:
             # Displays: 🚨 REFILL NOW: Brent is up 2.4%...
-            st.markdown(f"**Market Timing:** {f_timing}")
+         #   st.markdown(f"**Market Timing:** {f_timing}")
         
-        with advice_col2:
+        #with advice_col2:
             # Displays the spread analysis (e.g., 95-Octane value tip)
-            st.markdown(f"**Market Analysis:** {f_savings}")
+            #st.markdown(f"**Market Analysis:** {f_savings}")
                 
     countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Indonesia", "Asia/Jakarta"), ("Philippines", "Asia/Manila"), ("Australia", "Australia/Brisbane")]
     for i, (name, tz) in enumerate(countries):
