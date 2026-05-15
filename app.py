@@ -215,7 +215,7 @@ def fetch_fuel_logic(brent_now):
         f_savings = "💡 TIP: 95-Octane offers the best cost-to-performance ratio today."
         f_trends = {g: is_spiking for g in f_avg.keys()}
 
-        return f_avg, f_trends, f_brands, f_timing, f_savings
+        return f_avg, f_trends, f_brands, f_timing, f_savings, brent_3d_ago
 
         st.write(f"**Timing chk:** {f_timing}")
         st.write(f"**Optimization chk:** {f_savings}")
@@ -823,7 +823,7 @@ with tab1:
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
-    f_avg, f_brands, f_trends, f_timing, f_savings = fetch_fuel_logic(brent_now)
+    f_avg, f_brands, f_trends, f_timing, f_savings, brent_3d_ago = fetch_fuel_logic(brent_now)
 
     with st.expander("⛽ Average Fuel Prices (S$/Litre)", expanded=True):
        # Display the current Brent spot price for context
