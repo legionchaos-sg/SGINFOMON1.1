@@ -774,10 +774,15 @@ with tab1:
     coe_title = f"🚗 COE Bidding Results"
     coe_list = fetch_coe_intelli
     with st.expander(coe_title, expanded=True):
-        cc = st.columns(4)
-        for i, (cat, d) in enumerate(coe['categories'].items()):
-            # Calculate Overbid Rate dynamically
-            rate = d['bids'] / d['quota']
+        cols = st.columns(4)
+        target_categories = ["Cat A", "Cat B", "Cat C", "Cat E"]
+        for i, cat in enumerate(target_categories):
+            # Safely pull each category data dictionary
+            d = categories_data.get(cat, {"qp": 0, "change": 0, "quota": 1, "bids": 1})
+            quota_slots = d.get("quota", 1)
+            bids_rec = d.get("bids", 1)
+            rate = bids_rec / quota_slots if quota_slots > 0 else 1.0
+            
             color = "#ff4b4b" if rate > 1.5 else "#0068c9"
         
             with cols[i]:
@@ -793,11 +798,18 @@ with tab1:
 
         # DYNAMIC ANALYSIS CARDS
         st.markdown("---")
+        st.markdown(f"### 🤖 AI Market Intelligence (Next Window: {next_bid_date})")
+    
         ana_l, ana_r = st.columns(2)
         with ana_l:
-            st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
+            st.markdown("**Current Market Sentiment:**")
+            st.write(market_sentiment)
+            
         with ana_r:
-            st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")   
+            st.markdown("**95% Reality Prediction Matrix:**")
+            st.write(prediction_95)
+            
+        st.info("💡 **Gold 10 Strategic Action:** Post-Expo bidding cycles traditionally inflate premiums. Consider deferred registration placement until the upcoming secondary June window to clear artificial dealer backlogs.")  
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
