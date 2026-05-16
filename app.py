@@ -776,28 +776,28 @@ with tab1:
     with st.expander(coe_title, expanded=True):
         cc = st.columns(4)
         for i, (cat, d) in enumerate(coe['categories'].items()):
-        # Calculate Overbid Rate dynamically
-        rate = d['bids'] / d['quota']
-        color = "#ff4b4b" if rate > 1.5 else "#0068c9"
+            # Calculate Overbid Rate dynamically
+            rate = d['bids'] / d['quota']
+            color = "#ff4b4b" if rate > 1.5 else "#0068c9"
         
-        with cols[i]:
-            st.markdown(f"""
-                <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px;">
-                    <b style="color: white;">{cat}</b><br>
-                    <b style="font-size: 1.4rem; color: #ff4b4b;">${d['qp']:,}</b><br>
-                    <small style="color: #ff4b4b;">▲ ${d['change']:,}</small>
-                    <hr style="margin: 8px 0; border: 0.1px solid #444;">
-                    <small style="color: {color};"><b>RATE: {rate:.2f}x</b></small>
-                </div>
-            """, unsafe_allow_html=True)
+            with cols[i]:
+                st.markdown(f"""
+                    <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px;">
+                        <b style="color: white;">{cat}</b><br>
+                        <b style="font-size: 1.4rem; color: #ff4b4b;">${d['qp']:,}</b><br>
+                        <small style="color: #ff4b4b;">▲ ${d['change']:,}</small>
+                        <hr style="margin: 8px 0; border: 0.1px solid #444;">
+                        <small style="color: {color};"><b>RATE: {rate:.2f}x</b></small>
+                    </div>
+                """, unsafe_allow_html=True)
 
-    # DYNAMIC ANALYSIS CARDS
-    st.markdown("---")
-    ana_l, ana_r = st.columns(2)
-    with ana_l:
-        st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
-    with ana_r:
-        st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")   
+        # DYNAMIC ANALYSIS CARDS
+        st.markdown("---")
+        ana_l, ana_r = st.columns(2)
+        with ana_l:
+            st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
+        with ana_r:
+            st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")   
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
