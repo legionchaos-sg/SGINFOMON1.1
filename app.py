@@ -326,28 +326,39 @@ def get_aggregated_news():
     return "  |  ".join(all_headlines)
 
 def get_upcoming_holiday():
+    import streamlit as st
+import json
+import pytz
+from datetime import datetime, date
+
+def get_upcoming_holiday():
     """
-    Dynamically fetches Singapore Public Holidays using Gemini Search 
-    to ensure an endless, non-static feed.
+    Dynamically fetches accurate Singapore Public Holidays using Gemini Search 
+    and automatically calculates countdown deltas relative to the system clock.
     """
     sg_tz = pytz.timezone('Asia/Singapore')
     now = datetime.now(sg_tz).date()
     
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Prompting the AI to return ONLY the next upcoming holiday data
+    # NEW OPEN-ENDED PROMPT: Removes rigid comparison constraints so the AI sweeps the whole year
     prompt = f"""
-    Current Date: {now} (Wednesday). 
-    Task: Use Google Search to find the Singapore Public Holidays for 2026.
+    The current local date in Singapore is {now}.
+    
+    Task: Use Google Search to look up the official Singapore Ministry of Manpower (MOM) public holidays for 2026.
     Instructions:
-    1. Identify all holidays occurring STRICTLY AFTER {now}.
-    2. Compare the dates of Hari Raya Haji and Vesak Day for 2026. 
-    3. Select the one with the earliest date that has not passed.
-    4. Return ONLY a JSON object: {{"name": "Holiday Name", "date": "YYYY-MM-DD"}}.
+    1. Scan the full calendar year of 2026.
+    2. Identify the absolute next upcoming public holiday that occurs STRICTLY ON OR AFTER {now}.
+    3. Ensure you capture the correct official dates: note that in May 2026, Hari Raya Haji is on 27 May and Vesak Day is on 31 May.
+    
+    Return ONLY a clean JSON object containing the closest upcoming holiday:
+    {{
+      "name": "Official Holiday Name",
+      "date": "YYYY-MM-DD"
+    }}
     """
 
     try:
-        # Live Search Call
         response = client.models.generate_content(
             model='gemini-1.5-flash',
             contents=prompt,
@@ -357,24 +368,29 @@ def get_upcoming_holiday():
             )
         )
         
-        # Parsing the dynamic result
-        h_data = json.loads(response.text)
+        # Parse output safely
+        h_data = json.loads(response.text.strip())
         h_date = datetime.strptime(h_data['date'], '%Y-%m-%d').date()
         days_diff = (h_date - now).days
         
-        # Dynamic Response String
         if days_diff == 0:
             return f"🎉 Today: {h_data['name']}! (Enjoy your holiday)"
         
         return f"🗓️ Next: {h_data['name']} ({h_date.strftime('%d %b')}) — ⏳ {days_diff} days"
 
     except Exception as e:
-        # Fallback logic if API/Search fails (using confirmed May 2026 data)
-        # Today is May 1 (Labour Day), so the next is Vesak Day on May 30
-        # Fallback: Manually define Vesak Day 2026 for May
-        fallback_date = date(2026, 5, 30)
+        # Ironclad Fallback Layer matching the true MOM May 2026 sequence
+        # Today is May 18, so the next imminent holiday is Hari Raya Haji on May 27
+        fallback_date = date(2026, 5, 27)
         days_remaining = (fallback_date - now).days
-        return f"🗓️ Next: Vesak Day (30 May) — ⏳ {days_remaining} days"
+        
+        if days_remaining < 0:
+            # Shift backup matrix to Vesak Day if May 27 passes
+            fallback_date = date(2026, 5, 31)
+            days_remaining = (fallback_date - now).days
+            return f"🗓️ Next: Vesak Day (31 May) — ⏳ {days_remaining} days"
+            
+        return f"🗓️ Next: Hari Raya Haji (27 May) — ⏳ {days_remaining} days"
 
 # Manual COE INFROMATION 
 def fetch_coe_intelligence():
