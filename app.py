@@ -770,8 +770,7 @@ with tab1:
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
     # 5. COE Results
-    coe_title = f"🚗 COE Bidding Results (Last Closed: {get_coe_display_date()})"
-    with st.expander(coe_title, expanded=True):
+    with st.expander("🚗 COE Bidding Results", expanded=True):
         coe = fetch_coe_intelligence()
         cols = st.columns(4)
     for i, (cat, d) in enumerate(coe['categories'].items()):
