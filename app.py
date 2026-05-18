@@ -395,8 +395,8 @@ def fetch_coe_intelligence():
         "Cat C": {"qp": int, "change": int, "quota": int, "bids": int},
         "Cat E": {"qp": int, "change": int, "quota": int, "bids": int}
       },
-      #"market_sentiment": str,
-      #"prediction_95": str
+      "market_sentiment": str,
+      "prediction_95": str
     }
     """
 
@@ -422,47 +422,9 @@ def fetch_coe_intelligence():
                 "Cat C": {"qp": 87479, "change": 3978, "quota": 293, "bids": 511},
                 "Cat E": {"qp": 127700, "change": 2698, "quota": 254, "bids": 479}
             },
-            #"market_sentiment": "Bullish post-Expo demand.",
-            #"prediction_95": "Expect Cat A to test $128k."
+            "market_sentiment": "Bullish post-Expo demand.",
+            "prediction_95": "Expect Cat A to test $128k."
         }
-
-    # --- PHASE 2: MACRO-ECONOMIC CO-BROKER ANALYSIS ---
-    # We pass the real scraped data explicitly into the engine for contextual computation
-    analysis_prompt = f"""
-    You are an elite Singapore Macro-Economist and Automotive Strategist co-broking with cross-platform AI validation engines.
-    Analyze these raw, live Singapore COE metrics from the latest exercise:
-    {json.dumps(scraped_data['categories'])}
-    
-    Generate a deep-dive structural synthesis answering exactly what these closing numbers signify through these lenses:
-    1. Monetary Policy & Liquidity: How current MAS SGD NEER stance and high lending rates intersect with these premiums.
-    2. LTA Regulatory Controls: The structural impact of recent quota supply adjustments across Cat A vs Cat B.
-    3. Social & Workforce Dynamics: Fleet expansions by PHV/logistics networks vs private mass-market ownership affordability.
-    4. Energy Paradigm (Crude Oil vs EV Development): How fluctuating global oil supply chokepoints (e.g., Strait of Hormuz) push adoption curves toward EVs, impacting Cat A/B/E distributions.
-
-    Return JSON only with this exact schema:
-    {{
-      "market_sentiment": "Detailed paragraph weaving Monetary, LTA, and Workforce economics together based on the metrics.",
-      "prediction_95": "Detailed 95% reality-sync prediction assessing upcoming bid pressure, referencing crude-to-EV structural substitution trends."
-    }}
-    """
-    
-    try:
-        analysis_response = client.models.generate_content(
-            model='gemini-1.5-pro',
-            contents=analysis_prompt,
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
-        clean_analysis = analysis_response.text.replace("```json", "").replace("```", "").strip()
-        analysis_data = json.loads(clean_analysis)
-        
-        # Combine data maps
-        scraped_data["market_sentiment"] = analysis_data["market_sentiment"]
-        scraped_data["prediction_95"] = analysis_data["prediction_95"]
-    except Exception:
-        scraped_data["market_sentiment"] = "Liquidity remains concentrated in luxury tranches despite hawkish MAS monitoring. PHV enterprise bidding continues to out-price local private households."
-        scraped_data["prediction_95"] = "Expect persistent floor pressure. Elevated crude volatility acts as a macro catalyst pushing fleet buyers to aggressively lock in Cat E units for immediate EV deployment."
-
-    return scraped_data
 
 # --- DASHBOARD LOGIC ---
 
@@ -810,98 +772,30 @@ with tab1:
     # 5. COE Results
     with st.expander("🚗 COE Bidding Results", expanded=True):
         coe = fetch_coe_intelligence()
-        # Validation: Ensure coe is a dict and has the required structure
-    if not isinstance(coe, dict) or 'categories' not in coe:
-        raise ValueError("Invalid structural layout returned from API")
-except Exception as e:
-    # Gold 10 Hardcoded Fallback: Keeps your dashboard alive if the API drops
-    coe = {
-        "next_bid_date": "18 May 2026",
-        "market_sentiment": "Liquidity constraints remain high; corporate fleet booking continues to out-price mass market entry thresholds.",
-        "prediction_95": "95% Reality-Sync Model expects Cat A to encounter strong floor price resistance near $128k.",
-        "categories": {
-            "Cat A": {"qp": 124790, "change": 1780, "quota": 1301, "bids": 2071},
-            "Cat B": {"qp": 126236, "change": 5235, "quota": 883, "bids": 1332},
-            "Cat C": {"qp": 87479, "change": 3978, "quota": 293, "bids": 511},
-            "Cat E": {"qp": 127700, "change": 2698, "quota": 254, "bids": 479}
-        }
-    }
-
-# ==============================================================================
-# --- PRODUCTION-READY UI LAYOUT ---
-# ==============================================================================
-try:
-    # Attempt to pull the live macro-economic data map from Gemini
-    coe = fetch_coe_intelligence()
-    
-    # Validation: Ensure coe is a dict and has the required structure
-    if not isinstance(coe, dict) or 'categories' not in coe:
-        raise ValueError("Invalid structural layout returned from API")
-except Exception as e:
-    # Gold 10 Hardcoded Fallback: Keeps your dashboard alive if the API drops
-    coe = {
-        "next_bid_date": "18 May 2026",
-        "market_sentiment": "Liquidity constraints remain high; corporate fleet booking continues to out-price mass market entry thresholds.",
-        "prediction_95": "95% Reality-Sync Model expects Cat A to encounter strong floor price resistance near $128k.",
-        "categories": {
-            "Cat A": {"qp": 124790, "change": 1780, "quota": 1301, "bids": 2071},
-            "Cat B": {"qp": 126236, "change": 5235, "quota": 883, "bids": 1332},
-            "Cat C": {"qp": 87479, "change": 3978, "quota": 293, "bids": 511},
-            "Cat E": {"qp": 127700, "change": 2698, "quota": 254, "bids": 479}
-        }
-    }
-with st.expander("🏎️ COE Live Intelligence Dashboard", expanded=True):
-    
-    # Corrected indentation for the layout matrix
-    cols = st.columns(4)
-    
-    # This loop will now execute safely because 'categories' is guaranteed to exist
+        cols = st.columns(4)
     for i, (cat, d) in enumerate(coe['categories'].items()):
-        
-        # Pull values safely to prevent errors if keys are missing from the raw scrape
-        quota_slots = d.get('quota', 1) if d.get('quota', 1) > 0 else 1
-        bids_rec = d.get('bids', 0)
-        bid_delta = bids_rec - quota_slots
-        
         # Calculate Overbid Rate dynamically
-        rate = bids_rec / quota_slots
+        rate = d['bids'] / d['quota']
         color = "#ff4b4b" if rate > 1.5 else "#0068c9"
         
         with cols[i]:
             st.markdown(f"""
-                <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <b style="color: white; font-size: 0.95rem;">{cat}</b>
-                        <span style="color: {color}; font-weight: bold; font-size: 0.8rem;">{rate:.2f}x Ratio</span>
-                    </div>
-                    <b style="font-size: 1.35rem; color: #ff4b4b; display: block; margin-top: 4px;">${d.get('qp', 0):,}</b>
-                    <small style="color: #ff4b4b;">▲ ${d.get('change', 0):,}</small>
-                    <hr style="margin: 6px 0; border: 0.1px solid #444;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #bbb;">
-                        <span>Quota (Avail):</span><b style="color: white;">{quota_slots}</b>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #bbb;">
-                        <span>Bids (Submitted):</span><b style="color: white;">{bids_rec}</b>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #bbb; margin-top: 2px;">
-                        <span>Backlog Surplus:</span><b style="color: #ff4b4b;">+{bid_delta}</b>
-                    </div>
+                <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px;">
+                    <b style="color: white;">{cat}</b><br>
+                    <b style="font-size: 1.4rem; color: #ff4b4b;">${d['qp']:,}</b><br>
+                    <small style="color: #ff4b4b;">▲ ${d['change']:,}</small>
+                    <hr style="margin: 8px 0; border: 0.1px solid #444;">
+                    <small style="color: {color};"><b>RATE: {rate:.2f}x</b></small>
                 </div>
             """, unsafe_allow_html=True)
 
-    # DYNAMIC MULTI-VARIATE ANALYSIS PANELS
+    # DYNAMIC ANALYSIS CARDS
     st.markdown("---")
-    st.markdown(f"### 🤖 AI Macro-Economic Intelligence")
-    
     ana_l, ana_r = st.columns(2)
     with ana_l:
-        st.markdown("**Current Market Sentiment Framework:**")
-        st.info(coe.get('market_sentiment', 'Parsing systemic market movements...'))
+        st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
     with ana_r:
-        st.markdown(f"**95% Reality Prediction Matrix (Next Window: {coe.get('next_bid_date', 'TBD')}):**")
-        st.warning(coe.get('prediction_95', 'Recalculating algorithmic bid thresholds...'))
-        
-    st.info("💡 **Gold 10 Strategic Action:** Post-Expo bidding cycles traditionally inflate premiums. Consider deferred registration placement until the upcoming secondary June window to clear artificial dealer backlogs.")  
+        st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
