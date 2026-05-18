@@ -811,13 +811,13 @@ with tab1:
                 </div>
             """, unsafe_allow_html=True)
 
-    # DYNAMIC ANALYSIS CARDS
-    st.markdown("---")
-    ana_l, ana_r = st.columns(2)
-    with ana_l:
-        st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
-    with ana_r:
-        st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")    
+            # DYNAMIC ANALYSIS CARDS
+            st.markdown("---")
+            ana_l, ana_r = st.columns(2)
+            with ana_l:
+                st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
+            with ana_r:
+                st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
