@@ -326,12 +326,6 @@ def get_aggregated_news():
     return "  |  ".join(all_headlines)
 
 def get_upcoming_holiday():
-    import streamlit as st
-import json
-import pytz
-from datetime import datetime, date
-
-def get_upcoming_holiday():
     """
     Dynamically fetches accurate Singapore Public Holidays using Gemini Search 
     and automatically calculates countdown deltas relative to the system clock.
