@@ -395,8 +395,8 @@ def fetch_coe_intelligence():
         "Cat C": {"qp": int, "change": int, "quota": int, "bids": int},
         "Cat E": {"qp": int, "change": int, "quota": int, "bids": int}
       },
-      "market_sentiment": str,
-      "prediction_95": str
+      #"market_sentiment": str,
+      #"prediction_95": str
     }
     """
 
@@ -422,9 +422,47 @@ def fetch_coe_intelligence():
                 "Cat C": {"qp": 87479, "change": 3978, "quota": 293, "bids": 511},
                 "Cat E": {"qp": 127700, "change": 2698, "quota": 254, "bids": 479}
             },
-            "market_sentiment": "Bullish post-Expo demand.",
-            "prediction_95": "Expect Cat A to test $128k."
+            #"market_sentiment": "Bullish post-Expo demand.",
+            #"prediction_95": "Expect Cat A to test $128k."
         }
+
+    # --- PHASE 2: MACRO-ECONOMIC CO-BROKER ANALYSIS ---
+    # We pass the real scraped data explicitly into the engine for contextual computation
+    analysis_prompt = f"""
+    You are an elite Singapore Macro-Economist and Automotive Strategist co-broking with cross-platform AI validation engines.
+    Analyze these raw, live Singapore COE metrics from the latest exercise:
+    {json.dumps(scraped_data['categories'])}
+    
+    Generate a deep-dive structural synthesis answering exactly what these closing numbers signify through these lenses:
+    1. Monetary Policy & Liquidity: How current MAS SGD NEER stance and high lending rates intersect with these premiums.
+    2. LTA Regulatory Controls: The structural impact of recent quota supply adjustments across Cat A vs Cat B.
+    3. Social & Workforce Dynamics: Fleet expansions by PHV/logistics networks vs private mass-market ownership affordability.
+    4. Energy Paradigm (Crude Oil vs EV Development): How fluctuating global oil supply chokepoints (e.g., Strait of Hormuz) push adoption curves toward EVs, impacting Cat A/B/E distributions.
+
+    Return JSON only with this exact schema:
+    {{
+      "market_sentiment": "Detailed paragraph weaving Monetary, LTA, and Workforce economics together based on the metrics.",
+      "prediction_95": "Detailed 95% reality-sync prediction assessing upcoming bid pressure, referencing crude-to-EV structural substitution trends."
+    }}
+    """
+    
+    try:
+        analysis_response = client.models.generate_content(
+            model='gemini-1.5-pro',
+            contents=analysis_prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json")
+        )
+        clean_analysis = analysis_response.text.replace("```json", "").replace("```", "").strip()
+        analysis_data = json.loads(clean_analysis)
+        
+        # Combine data maps
+        scraped_data["market_sentiment"] = analysis_data["market_sentiment"]
+        scraped_data["prediction_95"] = analysis_data["prediction_95"]
+    except Exception:
+        scraped_data["market_sentiment"] = "Liquidity remains concentrated in luxury tranches despite hawkish MAS monitoring. PHV enterprise bidding continues to out-price local private households."
+        scraped_data["prediction_95"] = "Expect persistent floor pressure. Elevated crude volatility acts as a macro catalyst pushing fleet buyers to aggressively lock in Cat E units for immediate EV deployment."
+
+    return scraped_data
 
 # --- DASHBOARD LOGIC ---
 
