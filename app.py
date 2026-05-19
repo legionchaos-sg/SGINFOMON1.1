@@ -615,14 +615,10 @@ def fetch_agency_news(url, limit=4):
 # --- NEWS AGENCY REPOSITORY (2026 Verified) ---
 agencies = {
     "BLOOMBERG": "https://feeds.bloomberg.com/markets/news.rss",
-    "REUTERS": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
-    "CNBC": "https://www.cnbc.com/id/10000311/device/rss/rss.html",
     "XINHUA": "http://www.xinhuanet.com/english/rss/worldrss.xml",
-    "AFP": "https://www.afp.com/en/news-rss", # Note: AFP often requires aggregator proxies
     "CNA": "https://www.channelnewsasia.com/rssfeeds/8395986",
     "AL JAZEERA": "https://www.aljazeera.com/xml/rss/all.xml",
     "BBC": "https://feeds.bbci.co.uk/news/world/rss.xml",
-    "KYODO": "https://english.kyodonews.net/rss/news.xml"
 }
 # --- UI CONFIG ---
 st.set_page_config(page_title="SGINFOMON", page_icon="🇸🇬60", layout="wide")
