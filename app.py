@@ -388,36 +388,35 @@ def get_upcoming_holiday():
 
 # Manual COE INFROMATION 
 def fetch_coe_intelligence():
-    # Calling Gemini to perform a LIVE search with dynamic calendar tracking
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # DYNAMIC CALENDAR INJECTION: Automatically computes current cycle (e.g., "May 2026", "June 2026")
-    current_cycle = datetime.now().strftime("%B %Y")
+    # Use exact current date string so the model knows today's temporal location
+    current_date_str = datetime.now().strftime("%d %B %Y")
     
-    # REVAMPED SYSTEM PROMPT: Forces multi-variate macroeconomic interpretation of live values
     prompt = f"""
-    You are an expert Singapore macroeconomic auto-analyst asset. The current operational tracking time is {current_cycle}.
+    You are an expert Singapore macroeconomic auto-analyst asset. Today's date is {current_date_str}.
     
-    1. Search for the absolute latest Singapore COE bidding results matching or immediately preceding {current_cycle}.
-    2. Identify the accurate values for: QP (Quota Premium), change, quota, and total bids received for Cat A, B, C, and E.
-    3. Pinpoint the calendar date for the next upcoming open bidding exercise window.
+    1. Search for the absolute latest Singapore COE bidding results that have concluded right before today's date.
+    2. Identify the accurate values for: QP (Quota Premium), change (can be positive or negative), quota, and total bids received for Cat A, B, C, and E.
+    3. Pinpoint the calendar date for the NEXT upcoming open bidding exercise window.
     4. Formulate an advanced, data-driven synthesis for 'market_sentiment' and 'prediction_95' using the actual extracted numeric values.
     
     CRITICAL ANALYTICAL DIRECTIVES for text keys:
-    - For 'market_sentiment': Weave a cohesive overview of what the closing values/deltas mean by linking them to Singapore monetary conditions (MAS SGD NEER liquidity), LTA regulatory quota distribution decisions, and workforce social shifts (private buyers vs corporate fleet/PHV expansions). Do not mention outdated events or expos unless they occurred during this specific calendar window.
-    - For 'prediction_95': Project the next exercise closing trend with a 95% reality target. Base this explicitly on the current bid-to-quota surplus backlog, global energy pressures (crude oil price volatility), and localized EV infrastructure deployment pacing.
+    - For 'market_sentiment': Weave a cohesive overview of what the closing values/deltas mean by linking them to Singapore monetary conditions (MAS SGD NEER liquidity), LTA regulatory quota distribution decisions, and workforce social shifts (private buyers vs corporate fleet/PHV expansions).
+    - For 'prediction_95': Project the next exercise closing trend with a 95% reality target based on the current bid-to-quota surplus backlog, global energy pressures, and localized EV infrastructure pacing. 
+      CRITICAL: You MUST conclude this analysis string with a final sentence that explicitly provides your exact estimated dollar prediction for the next round. Use this exact bracketed format as the final statement: "Estimated next bid targets: [Cat A: $X, Cat B: $Y, Cat C: $Z]." (Replace X, Y, and Z with your calculated numeric estimations based on current momentum).
     
-    Return JSON only using this strict schema format:
+    Return JSON only using this strict schema format. The "change" values MUST be regular positive or negative integers:
     {{
-      "next_bid_date": "String (e.g., 18 May 2026)",
+      "next_bid_date": "String (e.g., 2 June 2026)",
       "categories": {{
         "Cat A": {{"qp": int, "change": int, "quota": int, "bids": int}},
         "Cat B": {{"qp": int, "change": int, "quota": int, "bids": int}},
         "Cat C": {{"qp": int, "change": int, "quota": int, "bids": int}},
         "Cat E": {{"qp": int, "change": int, "quota": int, "bids": int}}
       }},
-      "market_sentiment": "String (Dynamic multi-variate analysis anchoring raw numbers to MAS, LTA, and social vectors)",
-      "prediction_95": "String (95% accuracy projection referencing bid backlog dynamics and crude vs EV market trends)"
+      "market_sentiment": "String",
+      "prediction_95": "String (Must end with: Estimated next bid targets: [Cat A: $X, Cat B: $Y, Cat C: $Z].)"
     }}
     """
 
@@ -430,22 +429,26 @@ def fetch_coe_intelligence():
                 response_mime_type="application/json"
             )
         )
-        # Parse the dynamic JSON response cleanly
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        # Clean markdown fences out if the model accidentally appends them 
+        clean_json = response.text.replace("```json", "").replace("
+```", "").strip()
         return json.loads(clean_json)
         
-    except Exception:
-        # Emergency Macro Fallback: Ensures your structural architecture functions even if the web search trips
+    except Exception as e:
+        # Logs the actual error to your Streamlit logs so you can see why it failed
+        st.sidebar.error(f"COE Fetch Error: {e}")
+        
+        # Emergency Fallback upgraded to mirror the updated target directive layout
         return {
-            "next_bid_date": "18 May 2026",
+            "next_bid_date": "2 June 2026", 
             "categories": {
-                "Cat A": {"qp": 124790, "change": 1780, "quota": 1301, "bids": 2071},
-                "Cat B": {"qp": 126236, "change": 5235, "quota": 883, "bids": 1332},
-                "Cat C": {"qp": 87479, "change": 3978, "quota": 293, "bids": 511},
-                "Cat E": {"qp": 127700, "change": 2698, "quota": 254, "bids": 479}
+                "Cat A": {"qp": 124229, "change": -561, "quota": 1239, "bids": 2283},
+                "Cat B": {"qp": 129501, "change": 3265, "quota": 869, "bids": 1469},
+                "Cat C": {"qp": 92223, "change": 4744, "quota": 292, "bids": 468},
+                "Cat E": {"qp": 130000, "change": 2300, "quota": 256, "bids": 436}
             },
-            "market_sentiment": f"Passenger car tranches continue to demonstrate extreme liquidity insulation despite hawkish MAS policy frameworks. Structural quota restrictions by LTA favor high-end vehicle segments, while corporate PHV demand channels systematically price private suburban households out of mass-market registration brackets.",
-            "prediction_95": f"The substantial backlog of unsuccessful bids remaining from the previous cycle creates a hard price floor. Persistent global crude oil price fluctuations will continue accelerating fleet conversion rates toward commercial EV models, compounding demand pressure on Cat E allocations in the upcoming window."
+            "market_sentiment": "Cat A premiums experienced a minor stabilization adjustment downward, while luxury and open tranches (Cat B and E) climbed aggressively past the $129k and $130k resistance ceilings driven by fleet operators.",
+            "prediction_95": "With the upcoming June 2nd round facing a tight window, demand backlogs will likely force a rebound floor under Cat A while Cat B tests historical highs. Estimated next bid targets: [Cat A: $125,500, Cat B: $131,200, Cat C: $94,000]."
         }
 
 # --- DASHBOARD LOGIC ---
