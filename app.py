@@ -341,7 +341,7 @@ def get_upcoming_holiday():
     
     Task: Use Google Search to look up the official Singapore Ministry of Manpower (MOM) public holidays for 2026.
     Instructions:
-    1. Scan the full calendar year of 2026.
+    1. Scan the full calendar year of 2026, 2027, 2028 and the following years
     2. Identify the absolute next upcoming public holiday that occurs STRICTLY ON OR AFTER {now}.
     3. Ensure you capture the correct official dates: note that in May 2026, Hari Raya Haji is on 27 May and Vesak Day is on 31 May.
     
@@ -404,7 +404,7 @@ def fetch_coe_intelligence():
     CRITICAL ANALYTICAL DIRECTIVES for text keys:
     - For 'market_sentiment': Weave a cohesive overview of what the closing values/deltas mean by linking them to Singapore monetary conditions (MAS SGD NEER liquidity), LTA regulatory quota distribution decisions, and workforce social shifts (private buyers vs corporate fleet/PHV expansions).
     - For 'prediction_95': Project the next exercise closing trend with a 95% reality target based on the current bid-to-quota surplus backlog, global energy pressures, and localized EV infrastructure pacing. 
-      CRITICAL: You MUST conclude this analysis string with a final sentence that explicitly provides your exact estimated dollar prediction for the next round. Use this exact bracketed format as the final statement: "Estimated next bid targets: [Cat A: $X, Cat B: $Y, Cat C: $Z]." (Replace X, Y, and Z with your calculated numeric estimations based on current momentum).
+      CRITICAL: You MUST conclude this analysis string with a final sentence that explicitly provides your exact estimated dollar prediction for the next round. Use this exact bracketed format as the final statement: "Estimated next bid targets: [Cat A: \$X, Cat B: \$Y, Cat C: \$Z]." (Replace X, Y, and Z with your calculated numeric estimations based on current momentum).
     
     Return JSON only using this strict schema format. The "change" values MUST be regular positive or negative integers:
     {{
