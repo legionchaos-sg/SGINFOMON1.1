@@ -404,7 +404,7 @@ def fetch_coe_intelligence():
     CRITICAL ANALYTICAL DIRECTIVES for text keys:
     - For 'market_sentiment': Weave a cohesive overview of what the closing values/deltas mean by linking them to Singapore monetary conditions (MAS SGD NEER liquidity), LTA regulatory quota distribution decisions, and workforce social shifts (private buyers vs corporate fleet/PHV expansions).
     - For 'prediction_95': Project the next exercise closing trend with a 95% reality target based on the current bid-to-quota surplus backlog, global energy pressures, and localized EV infrastructure pacing. 
-      CRITICAL: You MUST conclude this analysis string with a final sentence that explicitly provides your exact estimated dollar prediction for the next round. Use this exact bracketed format as the final statement: "Estimated next bid targets: [Cat A: \$X, Cat B: \$Y, Cat C: \$Z]."
+      CRITICAL: You MUST conclude this analysis string with a final sentence that explicitly provides your exact estimated dollar prediction for the next round. Use this exact bracketed format as the final statement: "Estimated next bid targets: [Cat A: \$X, Cat B: \$Y, Cat C: \$Z]." (Replace X, Y, and Z with your calculated numeric estimations based on current momentum).
     
     Return JSON only using this strict schema format. The "change" values MUST be regular positive or negative integers:
     {{
