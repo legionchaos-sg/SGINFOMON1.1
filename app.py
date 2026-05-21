@@ -430,8 +430,7 @@ def fetch_coe_intelligence():
             )
         )
         # Clean markdown fences out if the model accidentally appends them 
-        clean_json = response.text.replace("```json", "").replace("
-```", "").strip()
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
         return json.loads(clean_json)
         
     except Exception as e:
