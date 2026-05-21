@@ -416,7 +416,7 @@ def fetch_coe_intelligence():
         "Cat E": {{"qp": int, "change": int, "quota": int, "bids": int}}
       }},
       "market_sentiment": "String",
-      "prediction_95": "String (Must end with: Estimated next bid targets: [Cat A: $X, Cat B: $Y, Cat C: $Z].)"
+      "prediction_95": "String (Must end with: Estimated next bid targets: [Cat A: X, Cat B: Y, Cat C: Z].)"
     }}
     """
 
