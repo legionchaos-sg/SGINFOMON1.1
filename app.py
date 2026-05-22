@@ -1652,161 +1652,79 @@ with tab5:
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
     st.header("🔒 Authorized Personnel Only")
-    
-    # Check session state security parameters
-    if "tab6_authenticated" not in st.session_state:
-        st.session_state.tab6_authenticated = False
 
-    # Initialize a system memory ledger for self-learning metrics
+    # 1. State Initialization
+    if "tab6_authenticated" not in st.session_state: st.session_state.tab6_authenticated = False
+    if "swarm_data" not in st.session_state: st.session_state.swarm_data = None
     if "swarm_self_learning_ledger" not in st.session_state:
         st.session_state.swarm_self_learning_ledger = {
             "execution_count": 0,
             "learned_weights": {"OpenAI": 0.35, "Anthropic": 0.35, "DeepSeek": 0.15, "Cohere": 0.15},
-            "recent_corrections": []
         }
-
+    
     # A. Secure Authorization Gate
     if not st.session_state.tab6_authenticated:
-        st.warning("This area contains proprietary model parameters. Please enter your authorization key.")
-        password_input = st.text_input("Authorization Key:", type="password", key="tab6_password_entry")
-        
-        if st.button("Unlock PRJKMZ Data", use_container_width=True):
+        st.warning("This area contains proprietary model parameters.")
+        password_input = st.text_input("Authorization Key:", type="password")
+        if st.button("Unlock PRJKMZ Data"):
             if password_input == "gold 10":
                 st.session_state.tab6_authenticated = True
                 st.rerun()
-            else:
-                st.error("Invalid Authorization Key. Access Denied.")
-                
-    # B. Protected Execution Zone (This runs only after password verification)
+            else: st.error("Access Denied.")
     else:
         st.success("Access Granted. Autonomous Memory Nodes Active.")
-        st.subheader("🔮 Swarm Optimization Staging Ground")
         
-        # Form to handle user input configuration securely
         with st.form(key="swarm_orchestration_form"):
-            user_situation = st.text_area(
-                "Punch in your situation, question, or data anomaly here:",
-                height=130,
-                value="Analyse the Iran-US situation when it will end with the world returning to normal rate of things",
-                placeholder="e.g., Analyze currency anomalies, policy shifts, or geopolitical conflicts..."
-            )
-            
-            col_left, col_right = st.columns(2)
-            with col_left:
-                model_count = st.number_input(
-                    "Total AI nodes to deploy (including yours):", 
-                    min_value=2, max_value=5, value=5
-                )
-            with col_right:
-                synthesis_depth = st.selectbox(
-                    "Master Synthesis Strategy:",
-                    ["Tight Consensus (Top 2)", "Triangulated Core (Top 3)", "Balanced Mosaic (Top 4)", "Maximum Swarm Spectrum (Top 5+)"]
-                )
-            
-            submit_run = st.form_submit_button(label="🚀 Execute Autonomous Swarm Run", use_container_width=True)
-
-        # -----------------------------------------------------------------
-        # C. SWARM ORCHESTRATION PIPELINE LOGIC
-        # -----------------------------------------------------------------
+            user_situation = st.text_area("Analysis Query:", height=100, value="Analyse the Iran-US situation.")
+            c1, c2 = st.columns(2)
+            model_count = c1.number_input("Nodes:", 2, 5, 5)
+            synthesis_depth = c2.selectbox("Strategy:", ["Tight Consensus", "Triangulated Core", "Balanced Mosaic"])
+            submit_run = st.form_submit_button("🚀 Execute Autonomous Swarm Run")
+    
+        # C. SWARM PIPELINE LOGIC (Cache Handling)
         if submit_run:
-            if not user_situation.strip():
-                st.warning("Please input a valid macro situation descriptor.")
-            else:
-                # Update loop iteration for self-learning
-                st.session_state.swarm_self_learning_ledger["execution_count"] += 1
-                
-                with st.status("Initializing Multi-Agent Node Swarm...", expanded=True) as status:
-                    st.write("📡 Step 1: Broadcasting situation payload to specialized counterpart endpoints...")
-                    time.sleep(0.8) # Simulate network synchronization
-                    
-                    st.write("🧮 Step 2: Harvesting raw analysis matrices and calculating environmental weights...")
-                    time.sleep(0.6)
-                    
-                    st.write("🤖 Step 3: Compiling contextual filters inside Master Gemini Layer...")
-                    time.sleep(0.5)
-                    
-                    status.update(label="Swarm Matrix Reconciled Successfully!", state="complete", expanded=False)
-
-                # --- 1. NETWORK SWARM REPORT METRICS ---
-                st.markdown("### 🌐 Swarm Topology & Deployed Counterparts")
-                
-                # Dynamic calculations based on user chosen count (Max 5 for this matrix)
-                total_nodes = int(model_count)
-                counterpart_count = total_nodes - 1
-                
-                metric_col1, metric_col2, metric_col3 = st.columns(3)
-                with metric_col1:
-                    st.metric(label="Total Network Nodes Active", value=f"{total_nodes} Models")
-                with metric_col2:
-                    st.metric(label="Counterpart Platforms Reached", value=f"{counterpart_count} External Platforms")
-                with metric_col3:
-                    st.metric(label="Master Orchestration Layer", value="Google Gemini 1.5 Pro")
-
-                # Structural table breakdown of the platforms and model types hit
-                st.markdown("**Active Model Deployment Inventory:**")
-                platform_data = [
-                    {"Platform": "Google Vertex AI (Yours)", "Engine Model Type": "Gemini 1.5 Pro", "Role Assigned": "Master Core Orchestrator / Final Synthesis"},
-                    {"Platform": "OpenAI API", "Engine Model Type": "GPT-4o (Omni Heavy Node)", "Role Assigned": "Macroeconomic Risk & Trade Volatility Data Filter"},
-                    {"Platform": "Anthropic API", "Engine Model Type": "Claude 3.5 Sonnet", "Role Assigned": "Geopolitical Sentiment & Strategic Policy Analysis"},
-                    {"Platform": "DeepSeek Infrastructure", "Engine Model Type": "DeepSeek-V3 (Reasoning Engine)", "Role Assigned": "Supply Chain Bottleneck & Maritime Logistics Tracking"},
-                    {"Platform": "Cohere Platform", "Engine Model Type": "Cohere Command R+", "Role Assigned": "Cross-Border Market Arbitrage & Capital Flight Vectoring"}
-                ]
-                # Slice inventory array cleanly based on how many total nodes the user requested
-                st.table(platform_data[:total_nodes])
-
-                # --- 2. SURROUNDING FACTORS CONSIDERATIONS CONTAINER ---
-                st.markdown("---")
-                st.markdown("### 🧭 Surrounding Factor Vectors Ingested By Gemini")
-                st.caption("Gemini automatically parsed these adjacent variables to look beyond your primary text block:")
-                
-                factor_col1, factor_col2 = st.columns(2)
-                with factor_col1:
-                    with st.container(border=True):
-                        st.markdown("**📊 Macro-Financial Indicators**")
-                        st.write("* **S$NEER Target Slopes:** Tracking Monetary Authority of Singapore framework shifts.")
-                        st.write("* **Wartime Energy Surcharges:** Factoring current spot rates on logistics channels.")
-                with factor_col2:
-                    with st.container(border=True):
-                        st.markdown("**⚓ Operational Realities**")
-                        st.write("* **Maritime Transit Diversions:** Transit delay multipliers around major shipping chokepoints.")
-                        st.write("* **Capital Realignment Hubs:** Tracking structural capital flight into defensive safe-havens.")
-
-                # --- 3. THE INTELLECTUAL SELECTION & FINAL SYNTHESIS CARD ---
-                st.markdown("---")
-                st.markdown("### 📋 Final Swarm Synthesis & Selected Reality Picks")
-                
-                # Contextual simulation of the specific user input matching our system timeline rules
-                st.info(f"**Query Objective Resolution:** {user_situation}")
-                
-                st.markdown("""
-                Based on the analysis profile, the master orchestration engine has discarded outliers and established a multi-layered path toward normal operations.
-                
-                #### 🎯 Selected Reality Picks (Top 3 Structural Nodes Chosen)
-                1. **Pick 1 (Geopolitical Resolution Node):** Predicts a structured, conditional commercial maritime lane compromise mediated by regional neutrals by **Late Q3 2026**.
-                2. **Pick 2 (Energy Equilibrium Node):** Projects energy commodity baselines stabilizing down to an balance window of **$82 – $88 per barrel by Q4 2026**.
-                3. **Pick 3 (Monetary Pivot Node):** Anticipates macro inflation cycles normalizing, permitting central banking institutions to resume traditional rate structures by **Early Q1 2027**.
-                
-                > **Unified System Synthesis:** A return to the normal pace of global trade will not occur as a single peace event. The platform maps stabilization starting late summer, but full structural normalization is delayed until the clearing of secondary energy impacts in early 2027.
-                """)
-
-                # --- 4. SELF-LEARNING AND IMPROVEMENT DISPLAY PANEL ---
-                st.markdown("---")
-                st.markdown("### 🧠 Self-Learning & Automated Optimization Metrics")
-                
-                # Automatically optimize weights based on execution count for simulation purposes
-                exec_num = st.session_state.swarm_self_learning_ledger["execution_count"]
-                if exec_num > 1:
-                    # Mimic small evolutionary variance improvements based on processing data inputs
-                    st.session_state.swarm_self_learning_ledger["learned_weights"]["OpenAI"] = round(0.35 + (exec_num * 0.001), 4)
-                    st.session_state.swarm_self_learning_ledger["learned_weights"]["Anthropic"] = round(0.35 - (exec_num * 0.001), 4)
-                
-                st.json(st.session_state.swarm_self_learning_ledger)
-                st.caption("The system tracks runtime variances and shifts model prioritization weights to favor nodes displaying lower historical data discrepancies.")
-
-        # --- DISCONNECT AREA ---
-        st.divider()
+            # Clear stale cache immediately
+            st.session_state.swarm_data = None
+            
+            # Simulate logic / Synthesis generation
+            st.session_state.swarm_self_learning_ledger["execution_count"] += 1
+            
+            # Dynamic response generation
+            dynamic_synthesis = f"""
+            #### 🎯 Dynamic Reality Picks for: {user_situation[:30]}...
+            1. **Geopolitical Node:** Based on the {synthesis_depth} strategy, current volatility indicates a pivot by Q3 2026.
+            2. **Energy Equilibrium Node:** Projected commodity stabilization window: **$80 – $90/bbl**.
+            3. **Monetary Pivot Node:** Central bank rate normalization tracked for **Q1 2027**.
+            
+            > **Unified Synthesis:** Stabilization initiated by late summer, full structural normalization by early 2027.
+            """
+            
+            st.session_state.swarm_data = {
+                "query": user_situation,
+                "nodes": model_count,
+                "synthesis": dynamic_synthesis
+            }
+            st.rerun()
+    
+        # D. DISPLAY LOGIC (Reads from state)
+        if st.session_state.swarm_data:
+            data = st.session_state.swarm_data
+            st.markdown("### 🌐 Swarm Topology Active")
+            st.metric("Total Network Nodes", data["nodes"])
+            
+            st.markdown("---")
+            st.markdown("### 📋 Final Swarm Synthesis")
+            st.info(f"**Query Objective:** {data['query']}")
+            st.success(data["synthesis"])
+            
+            st.markdown("### 🧠 Self-Learning Metrics")
+            st.json(st.session_state.swarm_self_learning_ledger)
+    
         if st.button("Secure Disconnect & Lock Tab"):
             st.session_state.tab6_authenticated = False
+            st.session_state.swarm_data = None
             st.rerun()
+    
+   
     
     
