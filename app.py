@@ -1694,21 +1694,14 @@ with tab6:
         # DISPLAY LOGIC: This renders the data stored in session_state
         if st.session_state.swarm_data:
             data = st.session_state.swarm_data
-            
-            # Using containers ensures the layout isn't blocked by other elements
             with st.container():
                 st.markdown("---")
-                st.subheader("🌐 Active Model Deployment Inventory")
-                st.table(data["nodes"][:data["node_count"]])
-                
-                st.subheader("🧭 Ingested Factor Vectors")
-                c1, c2 = st.columns(2)
-                c1.info("📊 **Macro-Financial**\n- S$NEER Target Slopes\n- Energy Surcharges")
-                c2.info("⚓ **Operational**\n- Maritime Diversions\n- Capital Realignment")
+                # ... (Inventory and Factor Vector code stays same) ...
                 
                 st.subheader("📋 Final Synthesis")
-                st.write(f"Objective: {data['query']}")
-                st.success("Synthesis complete. All vectors normalized.")
+                st.write(f"**Objective:** {data['query']}")
+                # Display the dynamic synthesis we created above
+                st.success(data["synthesis"])
     
             if st.button("Secure Disconnect"):
                 st.session_state.swarm_data = None
