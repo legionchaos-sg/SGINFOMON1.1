@@ -1653,60 +1653,110 @@ with tab5:
 with tab6:
     st.header("🔒 Authorized Personnel Only")
     
-    # Initialize state
-    if "authenticated" not in st.session_state: st.session_state.authenticated = False
-    if "swarm_data" not in st.session_state: st.session_state.swarm_data = None
-    
-    if not st.session_state.authenticated:
-        key = st.text_input("Authorization Key:", type="password")
-        if st.button("Unlock PRJKMZ"):
-            if key == "gold 10":
-                st.session_state.authenticated = True
+    # 1. Initialize the authentication state variable if it doesn't exist
+    if "tab6_authenticated" not in st.session_state:
+        st.session_state.tab6_authenticated = False
+
+    # A. Secure Authorization Gate
+    if not st.session_state.tab6_authenticated:
+        st.warning("This area contains proprietary model parameters. Please enter your authorization key.")
+        password_input = st.text_input("Authorization Key:", type="password", key="tab6_password_entry")
+        
+        if st.button("Unlock PRJKMZ Data", use_container_width=True):
+            if password_input == "gold 10":
+                st.session_state.tab6_authenticated = True
                 st.rerun()
-            else: st.error("Access Denied.")
-    else:
-        # The Orchestration Form
-        with st.form("swarm_form"):
-            query = st.text_area("Analysis Query:", value=".")
-            cols = st.columns(2)
-            node_count = cols[0].number_input("Nodes:", 2, 5, 5)
-            submitted = st.form_submit_button("🚀 Execute Swarm Run")
-            
-        if submitted:
-            # --- STALE CACHE RESOLUTION ---
-            # Wiping previous data immediately upon new submission
-            st.session_state.swarm_data = None 
-            
-            # Update the session state with fresh data
-            st.session_state.swarm_data = {
-                "query": query,
-                "node_count": node_count,
-                "nodes": [
-                    {"ID": "Node 01", "Platform": "Gemini 1.5 Pro", "Role": "Orchestrator"},
-                    {"ID": "Node 02", "Platform": "GPT-4o", "Role": "Risk Filter"},
-                    {"ID": "Node 03", "Platform": "Claude 3.5", "Role": "Sentiment"},
-                    {"ID": "Node 04", "Platform": "DeepSeek-V3", "Role": "Logistics"},
-                    {"ID": "Node 05", "Platform": "Cohere R+", "Role": "Capital"}
-                ]
-            }
-            st.rerun() # Force UI refresh to show results immediately
-    
-        # DISPLAY LOGIC: This renders the data stored in session_state
-        if st.session_state.swarm_data:
-            data = st.session_state.swarm_data
-            with st.container():
-                st.markdown("---")
-                # ... (Inventory and Factor Vector code stays same) ...
+            else:
+                st.error("Invalid Authorization Key. Access Denied.")
                 
-                st.subheader("📋 Final Synthesis")
-                st.write(f"**Objective:** {data['query']}")
-                # Display the dynamic synthesis we created above
-                st.success(data["synthesis"])
-    
-            if st.button("Secure Disconnect"):
-                st.session_state.swarm_data = None
-                st.rerun()
-    
-    
-    
-    
+    # B. Protected Execution Zone (This runs only after password verification)
+    else:
+        st.success("Access Granted. Autonomous Memory Nodes Active.")
+        
+        # -----------------------------------------------------------------
+        # 👇 DROP THE NEW AGENTIC MULTI-MODEL CODE BLOCK RIGHT HERE:
+        # -----------------------------------------------------------------
+        st.subheader("🔮 Swarm Optimization Staging Ground")
+        
+        # Form to contain user choices and prevent random page refreshes while typing
+        with st.form(key="swarm_orchestration_form"):
+            
+            # Input 1: The dynamic multi-line query input box
+            user_situation = st.text_area(
+                "Punch in your situation, question, or data anomaly here:",
+                height=130,
+                placeholder="e.g., Analyze career pivots for an IT manager or crunch SGD/CNY spot rate anomalies..."
+            )
+            
+            # Layout optimization split: model quantity and selection pickers side-by-side
+            col_left, col_right = st.columns(2)
+            
+            with col_left:
+                model_count = st.number_input(
+                    "Total AI nodes to deploy (including counterparts):", 
+                    min_value=2, max_value=10, value=5
+                )
+            
+            with col_right:
+                synthesis_depth = st.selectbox(
+                    "Master Synthesis Strategy:",
+                    ["Tight Consensus (Top 2)", "Triangulated Core (Top 3)", "Balanced Mosaic (Top 4)", "Maximum Swarm Spectrum (Top 5+)"]
+                )
+            
+            # The Trigger Action Button
+            submit_run = st.form_submit_button(label="🚀 Execute Autonomous Swarm Run", use_container_width=True)
+
+        # -----------------------------------------------------------------
+        # C. Handshake With Your Existing Gemini Library Integration
+        # -----------------------------------------------------------------
+        if submit_run:
+            if not user_situation.strip():
+                st.warning("Please input a macro situation or query description before launching the analysis.")
+            else:
+                # 1. Visual status indicator tracking the node deployment pipeline
+                with st.status("Initializing model matrix...", expanded=True) as status:
+                    
+                    st.write(f"Deconstructing objective. Deploying {model_count} AI counterpart variants...")
+                    # Simulating structural cross-platform ingestion loop rules
+                    # (Here, your code calls OpenAI, Anthropic, or mocks data streams)
+                    
+                    st.write("Counterpart data parsed. Routing aggregate feeds into Master Gemini instance...")
+                    
+                    # 2. Construct the macro meta-prompt enforcing our structural synthesis rules
+                    orchestrator_prompt = f"""
+                    You are acting as the Master Intelligence Synthesis Entity. 
+                    The user has supplied the following core query scenario: "{user_situation}"
+                    
+                    You must evaluate this across {model_count} theoretical counterpart vectors. 
+                    Apply your internal selection criteria to give a definitive reality synthesis 
+                    utilizing the '{synthesis_depth}' selection template. 
+                    Ensure no conversational filler, precise macro alignment, and provide your top actionable picks.
+                    """
+                    
+                    # 3. Call your existing Gemini execution code block
+                    try:
+                        # --- SAMPLE CALL STRUCTURE ---
+                        # model = genai.GenerativeModel('gemini-1.5-pro')
+                        # response = model.generate_content(orchestrator_prompt)
+                        # final_output_text = response.text
+                        
+                        # (Placeholder string to showcase UI display mapping)
+                        final_output_text = f"Successfully processed via Gemini. Evaluated inputs across {model_count} nodes based on: {user_situation[:40]}..."
+                        
+                        status.update(label="Multi-Node Synthesis Compiled!", state="complete", expanded=False)
+                        
+                        # Displaying final definitive output cards onto the layout
+                        st.subheader("📋 Master Swarm Analysis & Final Synthesis")
+                        st.markdown(final_output_text)
+                        
+                    except Exception as e:
+                        status.update(label="Pipeline Execution Error", state="error")
+                        st.error(f"Gemini processing engine failed: {str(e)}")
+
+        # -----------------------------------------------------------------
+        # Logout Facility to lock down the interface instantly
+        st.divider()
+        if st.button("Secure Disconnect & Lock Tab"):
+            st.session_state.tab6_authenticated = False
+            st.rerun()
+            show_strategy_roadmap(roadmap_airline)
