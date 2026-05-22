@@ -1648,5 +1648,41 @@ with tab5:
     with c2:
         # Use a spacer to push the button down so it aligns with the selectbox label
         st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
+
+        # --- SECURE PROTECTED TAB (TAB 6) ---
+with tab6:
+    st.header("🔒 Authorized Personnel Only")
+    
+    # 1. Initialize the authentication state variable if it doesn't exist
+    if "tab6_authenticated" not in st.session_state:
+        st.session_state.tab6_authenticated = False
+
+    # 2. Check if the user is verified
+    if not st.session_state.tab6_authenticated:
+        st.warning("This area contains proprietary model parameters. Please enter your authorization key.")
+        
+        # Password entry field (masked input)
+        password_input = st.text_input("Authorization Key:", type="password", key="tab6_password_entry")
+        
+        # Verification button
+        if st.button("Unlock PRJKMZ Data", use_container_width=True):
+            # REPLACE 'gold 10' WITH YOUR CHOSEN SECRET CODE
+            if password_input == "gold 10":
+                st.session_state.tab6_authenticated = True
+                st.rerun()  # Instantly refresh the page to draw the protected contents
+            else:
+                st.error("Invalid Authorization Key. Access Denied.")
+                
+    else:
+        # 3. SECURE CONTENT ZONE (This only renders if authenticated is True)
+        st.success("Access Granted. Autonomous Memory Nodes Active.")
+        
+        # --- PLACE YOUR HIGH-VALUE AGENTIC CODE HERE ---
+        st.write("Welcome to the PRJKMZ workspace. Multi-agent swarm logs are fully operational.")
+        
+        # Option to log out / lock the tab again
+        if st.button("Lock Tab & Log Out"):
+            st.session_state.tab6_authenticated = False
+            st.rerun()
         if st.button("🚀 Open Strategic Roadmap", use_container_width=True):
             show_strategy_roadmap(roadmap_airline)
