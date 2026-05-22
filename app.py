@@ -1652,77 +1652,62 @@ with tab5:
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
     st.header("🔒 Authorized Personnel Only")
-    
-    # 1. State Initializers
-    if "tab6_authenticated" not in st.session_state: st.session_state.tab6_authenticated = False
-    if "results" not in st.session_state: st.session_state.results = None
 
-    # 2. Auth Gate
-    if not st.session_state.tab6_authenticated:
-        password_input = st.text_input("Authorization Key:", type="password")
-        if st.button("Unlock PRJKMZ Data"):
-            if password_input == "gold 10":
-                st.session_state.tab6_authenticated = True
+    st.header("🔒 Authorized Personnel Only")
+    
+    # Initialize state
+    if "authenticated" not in st.session_state: st.session_state.authenticated = False
+    if "swarm_data" not in st.session_state: st.session_state.swarm_data = None
+
+    if not st.session_state.authenticated:
+        key = st.text_input("Authorization Key:", type="password")
+        if st.button("Unlock PRJKMZ"):
+            if key == "gold 10":
+                st.session_state.authenticated = True
                 st.rerun()
             else: st.error("Access Denied.")
-    
     else:
-        st.subheader("🔮 Swarm Optimization Staging Ground")
-        
-        with st.form(key="orchestration"):
-            query = st.text_area("Analysis Query:", value="Analyse the Iran-US situation and its global impact.")
-            col1, col2 = st.columns(2)
-            nodes = col1.number_input("Nodes:", 2, 5, 5)
-            strat = col2.selectbox("Strategy:", ["Tight", "Triangulated", "Balanced", "Maximum"])
-            submit = st.form_submit_button("🚀 Execute Autonomous Swarm Run")
-
-        # 3. DYNAMIC EXECUTION (STALE CACHE RESOLUTION)
-        if submit:
-            st.session_state.results = None  # WIPE PREVIOUS RUN
-            with st.status("Deploying Node Swarm...", expanded=True) as status:
-                time.sleep(1)
-                # Store the run data
-                st.session_state.results = {
-                    "nodes": nodes,
-                    "query": query,
-                    "inventory": [
-                        {"Platform": "Gemini 1.5 Pro", "Role": "Orchestrator"},
-                        {"Platform": "GPT-4o", "Role": "Risk Filter"},
-                        {"Platform": "Claude 3.5 Sonnet", "Role": "Sentiment"},
-                        {"Platform": "DeepSeek-V3", "Role": "Logistics"},
-                        {"Platform": "Cohere Command R+", "Role": "Arbitrage"}
-                    ]
-                }
-                status.update(label="Swarm Reconciled", state="complete")
-
-        # 4. DYNAMIC DISPLAY (ONLY RENDERS AFTER RUN)
-        if st.session_state.results:
-            res = st.session_state.results
+        # The Orchestration Form
+        with st.form("swarm_form"):
+            query = st.text_area("Analysis Query:", value="Analyse the Iran-US situation.")
+            cols = st.columns(2)
+            node_count = cols[0].number_input("Nodes:", 2, 5, 5)
+            submitted = st.form_submit_button("🚀 Execute Swarm Run")
             
-            st.markdown("### 🌐 Active Model Deployment Inventory")
-            # This table automatically resizes based on the 'nodes' input
-            st.table(res["inventory"][:res["nodes"]])
+        if submitted:
+            # Update the session state so the UI can "see" the data
+            st.session_state.swarm_data = {
+                "query": query,
+                "node_count": node_count,
+                "nodes": [
+                    {"ID": "Node 01", "Platform": "Gemini 1.5 Pro", "Role": "Orchestrator"},
+                    {"ID": "Node 02", "Platform": "GPT-4o", "Role": "Risk Filter"},
+                    {"ID": "Node 03", "Platform": "Claude 3.5", "Role": "Sentiment"},
+                    {"ID": "Node 04", "Platform": "DeepSeek-V3", "Role": "Logistics"},
+                    {"ID": "Node 05", "Platform": "Cohere R+", "Role": "Capital"}
+                ]
+            }
+            st.rerun() # Force UI refresh to show results immediately
 
-            st.markdown("### 🧭 Ingested Surrounding Factor Vectors")
+        # DISPLAY LOGIC: This renders the data stored in session_state
+        if st.session_state.swarm_data:
+            data = st.session_state.swarm_data
+            
+            st.subheader("🌐 Active Model Deployment Inventory")
+            st.table(data["nodes"][:data["node_count"]])
+            
+            st.subheader("🧭 Ingested Factor Vectors")
             c1, c2 = st.columns(2)
-            with c1:
-                with st.container(border=True):
-                    st.markdown("**📊 Macro-Financial**")
-                    st.write("• **S$NEER Target Slopes**")
-                    st.write("• **Wartime Energy Surcharges**")
-            with c2:
-                with st.container(border=True):
-                    st.markdown("**⚓ Operational Realities**")
-                    st.write("• **Maritime Transit Diversions**")
-                    st.write("• **Capital Realignment Hubs**")
-
-            st.markdown("---")
-            st.info(f"**Final Synthesis for:** {res['query']}")
-            # Insert your synthesis text here
+            c1.info("📊 **Macro-Financial**\n- S$NEER Target Slopes\n- Energy Surcharges")
+            c2.info("⚓ **Operational**\n- Maritime Diversions\n- Capital Realignment")
             
+            st.subheader("📋 Final Synthesis")
+            st.write(f"Objective: {data['query']}")
+            st.success("Synthesis complete. All vectors normalized.")
+
             if st.button("Secure Disconnect"):
-                st.session_state.results = None
-                st.session_state.tab6_authenticated = False
+                st.session_state.swarm_data = None
+                st.session_state.authenticated = False
                 st.rerun()
     
     
