@@ -1652,8 +1652,6 @@ with tab5:
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
     st.header("🔒 Authorized Personnel Only")
-
-    st.header("🔒 Authorized Personnel Only")
     
     # Initialize state
     if "authenticated" not in st.session_state: st.session_state.authenticated = False
@@ -1669,7 +1667,7 @@ with tab6:
     else:
         # The Orchestration Form
         with st.form("swarm_form"):
-            query = st.text_area("Analysis Query:", value="Analyse the Iran-US situation.")
+            query = st.text_area("Analysis Query:", value=".")
             cols = st.columns(2)
             node_count = cols[0].number_input("Nodes:", 2, 5, 5)
             submitted = st.form_submit_button("🚀 Execute Swarm Run")
@@ -1693,21 +1691,23 @@ with tab6:
         if st.session_state.swarm_data:
             data = st.session_state.swarm_data
             
-            st.subheader("🌐 Active Model Deployment Inventory")
-            st.table(data["nodes"][:data["node_count"]])
-            
-            st.subheader("🧭 Ingested Factor Vectors")
-            c1, c2 = st.columns(2)
-            c1.info("📊 **Macro-Financial**\n- S$NEER Target Slopes\n- Energy Surcharges")
-            c2.info("⚓ **Operational**\n- Maritime Diversions\n- Capital Realignment")
-            
-            st.subheader("📋 Final Synthesis")
-            st.write(f"Objective: {data['query']}")
-            st.success("Synthesis complete. All vectors normalized.")
+            # Using containers ensures the layout isn't blocked by other elements
+            with st.container():
+                st.markdown("---")
+                st.subheader("🌐 Active Model Deployment Inventory")
+                st.table(data["nodes"][:data["node_count"]])
+                
+                st.subheader("🧭 Ingested Factor Vectors")
+                c1, c2 = st.columns(2)
+                c1.info("📊 **Macro-Financial**\n- S$NEER Target Slopes\n- Energy Surcharges")
+                c2.info("⚓ **Operational**\n- Maritime Diversions\n- Capital Realignment")
+                
+                st.subheader("📋 Final Synthesis")
+                st.write(f"Objective: {data['query']}")
+                st.success("Synthesis complete. All vectors normalized.")
 
             if st.button("Secure Disconnect"):
                 st.session_state.swarm_data = None
-                st.session_state.authenticated = False
                 st.rerun()
     
     
