@@ -1656,7 +1656,7 @@ with tab6:
     # Initialize state
     if "authenticated" not in st.session_state: st.session_state.authenticated = False
     if "swarm_data" not in st.session_state: st.session_state.swarm_data = None
-
+    
     if not st.session_state.authenticated:
         key = st.text_input("Authorization Key:", type="password")
         if st.button("Unlock PRJKMZ"):
@@ -1673,7 +1673,11 @@ with tab6:
             submitted = st.form_submit_button("🚀 Execute Swarm Run")
             
         if submitted:
-            # Update the session state so the UI can "see" the data
+            # --- STALE CACHE RESOLUTION ---
+            # Wiping previous data immediately upon new submission
+            st.session_state.swarm_data = None 
+            
+            # Update the session state with fresh data
             st.session_state.swarm_data = {
                 "query": query,
                 "node_count": node_count,
@@ -1686,7 +1690,7 @@ with tab6:
                 ]
             }
             st.rerun() # Force UI refresh to show results immediately
-
+    
         # DISPLAY LOGIC: This renders the data stored in session_state
         if st.session_state.swarm_data:
             data = st.session_state.swarm_data
@@ -1705,7 +1709,7 @@ with tab6:
                 st.subheader("📋 Final Synthesis")
                 st.write(f"Objective: {data['query']}")
                 st.success("Synthesis complete. All vectors normalized.")
-
+    
             if st.button("Secure Disconnect"):
                 st.session_state.swarm_data = None
                 st.rerun()
