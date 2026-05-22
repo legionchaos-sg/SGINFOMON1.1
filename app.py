@@ -655,7 +655,7 @@ st.markdown("""
 
 # --- UI START ---
 st.title("SG Info Monitor 10.9")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful SERVICES", "🛠️ Taticial AVG FX Exchg", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful SERVICES", "🛠️ Taticial AVG FX Exchg", "🔮 COE PREDICTION", "✈️ AIRFARE ENGINE", "PRJKMZ"])
 
 with tab1:
     # 1. Clocks
