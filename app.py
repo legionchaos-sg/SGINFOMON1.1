@@ -1651,20 +1651,7 @@ with tab5:
 
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
-    st.header("🔒 Authorized Personnel Only")
-    st.set_page_config(layout="wide")
-    
-    # --- CONCISE VISUAL PROFILE ---
-    # Reduces font sizes and compacts the UI per [2026-03-24] preferences
-    st.markdown("""
-        <style>
-            .reportview-container .main .block-container { padding-top: 1rem; }
-            h1, h2, h3, h4 { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; font-size: 90%; }
-            div.stButton > button { margin-top: 5px; margin-bottom: 5px; font-size: 90%; }
-            p, li, span, div.st-markdown { font-size: 90% !important; }
-        </style>
-    """, unsafe_allow_safe_html=True)
-    
+   
     st.header("🔒 Authorized Personnel Only")
     
     # 1. INITIALIZE DYNAMIC SECURITY & MEMORY STATES
