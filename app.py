@@ -1689,7 +1689,7 @@ with tab6:
             # Update the session state with processed data
             st.session_state.swarm_data = {
                 "query": query,
-                "node_count": node_count,
+                "node_count": int(node_count),
                 "synthesis": run_synthesis(query, node_count), # Dynamically generated
                 "nodes": [
                     {"ID": "Node 01", "Platform": "Gemini 1.5 Pro", "Role": "Orchestrator"},
@@ -1704,6 +1704,9 @@ with tab6:
         # DISPLAY LOGIC: This renders the data stored in session_state
         if st.session_state.swarm_data:
             data = st.session_state.swarm_data
+
+            # Ensure keys exist before accessing
+            count = data.get("node_count", 2)
             
             with st.container():
                 st.markdown("---")
