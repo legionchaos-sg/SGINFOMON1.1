@@ -63,7 +63,7 @@ def get_ai_response(user_input):
     for attempt in range(3):
         try:
             response = client.models.generate_content(
-                model="gemini-3-flash-preview", 
+                model="gemini-3.5-flash", 
                 contents=user_input,
                 config={"tools": [{"google_search": {}}]}
             )
@@ -103,7 +103,7 @@ def get_cached_analysis(sti, gold, silver, brent):
     try:
         # Try with Search first
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.5-flash",
             contents=prompt,
             config={"tools": [{"google_search": {}}]}
         )
@@ -112,7 +112,7 @@ def get_cached_analysis(sti, gold, silver, brent):
         # If Search fails (429), return a non-search analysis immediately
         # This ensures the cache stores DATA, not an ERROR.
         response_lite = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.5-flash",
             contents=prompt + " (Search unavailable, use internal knowledge)"
         )
         return response_lite.text
@@ -175,7 +175,7 @@ def fetch_fuel_logic(brent_now):
 
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-pro',
+            model='gemini-3.1-pro',
             contents=dynamic_prompt,
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
@@ -354,7 +354,7 @@ def get_upcoming_holiday():
 
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-3.1-pro',
             contents=prompt,
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
@@ -422,7 +422,7 @@ def fetch_coe_intelligence():
 
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-pro',
+            model='gemini-3.1-pro',
             contents=prompt,
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
