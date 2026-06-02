@@ -1650,21 +1650,21 @@ with tab5:
         if st.button("Close"):
             st.rerun()
 
-    # Triggering UI
-    st.subheader("🗓️ Purchase Strategy")
-    c1, c2 = st.columns([1, 1], gap="small")
-
-    with c1:
-        # Ensure this block is indented exactly 4 spaces from 'with'
-        roadmap_airline = st.selectbox(
-            "Select Airline to Forecast:",
-            [c["name"] for c in final_sorted],
-            key="g10_t5_roadmap_select"
-        )
+        # Triggering UI
+        st.subheader("🗓️ Purchase Strategy")
+        c1, c2 = st.columns([1, 1], gap="small")
     
-    with c2:
-        # Use a spacer to push the button down so it aligns with the selectbox label
-        st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
+        with c1:
+            # Ensure this block is indented exactly 4 spaces from 'with'
+            roadmap_airline = st.selectbox(
+                "Select Airline to Forecast:",
+                [c["name"] for c in final_sorted],
+                key="g10_t5_roadmap_select"
+            )
+        
+        with c2:
+            # Use a spacer to push the button down so it aligns with the selectbox label
+            st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
 
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
