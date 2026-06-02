@@ -1666,25 +1666,6 @@ with tab5:
         # Use a spacer to push the button down so it aligns with the selectbox label
         st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
 
-        # Triggering UI
-    st.subheader("🗓️ Purchase Strategy")
-    c1, c2 = st.columns([1, 1], gap="small")
-
-    with c1:
-        roadmap_airline = st.selectbox(
-            "Select Airline to Forecast:",
-            [c["name"] for c in final_sorted],
-            key="g10_t5_roadmap_select"
-        )
-    
-    with c2:
-        # Pushes button down to perfectly align horizontally with the selectbox
-        st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
-        
-        # FIX: Trigger button added to launch the @st.dialog modal framework
-        if st.button("🚀 View Strategy Roadmap", use_container_width=True):
-            show_strategy_roadmap(roadmap_airline)
-
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
    
