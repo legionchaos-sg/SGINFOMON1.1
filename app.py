@@ -335,15 +335,14 @@ def get_upcoming_holiday():
     
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # NEW OPEN-ENDED PROMPT: Removes rigid comparison constraints so the AI sweeps the whole year
+    # CLEANED PROMPT: Removed outdated May anchors so the model looks forward cleanly
     prompt = f"""
     The current local date in Singapore is {now}.
     
-    Task: Use Google Search to look up the official Singapore Ministry of Manpower (MOM) public holidays for 2026.
+    Task: Use Google Search to look up the official Singapore Ministry of Manpower (MOM) public holidays.
     Instructions:
-    1. Scan the full calendar year of 2026, 2027, 2028 and the following years
+    1. Scan the calendar for the current year ({now.year}) and the following year.
     2. Identify the absolute next upcoming public holiday that occurs STRICTLY ON OR AFTER {now}.
-    3. Ensure you capture the correct official dates: note that in May 2026, Hari Raya Haji is on 27 May and Vesak Day is on 31 May.
     
     Return ONLY a clean JSON object containing the closest upcoming holiday:
     {{
@@ -353,8 +352,9 @@ def get_upcoming_holiday():
     """
 
     try:
+        # Utilizing a highly efficient production model string
         response = client.models.generate_content(
-            model='gemini-3.1-pro',
+            model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
@@ -362,8 +362,14 @@ def get_upcoming_holiday():
             )
         )
         
-        # Parse output safely
-        h_data = json.loads(response.text.strip())
+        # Safe JSON string cleaning (strips potential markdown code blocks)
+        clean_text = response.text.strip()
+        if clean_text.startswith("```"):
+            clean_text = clean_text.split("```")[1]
+            if clean_text.startswith("json"):
+                clean_text = clean_text[4:]
+                
+        h_data = json.loads(clean_text.strip())
         h_date = datetime.strptime(h_data['date'], '%Y-%m-%d').date()
         days_diff = (h_date - now).days
         
@@ -373,18 +379,29 @@ def get_upcoming_holiday():
         return f"🗓️ Next: {h_data['name']} ({h_date.strftime('%d %b')}) — ⏳ {days_diff} days"
 
     except Exception as e:
-        # Ironclad Fallback Layer matching the true MOM May 2026 sequence
-        # Today is May 18, so the next imminent holiday is Hari Raya Haji on May 27
-        fallback_date = date(2026, 5, 27)
-        days_remaining = (fallback_date - now).days
+        # Dynamic, ironclad fallback array covering the rest of the calendar
+        fallback_holidays = [
+            {"name": "Labour Day", "date": date(2026, 5, 1)},
+            {"name": "Hari Raya Haji", "date": date(2026, 5, 27)},
+            {"name": "Vesak Day", "date": date(2026, 5, 31)},
+            {"name": "Vesak Day (Observed)", "date": date(2026, 6, 1)},
+            {"name": "National Day", "date": date(2026, 8, 9)},
+            {"name": "National Day (Observed)", "date": date(2026, 8, 10)},
+            {"name": "Deepavali", "date": date(2026, 11, 8)},
+            {"name": "Deepavali (Observed)", "date": date(2026, 11, 9)},
+            {"name": "Christmas Day", "date": date(2026, 12, 25)},
+            {"name": "New Year's Day", "date": date(2027, 1, 1)},
+        ]
         
-        if days_remaining < 0:
-            # Shift backup matrix to Vesak Day if May 27 passes
-            fallback_date = date(2026, 5, 31)
-            days_remaining = (fallback_date - now).days
-            return f"🗓️ Next: Vesak Day (31 May) — ⏳ {days_remaining} days"
-            
-        return f"🗓️ Next: Hari Raya Haji (27 May) — ⏳ {days_remaining} days"
+        # Loop through the array and find the very first holiday that is equal to or ahead of today
+        for holiday in fallback_holidays:
+            if holiday["date"] >= now:
+                days_remaining = (holiday["date"] - now).days
+                if days_remaining == 0:
+                    return f"🎉 Today: {holiday['name']}! (Enjoy your holiday)"
+                return f"🗓️ Next: {holiday['name']} ({holiday['date'].strftime('%d %b')}) — ⏳ {days_remaining} days"
+        
+        return "🗓️ Next: Public Holiday — Check MOM website"
 
 # Manual COE INFROMATION 
 def fetch_coe_intelligence():
