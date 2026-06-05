@@ -1661,7 +1661,7 @@ with tab5:
     c1, c2 = st.columns([1, 1], gap="small")
 
     with c1:
-        # Ensure this block is indented exactly 4 spaces from 'with'
+        # User selects the airline from the dropdown
         roadmap_airline = st.selectbox(
             "Select Airline to Forecast:",
             [c["name"] for c in final_sorted],
@@ -1669,8 +1669,12 @@ with tab5:
         )
     
     with c2:
-        # Use a spacer to push the button down so it aligns with the selectbox label
+        # Pushes the button down so it aligns horizontally with the selectbox
         st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
+        
+        # Displays the action button to open up the @st.dialog window
+        if st.button("🚀 View Strategy Roadmap", use_container_width=True, key="g10_t5_trigger_btn"):
+            show_strategy_roadmap(roadmap_airline)
 
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
