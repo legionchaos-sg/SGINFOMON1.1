@@ -1659,28 +1659,16 @@ with tab5:
     # Triggering UI
     st.subheader("🗓️ Purchase Strategy")
     
-    # Force alignment via a tiny, localized CSS block targeting this specific button column
-    st.markdown("""
-        <style>
-            div[data-testid="stColumn"]:nth-of-type(2) div.stButton {
-                padding-top: 24px !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    c1, c2 = st.columns([1, 1], gap="small")
-
-    with c1:
-        roadmap_airline = st.selectbox(
-            "Select Airline to Forecast:",
-            [c["name"] for c in final_sorted],
-            key="g10_t5_roadmap_select_unique"
-        )
+    # 1. Dropdown box spans full width
+    roadmap_airline = st.selectbox(
+        "Select Airline to Forecast:",
+        [c["name"] for c in final_sorted],
+        key="g10_t5_roadmap_select_unique"
+    )
     
-    with c2:
-        # The CSS above handles the alignment, leaving the layout block completely clean
-        if st.button("🚀 View Strategy Roadmap", use_container_width=True, key="g10_t5_trigger_btn"):
-            show_strategy_roadmap(roadmap_airline)
+    # 2. Button renders directly underneath with a clean vertical stack
+    if st.button("🚀 View Strategy Roadmap", use_container_width=True, key="g10_t5_trigger_btn"):
+        show_strategy_roadmap(roadmap_airline)
 
 # --- SECURE PROTECTED TAB (TAB 6) ---
 with tab6:
