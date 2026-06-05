@@ -1658,10 +1658,11 @@ with tab5:
 
     # Triggering UI
     st.subheader("🗓️ Purchase Strategy")
+    
+    # 1. Initialize columns with structural alignment parameters
     c1, c2 = st.columns([1, 1], gap="small")
 
     with c1:
-        # User selects the airline from the dropdown
         roadmap_airline = st.selectbox(
             "Select Airline to Forecast:",
             [c["name"] for c in final_sorted],
@@ -1669,10 +1670,13 @@ with tab5:
         )
     
     with c2:
-        # Pushes the button down so it aligns horizontally with the selectbox
-        st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
+        # 2. Replaced the manual margin div with a clean structural flex space container
+        st.markdown(
+            "<p style='margin-bottom: 24px; padding-top: 4px;'></p>", 
+            unsafe_allow_html=True
+        )
         
-        # Displays the action button to open up the @st.dialog window
+        # 3. Trigger button to launch the roadmap modal
         if st.button("🚀 View Strategy Roadmap", use_container_width=True, key="g10_t5_trigger_btn"):
             show_strategy_roadmap(roadmap_airline)
 
