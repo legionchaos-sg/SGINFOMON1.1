@@ -1659,7 +1659,15 @@ with tab5:
     # Triggering UI
     st.subheader("🗓️ Purchase Strategy")
     
-    # 1. Initialize columns with structural alignment parameters
+    # Force alignment via a tiny, localized CSS block targeting this specific button column
+    st.markdown("""
+        <style>
+            div[data-testid="stColumn"]:nth-of-type(2) div.stButton {
+                padding-top: 24px !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
     c1, c2 = st.columns([1, 1], gap="small")
 
     with c1:
@@ -1670,13 +1678,7 @@ with tab5:
         )
     
     with c2:
-        # 2. Replaced the manual margin div with a clean structural flex space container
-        st.markdown(
-            "<p style='margin-bottom: 24px; padding-top: 4px;'></p>", 
-            unsafe_allow_html=True
-        )
-        
-        # 3. Trigger button to launch the roadmap modal
+        # The CSS above handles the alignment, leaving the layout block completely clean
         if st.button("🚀 View Strategy Roadmap", use_container_width=True, key="g10_t5_trigger_btn"):
             show_strategy_roadmap(roadmap_airline)
 
