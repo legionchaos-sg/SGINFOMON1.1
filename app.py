@@ -1629,14 +1629,17 @@ with tab5:
     # 5. STRATEGIC POP-UP LOGIC
     @st.dialog("16-Week Flight Strategy", width="large")
     def show_strategy_roadmap(airline_choice):
+        # Finds the specific dictionary for the chosen airline
         active_c = next(c for c in final_sorted if c["name"] == airline_choice)
         st.write(f"### 🗓️ Forecast for {active_c['name']}")
         
         pop_data = []
         for w in range(16, -1, -1):
             t_date = d_dep - timedelta(weeks=w)
+            
+            # 🛠️ FIXED: Replaced the 'top_3_list' join with your specific 'airline_choice' variable
             if 7 <= w <= 9:
-                advice = f"✅ BUY: {', '.join(top_3_list[:2])}"
+                advice = f"✅ BUY: {airline_choice}"
             elif w > 9:
                 advice = "⏳ HOLD: Prices Stagnant"
             else:
@@ -1652,7 +1655,7 @@ with tab5:
             })
         
         st.dataframe(pop_data, hide_index=True, use_container_width=True)
-        st.info("💡 **Strategy:** Statistically, the best prices for Asia-Pacific routes are found **7 to 9 weeks** before departure.")
+        st.info(f"💡 **Strategy:** Statistically, the best prices for {airline_choice} are found **7 to 9 weeks** before departure.")
         if st.button("Close"):
             st.rerun()
 
