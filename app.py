@@ -1659,7 +1659,7 @@ with tab5:
         roadmap_airline = st.selectbox(
             "Select Airline to Forecast:",
             [c["name"] for c in final_sorted],
-            key="g10_t5_roadmap_select"
+            key="g10_t5_roadmap_select_unique"
         )
     
     with c2:
