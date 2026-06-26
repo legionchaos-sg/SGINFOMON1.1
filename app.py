@@ -448,8 +448,8 @@ def fetch_coe_intelligence():
             contents=prompt,
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
-                response_mime_type="application/json",
-                response_schema=CoeSchema  
+                # This enforces native JSON delivery directly from the engine
+                response_mime_type="application/json"  
             )
         )
         return json.loads(response.text.strip())
