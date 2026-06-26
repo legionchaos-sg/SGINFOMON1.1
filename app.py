@@ -810,41 +810,61 @@ with tab1:
     # 5. COE Results
     with st.expander("🚗 COE Bidding Results", expanded=True):
         coe = fetch_coe_intelligence()
-        categories_dict = coe['categories']
+        categories_dict = coe.get('categories', {})
         
-        # Dynamically match column count to returned payload categories (e.g., 4 columns)
-        cols = st.columns(len(categories_dict))
+        # 🧼 FILTER: Only display the categories your layout natively supports
+        target_categories = ["Cat A", "Cat B", "Cat C", "Cat E"]
+        filtered_categories = {k: v for k, v in categories_dict.items() if k in target_categories}
         
-        for i, (cat, d) in enumerate(categories_dict.items()):
-            rate = d['bids'] / d['quota']
-            
-            # DYNAMIC STATUS INDICATORS (Fixes negative value layout display bugs)
-            if d['change'] >= 0:
-                change_str = f"▲ +${d['change']:,}"
-                change_color = "#00ff7f"  # Bright green for profit/upward trend
-            else:
-                change_str = f"▼ -${abs(d['change']):,}"
-                change_color = "#ff4b4b"  # Deep red for downward correction
+        # Dynamically match column count to our filtered targets (4 columns)
+        cols = st.columns(len(filtered_categories))
+        
+        for i, cat in enumerate(target_categories):
+            # Safe lookup: if a category is missing or dropped from the live feed, skip crashing
+            if cat not in filtered_categories:
+                continue
                 
-            rate_color = "#ff4b4b" if rate > 1.5 else "#007bff"
+            d = filtered_categories[cat]
             
-            with cols[i]:
-                st.markdown(f"""
-                    <div style="border-left: 4px solid {rate_color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; min-height: 140px;">
-                        <b style="color: white; font-size: 1.1rem;">{cat}</b><br>
-                        <b style="font-size: 1.4rem; color: white;">${d['qp']:,}</b><br>
-                        <small style="color: {change_color}; font-weight: bold;">{change_str}</small>
-                        <hr style="margin: 8px 0; border: 0.1px solid #444;">
-                        <small style="color: {rate_color};"><b>RATE: {rate:.2f}x</b></small>
-                    </div>
-                """, unsafe_allow_html=True)
+            try:
+                # Safe parsing with defaults to protect against missing keys from web scrapers
+                bids = float(d.get('bids', 0))
+                quota = float(d.get('quota', 1)) # Default to 1 to prevent ZeroDivisionError
+                rate = bids / quota
+                qp_val = d.get('qp', 0)
+                change_val = d.get('change', 0)
+                
+                # DYNAMIC STATUS INDICATORS
+                if change_val >= 0:
+                    change_str = f"▲ +${change_val:,}"
+                    change_color = "#00ff7f"
+                else:
+                    change_str = f"▼ -${abs(change_val):,}"
+                    change_color = "#ff4b4b"
+                    
+                rate_color = "#ff4b4b" if rate > 1.5 else "#007bff"
+                
+                with cols[i]:
+                    st.markdown(f"""
+                        <div style="border-left: 4px solid {rate_color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; min-height: 140px;">
+                            <b style="color: white; font-size: 1.1rem;">{cat}</b><br>
+                            <b style="font-size: 1.4rem; color: white;">${qp_val:,}</b><br>
+                            <small style="color: {change_color}; font-weight: bold;">{change_str}</small>
+                            <hr style="margin: 8px 0; border: 0.1px solid #444;">
+                            <small style="color: {rate_color};"><b>RATE: {rate:.2f}x</b></small>
+                        </div>
+                    """, unsafe_allow_html=True)
+            except Exception as loop_err:
+                # If an individual card has a data anomaly, show a clean warning instead of breaking the app
+                with cols[i]:
+                    st.caption(f"⚠️ {cat} parsing anomaly")
     
         st.markdown("---")
         ana_l, ana_r = st.columns(2)
         with ana_l:
-            st.markdown(f"**Current Sentiment:**\n{coe['market_sentiment']}")
+            st.markdown(f"**Current Sentiment:**\n{coe.get('market_sentiment', 'No sentiment generated.')}")
         with ana_r:
-            st.markdown(f"**Next Bid Target ({coe['next_bid_date']}):**\n{coe['prediction_95']}")    
+            st.markdown(f"**Next Bid Target ({coe.get('next_bid_date', 'TBD')}):**\n{coe.get('prediction_95', 'No prediction data.')}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
