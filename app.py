@@ -421,22 +421,22 @@ class CoeSchema(BaseModel):
 def fetch_coe_intelligence():
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Cache-busting strings to prevent Streamlit from serving stale memory layers
     current_date_str = datetime.now().strftime("%d %B %Y")
     exact_time_str = datetime.now().strftime("%H:%M:%S")
     
+    # REFACTORED PROMPT: Removed hardcoded data locks to let the search tool function freely
     prompt = f"""
     You are an expert Singapore macroeconomic auto-analyst asset. Today's date is strictly {current_date_str} (System Time: {exact_time_str}).
     
     Task:
-    1. Force-evict all historical context cache. Execute a live web search for the absolute newest Singapore COE bidding results that concluded on June 4, 2026.
-    2. Extract the true metrics for this round:
-       - Cat A: QP $126,009 | Change +1,780 | Quota 1,246 | Bids 2,076
-       - Cat B: QP $126,989 | Change -2,512 | Quota 889 | Bids 1,300
-       - Cat C: QP $94,000 | Change +1,777 | Quota 293 | Bids 453
-       - Cat E: QP $129,000 | Change -1,000 | Quota 261 | Bids 497
-    3. The next upcoming open bidding round opens on 15 June 2026.
-    4. Formulate an advanced, data-driven synthesis for 'market_sentiment' and 'prediction_95' based on these specific June 4th values.
+    1. Force-evict all historical context cache. Execute a live web search for the absolute newest, most current Singapore COE bidding results available from LTA OneMotoring or equivalent official telemetry.
+    2. Extract the true metrics for the latest completed round across Categories A, B, C, and E:
+       - Premium price ('qp' as integer)
+       - Change relative to previous round ('change' as positive or negative integer)
+       - Total Quota allocated ('quota' as integer)
+       - Total Bids received ('bids' as integer)
+    3. Identify the true, next upcoming open bidding round target date.
+    4. Formulate an advanced, data-driven synthesis for 'market_sentiment' and 'prediction_95' based on these live parsed parameters.
     
     CRITICAL TEXT FORMATTING:
     - For 'prediction_95': You MUST conclude this string with the exact target brackets format: "Estimated next bid targets: [Cat A: $X, Cat B: $Y, Cat C: $Z]."
@@ -449,18 +449,13 @@ def fetch_coe_intelligence():
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
                 response_mime_type="application/json",
-                response_schema=CoeSchema  # Anchors structure verification at the API gateway
+                response_schema=CoeSchema  
             )
         )
-        
-        # Valid schema verification guarantees completely clean JSON string generation
         return json.loads(response.text.strip())
         
     except Exception as e:
-        # Debug logger to expose what specific element is blocking the dynamic route
         st.sidebar.warning(f"Live Stream bypassing to local layer: {e}")
-        
-        # Updated safety container to reflect the June 4 results if network handshakes drop out
         return {
             "next_bid_date": "15 June 2026", 
             "categories": {
@@ -469,8 +464,8 @@ def fetch_coe_intelligence():
                 "Cat C": {"qp": 94000, "change": 1777, "quota": 293, "bids": 453},
                 "Cat E": {"qp": 129000, "change": -1000, "quota": 261, "bids": 497}
             },
-            "market_sentiment": "Cat A premiums surged to an 8-month high ($126,009) due to post-Car Expo backlogs. Commercial Cat C set records at $94,000, while premium Cat B corrected downward.",
-            "prediction_95": "Expect high support floors across Cat A and C due to persistent backlogs. Estimated next bid targets: [Cat A: $127,200, Cat B: $128,500, Cat C: $95,200]."
+            "market_sentiment": "Fallback data triggered. Connectivity error in pipeline loop.",
+            "prediction_95": "Estimated next bid targets: [Cat A: $127,200, Cat B: $128,500, Cat C: $95,200]."
         }
 
 # --- DASHBOARD LOGIC ---
@@ -815,30 +810,41 @@ with tab1:
     # 5. COE Results
     with st.expander("🚗 COE Bidding Results", expanded=True):
         coe = fetch_coe_intelligence()
-        cols = st.columns(4)
-        for i, (cat, d) in enumerate(coe['categories'].items()):
-            # Calculate Overbid Rate dynamically
+        categories_dict = coe['categories']
+        
+        # Dynamically match column count to returned payload categories (e.g., 4 columns)
+        cols = st.columns(len(categories_dict))
+        
+        for i, (cat, d) in enumerate(categories_dict.items()):
             rate = d['bids'] / d['quota']
-            color = "#ff4b4b" if rate > 1.5 else "#0068c9"
+            
+            # DYNAMIC STATUS INDICATORS (Fixes negative value layout display bugs)
+            if d['change'] >= 0:
+                change_str = f"▲ +${d['change']:,}"
+                change_color = "#00ff7f"  # Bright green for profit/upward trend
+            else:
+                change_str = f"▼ -${abs(d['change']):,}"
+                change_color = "#ff4b4b"  # Deep red for downward correction
+                
+            rate_color = "#ff4b4b" if rate > 1.5 else "#007bff"
             
             with cols[i]:
                 st.markdown(f"""
-                    <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px;">
-                        <b style="color: white;">{cat}</b><br>
-                        <b style="font-size: 1.4rem; color: #ff4b4b;">${d['qp']:,}</b><br>
-                        <small style="color: #ff4b4b;">▲ ${d['change']:,}</small>
+                    <div style="border-left: 4px solid {rate_color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; min-height: 140px;">
+                        <b style="color: white; font-size: 1.1rem;">{cat}</b><br>
+                        <b style="font-size: 1.4rem; color: white;">${d['qp']:,}</b><br>
+                        <small style="color: {change_color}; font-weight: bold;">{change_str}</small>
                         <hr style="margin: 8px 0; border: 0.1px solid #444;">
-                        <small style="color: {color};"><b>RATE: {rate:.2f}x</b></small>
+                        <small style="color: {rate_color};"><b>RATE: {rate:.2f}x</b></small>
                     </div>
                 """, unsafe_allow_html=True)
-
-        # DYNAMIC ANALYSIS CARDS
+    
         st.markdown("---")
         ana_l, ana_r = st.columns(2)
         with ana_l:
-            st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
+            st.markdown(f"**Current Sentiment:**\n{coe['market_sentiment']}")
         with ana_r:
-            st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")    
+            st.markdown(f"**Next Bid Target ({coe['next_bid_date']}):**\n{coe['prediction_95']}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
