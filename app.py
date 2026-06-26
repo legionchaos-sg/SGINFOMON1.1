@@ -861,10 +861,28 @@ with tab1:
     
         st.markdown("---")
         ana_l, ana_r = st.columns(2)
+        ana_l, ana_r = st.columns(2)
+    
         with ana_l:
-            st.markdown(f"**Current Sentiment:**\n{coe.get('market_sentiment', 'No sentiment generated.')}")
+            # 🔍 SMART LOOKUP: Search for variations Gemini might name the sentiment key
+            live_sentiment = (
+                coe.get('market_sentiment') or 
+                coe.get('sentiment') or 
+                coe.get('analysis') or 
+                coe.get('market_analysis') or
+                "Live sentiment summary was generated but key schema varied. Check raw payload."
+            )
+            st.markdown(f"**Current Sentiment:**\n{live_sentiment}")
+            
         with ana_r:
-            st.markdown(f"**Next Bid Target ({coe.get('next_bid_date', 'TBD')}):**\n{coe.get('prediction_95', 'No prediction data.')}")    
+            # 🔍 SMART LOOKUP: Search for variations of the prediction key
+            live_prediction = (
+                coe.get('prediction_95') or 
+                coe.get('prediction') or 
+                coe.get('next_bid_prediction') or 
+                "No matching prediction data found."
+            )
+            st.markdown(f"**Next Bid Target ({coe.get('next_bid_date', 'TBD')}):**\n{live_prediction}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
