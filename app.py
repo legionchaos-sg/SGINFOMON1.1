@@ -814,31 +814,65 @@ with tab1:
 
     # 5. COE Results
     with st.expander("🚗 COE Bidding Results", expanded=True):
-        coe = fetch_coe_intelligence()
-        cols = st.columns(4)
-        for i, (cat, d) in enumerate(coe['categories'].items()):
-            # Calculate Overbid Rate dynamically
-            rate = d['bids'] / d['quota']
-            color = "#ff4b4b" if rate > 1.5 else "#0068c9"
+        # 1. CALL YOUR EXISTING DYNAMIC FUNCTION (With Streamlit caching wrapped around it)
+        @st.cache_data(ttl=3600)
+        def get_cached_intelligence():
+            return fetch_coe_intelligence() # Calls your function above cleanly
+    
+        # Ingest the dynamic live payload
+        coe_payload = get_cached_intelligence()
+        
+        # Extract the nested categories dictionary
+        categories_data = coe_payload["categories"]
+    
+        # 2. USER INTERFACE & INPUT (Dynamically populated from your function)
+        p_c1, p_c2, p_c3 = st.columns([1.2, 1.3, 1.5], vertical_alignment="center")
+        
+        with p_c1:
+            # Pulls categories dynamically ("Cat A", "Cat B", etc.) directly from your schema
+            v_cat = st.selectbox("Category:", list(categories_data.keys()), key="g10_t4_vcat")
+            u_target = st.number_input("Desired COE ($):", min_value=0, value=0, help="Set to 0 for Model Auto-Prediction", key="g10_t4_target")
+        
+        # 3. RE-MAPPED VARIABLE DICTIONARY (Fixes the schema mismatch)
+        selected_cat = categories_data[v_cat]
+        
+        bq_ratio = float(selected_cat['bids']) / float(selected_cat['quota'])
+        last_p = selected_cat['qp']  # Re-mapped from 'p' to 'qp'
+        next_date = coe_payload.get("next_bid_date", "TBD")
+        
+        with p_c2:
+            m_sent = st.select_slider(
+                "Model Market Sentiments:", 
+                options=["Bearish", "Neutral", "Bullish"], 
+                value="Bullish" if bq_ratio > 1.5 else "Neutral",
+                key="g10_t4_sent"
+            )
+            st.caption(f"BQ Ratio: {bq_ratio:.2f}x | Next Bidding: {next_date}")
+    
+        with p_c3:
+            st.markdown(f"""
+                <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid #444; text-align:center;">
+                    <small>Live Scraped Price</small><br>
+                    <strong style="font-size:1.4rem; color:#007bff;">${last_p:,.0f}</strong><br>
+                    <small>Change: {selected_cat['change']:+,:,.0f}</small>
+                </div>
+            """, unsafe_allow_html=True)
+    
+        st.divider()
+    
+        # 4. CORE PREDICTION LOGIC SWITCH
+        if u_target == 0:
+            st.subheader("📡 Next Bidding Prediction (Automated)")
             
-            with cols[i]:
-                st.markdown(f"""
-                    <div style="border-left: 4px solid {color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px;">
-                        <b style="color: white;">{cat}</b><br>
-                        <b style="font-size: 1.4rem; color: #ff4b4b;">${d['qp']:,}</b><br>
-                        <small style="color: #ff4b4b;">▲ ${d['change']:,}</small>
-                        <hr style="margin: 8px 0; border: 0.1px solid #444;">
-                        <small style="color: {color};"><b>RATE: {rate:.2f}x</b></small>
-                    </div>
-                """, unsafe_allow_html=True)
-
-        # DYNAMIC ANALYSIS CARDS
-        st.markdown("---")
-        ana_l, ana_r = st.columns(2)
-        with ana_l:
-            st.markdown(f"**Current Sentiment:** {coe['market_sentiment']}")
-        with ana_r:
-            st.markdown(f"**Next Bid ({coe['next_bid_date']}):** {coe['prediction_95']}")    
+            # Display your function's live qualitative text summary
+            st.info(f"**Market Sentiment Intel:** {coe_payload['market_sentiment']}")
+            st.write(f"🔮 **95% Confidence Interval Forecast:** {coe_payload['prediction_95']}")
+            
+            # Keep your metric containers underneath for telemetry display
+            l_res, r_res = st.columns([2, 1])
+            with r_res:
+                st.metric("Bids Received", f"{selected_cat['bids']:,}")
+                st.metric("Quota Available", f"{selected_cat['quota']:,}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
