@@ -418,6 +418,7 @@ class CoeSchema(BaseModel):
     prediction_95: str
 
 # Manual COE INFROMATION 
+@st.cache_data(ttl=14400)
 def fetch_coe_intelligence():
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     
