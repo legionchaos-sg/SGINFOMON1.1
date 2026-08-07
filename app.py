@@ -169,7 +169,7 @@ def fetch_sg_economy():
             "inf_delta": 0.60
         }      
         
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=86400)
 def fetch_fuel_logic(brent_now):
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
     dynamic_prompt = """Search for SG petrol prices and Brent price on May 12, 2026. Return JSON only."""
@@ -212,7 +212,7 @@ def fetch_fuel_logic(brent_now):
         f_trends = {g: True for g in f_avg.keys()}
         return f_avg, f_trends, {}, "✅ STABLE (Baseline)", f"⚠️ Error: {str(e)[:20]}", 107.77
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=86400)
 def fetch_live_forex():
     fx_tickers = {"MYR": "SGDMYR=X", "JPY": "SGDJPY=X", "THB": "SGDTHB=X", "CNY": "SGDCNY=X", "USD": "SGDUSD=X"}
     fx_results = {}
@@ -292,7 +292,7 @@ def get_live_rate(ticker):
     except:
         return 0.0
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=150)
 def fetch_live_market_data():
     tickers = {"STI": "^STI", "Gold": "GC=F", "Silver": "SI=F", "Brent": "BZ=F"}
     results = {}
