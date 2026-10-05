@@ -749,7 +749,7 @@ with tab1:
     st.markdown(ticker_html, unsafe_allow_html=True)
 
     #World clock             
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin"), ("Australia", "Australia/Brisbane")]
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Australia", "Australia/Brisbane"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin")]
     for i, (name, tz) in enumerate(countries):
         t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
     
