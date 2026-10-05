@@ -678,6 +678,11 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful 
 
 #Tab1 Main Page
 with tab1:
+    #World clock             
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+        
     #SG Holiday upcoming 
     t_cols = st.columns(6)# 2. News & Holidays (FIXED INDENTATION)
     st.divider()
@@ -747,11 +752,6 @@ with tab1:
     """
     
     st.markdown(ticker_html, unsafe_allow_html=True)
-
-    #World clock             
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
     
     with st.expander("📈 Market Indices & Commodities", expanded=True):
        # Each column now occupies exactly 1/6th of the expander width
@@ -862,7 +862,7 @@ with tab1:
         if prediction_results:
             df_final = pd.DataFrame(prediction_results, columns=cols)
             st.table(df_final)
-            st.caption("✨ Models: Prophet Trend (60%) + Chronos-2 Momentum (40%) | Data updated via Gold 10 Fetcher")
+            #st.caption("✨ Models: Prophet Trend (60%) + Chronos-2 Momentum (40%) | Data updated via Gold 10 Fetcher")
         else:
             st.warning("Prediction engine currently syncing. Please wait...")
 
