@@ -808,82 +808,134 @@ with tab1:
         f_cols[3].metric("SGD/CNY", f"{fx_data['CNY'][0]:.4f}", f"{fx_data['CNY'][1]:+.2f}%")
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
+    # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
+    with st.expander("🌏 Asian Market Watch", expanded=False): 
+       markets = {
+        "Singapore": "^STI", "Hong Kong": "^HSI", "China (SSE)": "000001.SS", "Taiwan": "^TWII",
+        "Japan": "^N225", "South Korea": "^KS11", "Thailand": "^SET.BK", "Malaysia": "^KLSE"
+       }
+
+       table_data = []
+       for name, symbol in markets.items():
+           price, change, status = fetch_market_rate(symbol)
+           table_data.append({
+               "Region": name,
+               "Index Value": f"{price:,.2f}" if price else "N/A",
+               "Change %": change,
+               "Status": status
+           })
+    
+       # Display with 10pt Font and White Text
+       df = pd.DataFrame(table_data)
+       st.table(df.style.set_properties(**{
+           'text-align': 'left',
+           'font-size': '10pt',
+           'color': 'white'
+       }))
+    
+       if st.button("🔄 Manual Refresh"):
+           st.rerun()
+            
+    # Global Mkt: SNP500, DOW JONES, NASDAQ, FTSE 100, CREDIT, BONDS
+    with st.expander("🌏 Western Market Watch", expanded=True):
+        western_data = []
+        
+        for name, symbol in western_markets.items():
+            price, change, status = fetch_western_rate(symbol)
+            western_data.append({
+                "Asset Class": name,
+                "Last Rate/Price": price,
+                "Daily Change": change,
+                "Market Status": status
+            })
+        
+        df_west = pd.DataFrame(western_data)
+        
+        # --- 3. DISPLAY (Using 10pt Font for Gold 10) ---
+        st.table(df_west.style.set_properties(**{
+            'text-align': 'left',
+            'font-size': '10pt'
+        }))
+        
+        if st.button("Refresh Western Feed"):
+            st.rerun() 
+
     # 5. COE Results
-    with st.expander("🚗 COE Bidding Results", expanded=True):
-        coe = fetch_coe_intelligence()
-        categories_dict = coe.get('categories', {})
+    #with st.expander("🚗 COE Bidding Results", expanded=True):
+    #    coe = fetch_coe_intelligence()
+    #    categories_dict = coe.get('categories', {})
         
         # 🧼 FILTER: Only display the categories your layout natively supports
-        target_categories = ["Cat A", "Cat B", "Cat C", "Cat E"]
-        filtered_categories = {k: v for k, v in categories_dict.items() if k in target_categories}
+    #    target_categories = ["Cat A", "Cat B", "Cat C", "Cat E"]
+    #    filtered_categories = {k: v for k, v in categories_dict.items() if k in target_categories}
         
         # Dynamically match column count to our filtered targets (4 columns)
-        cols = st.columns(len(filtered_categories))
+    #    cols = st.columns(len(filtered_categories))
         
-        for i, cat in enumerate(target_categories):
+    #    for i, cat in enumerate(target_categories):
             # Safe lookup: if a category is missing or dropped from the live feed, skip crashing
-            if cat not in filtered_categories:
-                continue
+    #        if cat not in filtered_categories:
+    #            continue
                 
-            d = filtered_categories[cat]
+    #        d = filtered_categories[cat]
             
-            try:
+    #        try:
                 # Safe parsing with defaults to protect against missing keys from web scrapers
-                bids = float(d.get('bids', 0))
-                quota = float(d.get('quota', 1)) # Default to 1 to prevent ZeroDivisionError
-                rate = bids / quota
-                qp_val = d.get('qp', 0)
-                change_val = d.get('change', 0)
+    #            bids = float(d.get('bids', 0))
+    #            quota = float(d.get('quota', 1)) # Default to 1 to prevent ZeroDivisionError
+    #            rate = bids / quota
+    #            qp_val = d.get('qp', 0)
+    #            change_val = d.get('change', 0)
                 
                 # DYNAMIC STATUS INDICATORS
-                if change_val >= 0:
-                    change_str = f"▲ +${change_val:,}"
-                    change_color = "#00ff7f"
-                else:
-                    change_str = f"▼ -${abs(change_val):,}"
-                    change_color = "#ff4b4b"
+    #            if change_val >= 0:
+    #                change_str = f"▲ +${change_val:,}"
+    #                change_color = "#00ff7f"
+    #            else:
+    #                change_str = f"▼ -${abs(change_val):,}"
+    #                change_color = "#ff4b4b"
                     
-                rate_color = "#ff4b4b" if rate > 1.5 else "#007bff"
+    #            rate_color = "#ff4b4b" if rate > 1.5 else "#007bff"
                 
-                with cols[i]:
-                    st.markdown(f"""
-                        <div style="border-left: 4px solid {rate_color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; min-height: 140px;">
-                            <b style="color: white; font-size: 1.1rem;">{cat}</b><br>
-                            <b style="font-size: 1.4rem; color: white;">${qp_val:,}</b><br>
-                            <small style="color: {change_color}; font-weight: bold;">{change_str}</small>
-                            <hr style="margin: 8px 0; border: 0.1px solid #444;">
-                            <small style="color: {rate_color};"><b>RATE: {rate:.2f}x</b></small>
-                        </div>
-                    """, unsafe_allow_html=True)
-            except Exception as loop_err:
-                # If an individual card has a data anomaly, show a clean warning instead of breaking the app
-                with cols[i]:
-                    st.caption(f"⚠️ {cat} parsing anomaly")
+    #            with cols[i]:
+    #                st.markdown(f"""
+    #                    <div style="border-left: 4px solid {rate_color}; padding: 10px; background-color: #1e1e1e; border-radius: 5px; min-height: 140px;">
+    #                        <b style="color: white; font-size: 1.1rem;">{cat}</b><br>
+    #                        <b style="font-size: 1.4rem; color: white;">${qp_val:,}</b><br>
+    #                        <small style="color: {change_color}; font-weight: bold;">{change_str}</small>
+    #                        <hr style="margin: 8px 0; border: 0.1px solid #444;">
+    #                        <small style="color: {rate_color};"><b>RATE: {rate:.2f}x</b></small>
+    #                    </div>
+    #                """, unsafe_allow_html=True)
+    #        except Exception as loop_err:
+    #            # If an individual card has a data anomaly, show a clean warning instead of breaking the app
+    #            with cols[i]:
+    #                st.caption(f"⚠️ {cat} parsing anomaly")
     
-        st.markdown("---")
-        ana_l, ana_r = st.columns(2)
-        ana_l, ana_r = st.columns(2)
+     #   st.markdown("---")
+     #   ana_l, ana_r = st.columns(2)
+     #   ana_l, ana_r = st.columns(2)
     
-        with ana_l:
-            # 🔍 SMART LOOKUP: Search for variations Gemini might name the sentiment key
-            live_sentiment = (
-                coe.get('market_sentiment') or 
-                coe.get('sentiment') or 
-                coe.get('analysis') or 
-                coe.get('market_analysis') or
-                "Live sentiment summary was generated but key schema varied. Check raw payload."
-            )
-            st.markdown(f"**Current Sentiment:**\n{live_sentiment}")
+     #   with ana_l:
+     #       # 🔍 SMART LOOKUP: Search for variations Gemini might name the sentiment key
+     #       live_sentiment = (
+     #           coe.get('market_sentiment') or 
+     #           coe.get('sentiment') or 
+     #           coe.get('analysis') or 
+     #           coe.get('market_analysis') or
+     #           "Live sentiment summary was generated but key schema varied. Check raw payload."
+     #       )
+     #       st.markdown(f"**Current Sentiment:**\n{live_sentiment}")
             
-        with ana_r:
+     #   with ana_r:
             # 🔍 SMART LOOKUP: Search for variations of the prediction key
-            live_prediction = (
-                coe.get('prediction_95') or 
-                coe.get('prediction') or 
-                coe.get('next_bid_prediction') or 
-                "No matching prediction data found."
-            )
-            st.markdown(f"**Next Bid Target ({coe.get('next_bid_date', 'TBD')}):**\n{live_prediction}")    
+     #       live_prediction = (
+     #           coe.get('prediction_95') or 
+     #           coe.get('prediction') or 
+     #           coe.get('next_bid_prediction') or 
+     #           "No matching prediction data found."
+     #       )
+     #       st.markdown(f"**Next Bid Target ({coe.get('next_bid_date', 'TBD')}):**\n{live_prediction}")    
 
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
