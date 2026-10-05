@@ -678,7 +678,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 LIVE MONITOR", "🏢 Useful 
 
 #Tab1 Main Page
 with tab1:
-    # 1. Clocks
+    #SG Holiday upcoming 
     t_cols = st.columns(6)# 2. News & Holidays (FIXED INDENTATION)
     st.divider()
     holiday_info = get_upcoming_holiday()
@@ -747,6 +747,11 @@ with tab1:
     """
     
     st.markdown(ticker_html, unsafe_allow_html=True)
+
+    #World clock             
+    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin"), ("Australia", "Australia/Brisbane")]
+    for i, (name, tz) in enumerate(countries):
+        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
     
     with st.expander("📈 Market Indices & Commodities", expanded=True):
        # Each column now occupies exactly 1/6th of the expander width
@@ -809,6 +814,58 @@ with tab1:
         f_cols[3].metric("SGD/CNY", f"{fx_data['CNY'][0]:.4f}", f"{fx_data['CNY'][1]:+.2f}%")
         f_cols[4].metric("SGD/USD", f"{fx_data['USD'][0]:.4f}", f"{fx_data['USD'][1]:+.2f}%")
 
+    #Forex Prediction
+    with st.expander("🌐 Forex Prediction Trends 3 days"):
+        # 1. Detect if today is a Non-Trading Day (Weekend or Holiday)
+        # pd.bdate_range returns business days; if today isn't in that range, it's a holiday/weekend
+        today = datetime.now().date()
+        is_business_day = len(pd.bdate_range(start=today, end=today)) > 0
+        
+        if not is_business_day:
+            st.info(f"📅 **Note:** Today ({today.strftime('%d %b')}) is a **No-Trading Day**. Calculations are based on the last available market close and derived predictions.")
+    
+        # 2. Setup Prediction Headers (Next 3 Business Days)
+        b_days = pd.bdate_range(start=today + pd.Timedelta(days=1), periods=3, freq='B')
+        cols = ["Pair", "Current", b_days[0].strftime('%a (%d %b)'), b_days[1].strftime('%a (%d %b)'), b_days[2].strftime('%a (%d %b)'), "Gold 10 Signal"]
+        
+        predict_pairs = {
+            "SGD/MYR": "SGDMYR=X", "SGD/JPY": "SGDJPY=X", 
+            "SGD/THB": "SGDTHB=X", "SGD/CNY": "SGDCNY=X", 
+            "SGD/USD": "SGDUSD=X", "SGD/EUR": "SGDEUR=X",
+            "SGD/GBP": "SGDGBP=X"
+        }
+        
+        prediction_results = []
+    
+        # 3. Process Pairs
+        for label, ticker in predict_pairs.items():
+            hist_df = fetch_prediction_data(ticker) # Your existing fetcher
+            
+            if hist_df is not None and not hist_df.empty:
+                # Gold 10 extraction logic
+                curr = float(hist_df['Close'].iloc[-1])
+                
+                # Weighted Ensemble Predictions
+                d1 = gold_10_predictor(hist_df, step=1)
+                d2 = gold_10_predictor(hist_df, step=2)
+                d3 = gold_10_predictor(hist_df, step=3)
+                
+                signal = generate_recommendation(d3, curr)
+                
+                prediction_results.append([
+                    label, f"{curr:.4f}", f"{d1:.4f}", f"{d2:.4f}", f"{d3:.4f}", signal
+                ])
+            else:
+                prediction_results.append([label, "0.0000", "-", "-", "-", "⏳ OFFLINE"])
+    
+        # 4. Final Table Display
+        if prediction_results:
+            df_final = pd.DataFrame(prediction_results, columns=cols)
+            st.table(df_final)
+            st.caption("✨ Models: Prophet Trend (60%) + Chronos-2 Momentum (40%) | Data updated via Gold 10 Fetcher")
+        else:
+            st.warning("Prediction engine currently syncing. Please wait...")
+
     # Regional Mkt Indices SS, HK, JPAN, MSIA AND TH---
     with st.expander("🌏 Asian Market Watch", expanded=False): 
        markets = {
@@ -860,9 +917,7 @@ with tab1:
         
         if st.button("Refresh Western Feed"):
             st.rerun() 
-
-       
-
+            
     # 6. FUEL MONITOR SECTION
     brent_now = float(m_live['Brent'][0])
     f_avg, f_trends, f_brands, f_timing, f_savings, brent_3d_ago = fetch_fuel_logic(brent_now)
@@ -892,8 +947,7 @@ with tab1:
         # 1. Calculation: Brent Momentum (Today vs 3D Ago)
         brent_delta_pct = ((brent_now - brent_3d_ago) / brent_3d_ago) * 100
         
-        # 2. Predictive Analysis Logic
-        # 2. Time-Range Predictive Logic
+        # 2. Predictive Analysis Logic + Time-Range Predictive Logic
         # We define "Stability" as volatility within a 1.5% band
         if brent_delta_pct > 2.0:
             prediction = "🚨 PRICE HIKE IMMINENT"
@@ -932,10 +986,7 @@ with tab1:
             st.markdown(f"**Strategic Advice:** {advice}")
             st.markdown(f"**Market Momentum:** Currently at **{brent_delta_pct:+.2f}%** vs May 12 baseline.")
     
-    #World clock             
-    countries = [("Singapore", "Asia/Singapore"), ("Thailand", "Asia/Bangkok"), ("Japan", "Asia/Tokyo"), ("Houston, USA", "America/Chicago"), ("Frankfurt, Germany", "Europe/Berlin"), ("Australia", "Australia/Brisbane")]
-    for i, (name, tz) in enumerate(countries):
-        t_cols[i].markdown(f'<div class="t-card"><small>{name}</small><br><b>{datetime.now(pytz.timezone(tz)).strftime("%H:%M")}</b></div>', unsafe_allow_html=True)
+    
         
 # ==========================================
 # TAB 3: SYSTEM TOOLS
@@ -1067,56 +1118,7 @@ with tab2:
     st.error("🚨 Police: 999 | 🚒 SCDF: 995 | 🏥 Non-Emergency: 1777")
 
     # --- 2. Forex 3 days Predictions Trends AI --- New updated 29th Mar
-    with st.expander("🌐 Forex Prediction Trends 3 days"):
-        # 1. Detect if today is a Non-Trading Day (Weekend or Holiday)
-        # pd.bdate_range returns business days; if today isn't in that range, it's a holiday/weekend
-        today = datetime.now().date()
-        is_business_day = len(pd.bdate_range(start=today, end=today)) > 0
-        
-        if not is_business_day:
-            st.info(f"📅 **Note:** Today ({today.strftime('%d %b')}) is a **No-Trading Day**. Calculations are based on the last available market close and derived predictions.")
     
-        # 2. Setup Prediction Headers (Next 3 Business Days)
-        b_days = pd.bdate_range(start=today + pd.Timedelta(days=1), periods=3, freq='B')
-        cols = ["Pair", "Current", b_days[0].strftime('%a (%d %b)'), b_days[1].strftime('%a (%d %b)'), b_days[2].strftime('%a (%d %b)'), "Gold 10 Signal"]
-        
-        predict_pairs = {
-            "SGD/MYR": "SGDMYR=X", "SGD/JPY": "SGDJPY=X", 
-            "SGD/THB": "SGDTHB=X", "SGD/CNY": "SGDCNY=X", 
-            "SGD/USD": "SGDUSD=X", "SGD/EUR": "SGDEUR=X",
-            "SGD/GBP": "SGDGBP=X"
-        }
-        
-        prediction_results = []
-    
-        # 3. Process Pairs
-        for label, ticker in predict_pairs.items():
-            hist_df = fetch_prediction_data(ticker) # Your existing fetcher
-            
-            if hist_df is not None and not hist_df.empty:
-                # Gold 10 extraction logic
-                curr = float(hist_df['Close'].iloc[-1])
-                
-                # Weighted Ensemble Predictions
-                d1 = gold_10_predictor(hist_df, step=1)
-                d2 = gold_10_predictor(hist_df, step=2)
-                d3 = gold_10_predictor(hist_df, step=3)
-                
-                signal = generate_recommendation(d3, curr)
-                
-                prediction_results.append([
-                    label, f"{curr:.4f}", f"{d1:.4f}", f"{d2:.4f}", f"{d3:.4f}", signal
-                ])
-            else:
-                prediction_results.append([label, "0.0000", "-", "-", "-", "⏳ OFFLINE"])
-    
-        # 4. Final Table Display
-        if prediction_results:
-            df_final = pd.DataFrame(prediction_results, columns=cols)
-            st.table(df_final)
-            st.caption("✨ Models: Prophet Trend (60%) + Chronos-2 Momentum (40%) | Data updated via Gold 10 Fetcher")
-        else:
-            st.warning("Prediction engine currently syncing. Please wait...")
     
     # Bank Rates SG---
     # COE Results
