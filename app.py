@@ -123,57 +123,47 @@ def fetch_sg_economy():
     
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
 
-try:
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    json_data = response.json()
-
-    rows = json_data['Data']['row']
-    all_items_row = next(
-        r for r in rows if r['rowText'].strip().lower() == "all items"
-    )
-
-    # Parse "2026 Aug" style keys, drop empty values, sort newest first
-    series = []
-    for c in all_items_row['columns']:
-        try:
-            dt = datetime.strptime(c['key'], "%Y %b")
-            series.append((dt, float(c['value'])))
-        except (ValueError, TypeError):
-            continue  # skip unpublished/blank months
-    series.sort(key=lambda x: x[0], reverse=True)
-
-    # Look up by date, not by index
-    lookup = {(dt.year, dt.month): v for dt, v in series}
-    cur = series[0][0]
-
-    def get(y, m):
-        # step back m months from cur
-        total = cur.year * 12 + (cur.month - 1) - m
-        return lookup[(total // 12, total % 12 + 1)]
-
-    latest_cpi        = get(0, 0)
-    prev_month_cpi    = get(0, 1)
-    year_ago_cpi      = get(0, 12)
-    prev_year_ago_cpi = get(0, 13)
-
-    cpi_delta  = latest_cpi - prev_month_cpi
-    inf_val    = (latest_cpi - year_ago_cpi) / year_ago_cpi * 100
-    prev_inf   = (prev_month_cpi - prev_year_ago_cpi) / prev_year_ago_cpi * 100
-    inf_delta  = inf_val - prev_inf
-
-except Exception as e:
-    print("CPI fetch failed:", repr(e))  # don't swallow silently
-
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        json_data = response.json()
+    
+        rows = json_data['Data']['row']
+        all_items_row = next(
+            r for r in rows if r['rowText'].strip().lower() == "all items"
+        )
+    
+        # Parse "2026 Aug" style keys, drop empty values, sort newest first
+        series = []
+        for c in all_items_row['columns']:
+            try:
+                dt = datetime.strptime(c['key'], "%Y %b")
+                series.append((dt, float(c['value'])))
+            except (ValueError, TypeError):
+                continue  # skip unpublished/blank months
+        series.sort(key=lambda x: x[0], reverse=True)
+    
+        # Look up by date, not by index
+        lookup = {(dt.year, dt.month): v for dt, v in series}
+        cur = series[0][0]
+    
+        def get(y, m):
+            # step back m months from cur
+            total = cur.year * 12 + (cur.month - 1) - m
+            return lookup[(total // 12, total % 12 + 1)]
+    
+        latest_cpi        = get(0, 0)
+        prev_month_cpi    = get(0, 1)
+        year_ago_cpi      = get(0, 12)
+        prev_year_ago_cpi = get(0, 13)
+    
+        cpi_delta  = latest_cpi - prev_month_cpi
+        inf_val    = (latest_cpi - year_ago_cpi) / year_ago_cpi * 100
+        prev_inf   = (prev_month_cpi - prev_year_ago_cpi) / prev_year_ago_cpi * 100
+        inf_delta  = inf_val - prev_inf
+    
     except Exception as e:
-        # Robust Fallback: Returns your known March 2026 data if API is down
-        print(f"SingStat API Error: {e}")
-        return {
-            "cpi_val": 102.40, 
-            "cpi_delta": 0.50, 
-            "inf_val": 1.80, 
-            "inf_delta": 0.60
-        }      
+        print("CPI fetch failed:", repr(e))  # don't swallow silently    
         
 @st.cache_data(ttl=86400)
 def fetch_fuel_logic(brent_now):
