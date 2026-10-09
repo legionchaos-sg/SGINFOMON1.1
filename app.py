@@ -121,49 +121,43 @@ def get_cached_analysis(sti, gold, silver, brent):
 def fetch_sg_economy():
     #Dynamically pulls live CPI data from SingStat API (2024=100 Base).Calculates CPI Value, MoM Delta, and YoY Inflation.
     
+    # M213751: Consumer Price Index, (2024 As Base Year), Monthly
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
+    
+    try:
+        # We request enough data to compare current month vs prev month AND prev year
+        params = {'limit': 15, 'sortBy': 'time_period desc'}
+        response = requests.get(url, params=params, timeout=10)
+        json_data = response.json()
+        
+        # Extract the 'All Items' row (usually the first row in this table)
+        # Note: We filter for the "All Items" row text to be precise
+        all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
+        columns = all_items_row['columns']
+        
+        # 1. CPI Value (Latest)
+        latest_cpi = float(columns[0]['value'])
+        
+        # 2. CPI Delta (Month-on-Month)
+        prev_month_cpi = float(columns[1]['value'])
+        cpi_delta = latest_cpi - prev_month_cpi
+        
+        # 3. Inflation Value (Year-on-Year)
+        # 12 months ago is index 12 in a monthly series
+        year_ago_cpi = float(columns[12]['value'])
+        inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100
+        
+        # 4. Inflation Delta (Current YoY vs Previous month's YoY)
+        prev_month_year_ago_cpi = float(columns[13]['value'])
+        prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
+        inf_delta = inf_val - prev_inf_val
 
-try:
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    json_data = response.json()
-
-    rows = json_data['Data']['row']
-    all_items_row = next(
-        r for r in rows if r['rowText'].strip().lower() == "all items"
-    )
-
-    # Parse "2026 Aug" style keys, drop empty values, sort newest first
-    series = []
-    for c in all_items_row['columns']:
-        try:
-            dt = datetime.strptime(c['key'], "%Y %b")
-            series.append((dt, float(c['value'])))
-        except (ValueError, TypeError):
-            continue  # skip unpublished/blank months
-    series.sort(key=lambda x: x[0], reverse=True)
-
-    # Look up by date, not by index
-    lookup = {(dt.year, dt.month): v for dt, v in series}
-    cur = series[0][0]
-
-    def get(y, m):
-        # step back m months from cur
-        total = cur.year * 12 + (cur.month - 1) - m
-        return lookup[(total // 12, total % 12 + 1)]
-
-    latest_cpi        = get(0, 0)
-    prev_month_cpi    = get(0, 1)
-    year_ago_cpi      = get(0, 12)
-    prev_year_ago_cpi = get(0, 13)
-
-    cpi_delta  = latest_cpi - prev_month_cpi
-    inf_val    = (latest_cpi - year_ago_cpi) / year_ago_cpi * 100
-    prev_inf   = (prev_month_cpi - prev_year_ago_cpi) / prev_year_ago_cpi * 100
-    inf_delta  = inf_val - prev_inf
-
-except Exception as e:
-    print("CPI fetch failed:", repr(e))  # don't swallow silently
+        return {
+            "cpi_val": round(latest_cpi, 2),
+            "cpi_delta": round(cpi_delta, 2),
+            "inf_val": round(inf_val, 2),
+            "inf_delta": round(inf_delta, 2)
+        }
 
     except Exception as e:
         # Robust Fallback: Returns your known March 2026 data if API is down
