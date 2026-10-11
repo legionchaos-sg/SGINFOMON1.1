@@ -126,40 +126,39 @@ def fetch_sg_economy():
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
     headers = {"User-Agent": "Mozilla/5.0"}
     
-        try:
-            # We request enough data to compare current month vs prev month AND prev year
-            params = {'limit': 30, 'sortBy': 'time_period desc'}
-            response = requests.get(url, params=params, headers=headers, timeout=15)
-            response.raise_for_status()
-            json_data = response.json()
+    try:
+        # We request enough data to compare current month vs prev month AND prev year
+        params = {'limit': 30, 'sortBy': 'time_period desc'}
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response.raise_for_status()
+        json_data = response.json()
             
-            # Extract the 'All Items' row (usually the first row in this table)
-            # Note: We filter for the "All Items" row text to be precise
-            #all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
-            #columns = all_items_row['columns']
-            # Find row for "All Items"
-            rows = json_data.get('Data', {}).get('row', [])
-            all_items_row = next((item for item in rows if item.get('rowText') == "All Items"), None)
+        # Extract the 'All Items' row (usually the first row in this table)
+        # Note: We filter for the "All Items" row text to be precise
+        #all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
+        #columns = all_items_row['columns']
+        # Find row for "All Items"
+        rows = json_data.get('Data', {}).get('row', [])            
+        all_items_row = next((item for item in rows if item.get('rowText') == "All Items"), None)
     
-            if not all_items_row or 'columns' not in all_items_row:
-                raise ValueError("Row 'All Items' not found in SingStat response.")
-            columns = all_items_row['columns']
-    
-            if len(columns) < 14:
+        if not all_items_row or 'columns' not in all_items_row:
+            raise ValueError("Row 'All Items' not found in SingStat response.")
+            
+        columns = all_items_row['columns']
+        if len(columns) < 14:
                 raise IndexError(f"Insufficient data returned: expected >= 14 periods, got {len(columns)}")
     
-            # Values
-            latest_cpi = float(columns[0]['value'])
-            prev_month_cpi = float(columns[1]['value'])
-            year_ago_cpi = float(columns[12]['value'])
-            prev_month_year_ago_cpi = float(columns[13]['value'])
+        # Values
+        latest_cpi = float(columns[0]['value'])
+        prev_month_cpi = float(columns[1]['value'])
+        year_ago_cpi = float(columns[12]['value'])
+        prev_month_year_ago_cpi = float(columns[13]['value'])
     
-            # Calculations
-            cpi_delta = latest_cpi - prev_month_cpi
-            inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100
-            
-            prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
-            inf_delta = inf_val - prev_inf_val
+        # Calculations
+        cpi_delta = latest_cpi - prev_month_cpi
+        inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100 
+        prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
+        inf_delta = inf_val - prev_inf_val
             # 1. CPI Value (Latest)
             #latest_cpi = float(columns[0]['value'])
             
@@ -177,14 +176,15 @@ def fetch_sg_economy():
             #prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
             #inf_delta = inf_val - prev_inf_val
     
-            return {
-                "cpi_val": round(latest_cpi, 2),
-                "cpi_delta": round(cpi_delta, 2),
-                "inf_val": round(inf_val, 2),
-                "inf_delta": round(inf_delta, 2)
-            }
+        return {
+            "cpi_val": round(latest_cpi, 2),
+            "cpi_delta": round(cpi_delta, 2),
+            "inf_val": round(inf_val, 2),
+            "inf_delta": round(inf_delta, 2)
+        }
 
     # Print exact exception to debug log
+    except Exception as e:
         print(f"SingStat API Error Detail: {type(e).__name__} - {e}")
         raise e  # Temporarily raise error to surface exact failure in terminal
 
