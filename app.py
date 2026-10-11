@@ -118,69 +118,40 @@ def get_cached_analysis(sti, gold, silver, brent):
         )
         return response_lite.text
 
-@st.cache_data(ttl=86400)
 def fetch_sg_economy():
     #Dynamically pulls live CPI data from SingStat API (2024=100 Base).Calculates CPI Value, MoM Delta, and YoY Inflation.
     
     # M213751: Consumer Price Index, (2024 As Base Year), Monthly
     url = "https://tablebuilder.singstat.gov.sg/api/public/v1/tabledata/M213751"
-    headers = {"User-Agent": "Mozilla/5.0"}
     
     try:
         # We request enough data to compare current month vs prev month AND prev year
-        params = {'limit': 30, 'sortBy': 'time_period desc'}
-        response = requests.get(url, params=params, headers=headers, timeout=15)
-        response.raise_for_status()
+        params = {'limit': 15, 'sortBy': 'time_period desc'}
+        response = requests.get(url, params=params, timeout=10)
         json_data = response.json()
-            
+        
         # Extract the 'All Items' row (usually the first row in this table)
         # Note: We filter for the "All Items" row text to be precise
-        #all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
-        #columns = all_items_row['columns']
-        # Find row for "All Items"
-        rows = json_data.get('Data', {}).get('row', [])            
-        all_items_row = next((item for item in rows if item.get('rowText') == "All Items"), None)
-    
-        if not all_items_row or 'columns' not in all_items_row:
-            raise ValueError("Row 'All Items' not found in SingStat response.")
-            
+        all_items_row = next(item for item in json_data['Data']['row'] if item['rowText'] == "All Items")
         columns = all_items_row['columns']
-        if len(columns) < 14:
-                raise IndexError(f"Insufficient data returned: expected >= 14 periods, got {len(columns)}")
-    
-        # Values
+        
+        # 1. CPI Value (Latest)
         latest_cpi = float(columns[0]['value'])
+        
+        # 2. CPI Delta (Month-on-Month)
         prev_month_cpi = float(columns[1]['value'])
-        year_ago_cpi = float(columns[12]['value'])
-        prev_month_year_ago_cpi = float(columns[13]['value'])
-    
-        # Calculations
         cpi_delta = latest_cpi - prev_month_cpi
-        inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100 
+        
+        # 3. Inflation Value (Year-on-Year)
+        # 12 months ago is index 12 in a monthly series
+        year_ago_cpi = float(columns[12]['value'])
+        inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100
+        
+        # 4. Inflation Delta (Current YoY vs Previous month's YoY)
+        prev_month_year_ago_cpi = float(columns[13]['value'])
         prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
         inf_delta = inf_val - prev_inf_val
-            # 1. CPI Value (Latest)
-            #latest_cpi = float(columns[0]['value'])
-            
-            # 2. CPI Delta (Month-on-Month)
-            #prev_month_cpi = float(columns[1]['value'])
-            #cpi_delta = latest_cpi - prev_month_cpi
-            
-            # 3. Inflation Value (Year-on-Year)
-            # 12 months ago is index 12 in a monthly series
-            #year_ago_cpi = float(columns[12]['value'])
-            #inf_val = ((latest_cpi - year_ago_cpi) / year_ago_cpi) * 100
-            
-            # 4. Inflation Delta (Current YoY vs Previous month's YoY)
-            #prev_month_year_ago_cpi = float(columns[13]['value'])
-            #prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
-            #inf_delta = inf_val - prev_inf_val
-    
-       
 
-    # Print exact exception to debug log
-    except Exception as e:
-        print(f"SingStat API Error Detail: {type(e).__name__} - {e}")
         return {
             "cpi_val": round(latest_cpi, 2),
             "cpi_delta": round(cpi_delta, 2),
@@ -188,15 +159,15 @@ def fetch_sg_economy():
             "inf_delta": round(inf_delta, 2)
         }
 
-    #except Exception as e:
+    except Exception as e:
         # Robust Fallback: Returns your known March 2026 data if API is down
-        #print(f"SingStat API Error: {e}")
-        #return {
-            #"cpi_val": 102.40, 
-            #"cpi_delta": 0.50, 
-            #"inf_val": 1.80, 
-            #"inf_delta": 0.60
-        #}      
+        print(f"SingStat API Error: {e}")
+        return {
+            "cpi_val": 102.40, 
+            "cpi_delta": 0.50, 
+            "inf_val": 1.80, 
+            "inf_delta": 0.60
+        }      
         
 @st.cache_data(ttl=86400)
 def fetch_fuel_logic(brent_now):
