@@ -176,17 +176,17 @@ def fetch_sg_economy():
             #prev_inf_val = ((prev_month_cpi - prev_month_year_ago_cpi) / prev_month_year_ago_cpi) * 100
             #inf_delta = inf_val - prev_inf_val
     
+       
+
+    # Print exact exception to debug log
+    except Exception as e:
+        print(f"SingStat API Error Detail: {type(e).__name__} - {e}")
         return {
             "cpi_val": round(latest_cpi, 2),
             "cpi_delta": round(cpi_delta, 2),
             "inf_val": round(inf_val, 2),
             "inf_delta": round(inf_delta, 2)
         }
-
-    # Print exact exception to debug log
-    except Exception as e:
-        print(f"SingStat API Error Detail: {type(e).__name__} - {e}")
-        raise e  # Temporarily raise error to surface exact failure in terminal
 
     #except Exception as e:
         # Robust Fallback: Returns your known March 2026 data if API is down
