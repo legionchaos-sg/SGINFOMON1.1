@@ -118,6 +118,7 @@ def get_cached_analysis(sti, gold, silver, brent):
         )
         return response_lite.text
 
+@st.cache_data(ttl=86400)
 def fetch_sg_economy():
     #Dynamically pulls live CPI data from SingStat API (2024=100 Base).Calculates CPI Value, MoM Delta, and YoY Inflation.
     
